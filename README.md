@@ -1,4 +1,4 @@
-# DestPlanner
+git # DestPlanner
 ## Problem Statement
 Modern travelers face significant challenges when planning trips, including:<br>
 • **Fragmented tools and platforms** - Users must juggle multiple applications for destination
