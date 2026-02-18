@@ -55,6 +55,7 @@ func main() {
 	api.Use(middleware.AuthMiddleware())
 	{
 		api.GET("/profile", handlers.GetProfile)
+		api.PUT("/profile", handlers.UpdateProfile)
 	}
 
 	// Start server
