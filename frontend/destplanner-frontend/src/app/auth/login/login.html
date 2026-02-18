@@ -1,0 +1,34 @@
+<div class="auth-page">
+  <mat-card class="auth-card">
+    <h2>Login</h2>
+
+    <form [formGroup]="loginForm" (ngSubmit)="submit()">
+
+      <!-- Username -->
+      <mat-form-field appearance="fill">
+        <mat-label>Username</mat-label>
+        <input matInput formControlName="username" [disabled]="loading">
+      </mat-form-field>
+
+      <!-- Password -->
+      <mat-form-field appearance="fill">
+        <mat-label>Password</mat-label>
+        <input matInput type="password" formControlName="password" [disabled]="loading">
+      </mat-form-field>
+
+      <!-- Remember Me -->
+      <mat-checkbox formControlName="rememberMe" [disabled]="loading">Remember me</mat-checkbox>
+
+      <!-- Submit Button -->
+      <button type="submit" class="register-btn" [disabled]="loading">
+        {{ loading ? 'Logging in...' : 'Login' }}
+      </button>
+    </form>
+
+    <!-- Bottom Switch -->
+    <div class="auth-switch">
+        Don't have an account? 
+      <span (click)="navigateToRegister()">Register</span>
+    </div>
+  </mat-card>
+</div>

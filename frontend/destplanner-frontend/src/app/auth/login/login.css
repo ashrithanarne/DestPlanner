@@ -1,0 +1,66 @@
+/* FULL PAGE GRADIENT */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: linear-gradient(
+    135deg,
+    #5f6bdc,
+    #8a5bdc,
+    #d45ca6
+  );
+}
+
+/* CARD */
+.auth-card {
+  background: white;
+  padding: 40px;       
+  border-radius: 18px;
+  width: 380px;        
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* TITLE */
+.auth-card h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* FORM FIELDS */
+mat-form-field {
+  width: 100%;
+}
+
+/* BUTTON */
+.register-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 10px;
+
+  background: linear-gradient(
+    135deg,
+    #ff4f87,
+    #ff6b9d
+  );
+
+  color: white;
+}
+
+/* SWITCH LINK */
+.auth-switch {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.auth-switch span {
+  color: #ff4f87;
+  cursor: pointer;
+  font-weight: 600;
+}
