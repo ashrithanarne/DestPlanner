@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"backend/database"
 	"backend/models"
 	"backend/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 // Login handles user login
@@ -82,5 +83,69 @@ func Login(c *gin.Context) {
 		Token:     token,
 		User:      user,
 		ExpiresAt: expiresAt,
+	})
+}
+
+// Register handles user registration
+func Register(c *gin.Context) {
+	var registerReq models.RegisterRequest
+
+	// Parse request body
+	if err := c.ShouldBindJSON(&registerReq); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "bad_request",
+			Message: "Invalid request payload",
+		})
+		return
+	}
+
+	// Validate input
+	if registerReq.Email == "" || registerReq.Password == "" ||
+		registerReq.FirstName == "" || registerReq.LastName == "" {
+
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "validation_error",
+			Message: "All fields are required",
+		})
+		return
+	}
+
+	// Hash password
+	hashedPassword, err := utils.HashPassword(registerReq.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "server_error",
+			Message: "Failed to hash password",
+		})
+		return
+	}
+
+	// Insert user into database
+	query := `
+	INSERT INTO users (email, password_hash, first_name, last_name)
+	VALUES (?, ?, ?, ?)
+	`
+
+	result, err := database.DB.Exec(query,
+		registerReq.Email,
+		hashedPassword,
+		registerReq.FirstName,
+		registerReq.LastName,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "user_exists",
+			Message: "User with this email already exists",
+		})
+		return
+	}
+
+	// Get inserted user ID
+	userID, _ := result.LastInsertId()
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "User registered successfully",
+		"user_id": userID,
 	})
 }

@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	"backend/database"
 	"backend/handlers"
 	"backend/middleware"
 	"backend/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -48,6 +49,7 @@ func main() {
 	auth := r.Group("/api/auth")
 	{
 		auth.POST("/login", handlers.Login)
+		auth.POST("/register", handlers.Register)
 	}
 
 	// Protected routes - require JWT authentication
