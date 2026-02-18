@@ -1,0 +1,46 @@
+<div class="auth-page">
+
+  <div class="auth-card">
+
+    <h2>Create Account</h2>
+
+    <form [formGroup]="registerForm" (ngSubmit)="submit()">
+
+      <mat-form-field appearance="outline">
+        <mat-label>Name</mat-label>
+        <input matInput formControlName="name">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Password</mat-label>
+        <input
+          matInput
+          type="password"
+          formControlName="password"
+          (input)="checkStrength(registerForm.value.password || '')"
+        >
+      </mat-form-field>
+
+      <p class="strength">
+        Password strength: {{ passwordStrength }}
+      </p>
+
+      <button mat-raised-button class="register-btn" [disabled]="loading">
+        Register
+      </button>
+
+    </form>
+
+    <p class="auth-switch">
+      Already have an account?
+      <span (click)="navigateToLogin()">Login</span>
+    </p>
+
+  </div>
+
+</div>
