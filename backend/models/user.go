@@ -26,6 +26,13 @@ type LoginResponse struct {
 	ExpiresAt int64  `json:"expires_at"`
 }
 
+// UpdateProfileRequest represents the profile update request payload
+type UpdateProfileRequest struct {
+	Email     string `json:"email,omitempty"`
+	FirstName string `json:"first_name,omitempty"`
+	LastName  string `json:"last_name,omitempty"`
+}
+
 // ErrorResponse represents an error response
 type ErrorResponse struct {
 	Error   string `json:"error"`
