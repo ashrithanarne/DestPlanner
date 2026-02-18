@@ -1,0 +1,133 @@
+<!-- Desktop Navigation -->
+<mat-toolbar class="navbar">
+  <div class="navbar-container">
+    
+    <!-- Logo -->
+    <div class="logo" (click)="navigateToHome()">
+      <mat-icon class="logo-icon">flight_takeoff</mat-icon>
+      <span class="logo-text">Dest<span class="logo-highlight">Planner</span></span>
+    </div>
+
+    <!-- Spacer -->
+    <span class="nav-spacer"></span>
+
+    <!-- Desktop Menu (Hidden on Mobile) -->
+    <div class="nav-links desktop-menu">
+      
+      <!-- Unauthenticated Menu -->
+      <ng-container *ngIf="!isAuthenticated">
+        <button mat-button routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}">
+          Home
+        </button>
+        <button mat-button routerLink="/destinations" routerLinkActive="active-link">
+          Destinations
+        </button>
+        <button mat-button (click)="navigateToLogin()">
+          Login
+        </button>
+        <button mat-raised-button color="accent" class="cta-button" (click)="navigateToRegister()">
+          Get Started
+        </button>
+      </ng-container>
+
+      <!-- Authenticated Menu -->
+      <ng-container *ngIf="isAuthenticated">
+        <button mat-button routerLink="/dashboard" routerLinkActive="active-link">
+          <mat-icon>dashboard</mat-icon>
+          Dashboard
+        </button>
+        <button mat-button routerLink="/my-trips" routerLinkActive="active-link">
+          <mat-icon>luggage</mat-icon>
+          My Trips
+        </button>
+        <button mat-button routerLink="/destinations" routerLinkActive="active-link">
+          <mat-icon>explore</mat-icon>
+          Destinations
+        </button>
+
+        <!-- User Menu -->
+        <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
+          <mat-icon>account_circle</mat-icon>
+          {{ userName }}
+          <mat-icon>arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <button mat-menu-item (click)="navigateToProfile()">
+            <mat-icon>person</mat-icon>
+            <span>Profile</span>
+          </button>
+          <button mat-menu-item routerLink="/settings">
+            <mat-icon>settings</mat-icon>
+            <span>Settings</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      </ng-container>
+    </div>
+
+    <!-- Mobile Hamburger Menu (Hidden on Desktop) -->
+    <button mat-icon-button class="mobile-menu-button" (click)="toggleMobileMenu()">
+      <mat-icon>{{ isMobileMenuOpen ? 'close' : 'menu' }}</mat-icon>
+    </button>
+  </div>
+</mat-toolbar>
+
+<!-- Mobile Menu Dropdown -->
+<div class="mobile-menu" [class.mobile-menu-open]="isMobileMenuOpen">
+  
+  <!-- Unauthenticated Mobile Menu -->
+  <ng-container *ngIf="!isAuthenticated">
+    <button mat-button class="mobile-menu-item" routerLink="/" (click)="toggleMobileMenu()">
+      <mat-icon>home</mat-icon>
+      Home
+    </button>
+    <button mat-button class="mobile-menu-item" routerLink="/destinations" (click)="toggleMobileMenu()">
+      <mat-icon>explore</mat-icon>
+      Destinations
+    </button>
+    <button mat-button class="mobile-menu-item" (click)="navigateToLogin(); toggleMobileMenu()">
+      <mat-icon>login</mat-icon>
+      Login
+    </button>
+    <button mat-raised-button color="accent" class="mobile-menu-item cta-mobile" (click)="navigateToRegister(); toggleMobileMenu()">
+      <mat-icon>person_add</mat-icon>
+      Get Started
+    </button>
+  </ng-container>
+
+  <!-- Authenticated Mobile Menu -->
+  <ng-container *ngIf="isAuthenticated">
+    <div class="mobile-user-info">
+      <mat-icon>account_circle</mat-icon>
+      <span>{{ userName }}</span>
+    </div>
+    <button mat-button class="mobile-menu-item" routerLink="/dashboard" (click)="toggleMobileMenu()">
+      <mat-icon>dashboard</mat-icon>
+      Dashboard
+    </button>
+    <button mat-button class="mobile-menu-item" routerLink="/my-trips" (click)="toggleMobileMenu()">
+      <mat-icon>luggage</mat-icon>
+      My Trips
+    </button>
+    <button mat-button class="mobile-menu-item" routerLink="/destinations" (click)="toggleMobileMenu()">
+      <mat-icon>explore</mat-icon>
+      Destinations
+    </button>
+    <button mat-button class="mobile-menu-item" (click)="navigateToProfile(); toggleMobileMenu()">
+      <mat-icon>person</mat-icon>
+      Profile
+    </button>
+    <button mat-button class="mobile-menu-item" routerLink="/settings" (click)="toggleMobileMenu()">
+      <mat-icon>settings</mat-icon>
+      Settings
+    </button>
+    <button mat-button class="mobile-menu-item logout-button" (click)="logout(); toggleMobileMenu()">
+      <mat-icon>logout</mat-icon>
+      Logout
+    </button>
+  </ng-container>
+</div>
