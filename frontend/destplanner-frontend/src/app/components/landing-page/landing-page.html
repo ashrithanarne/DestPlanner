@@ -1,0 +1,184 @@
+<!-- Navigation Bar -->
+<mat-toolbar class="navbar" color="primary">
+  <div class="navbar-container">
+    <div class="logo">
+      <mat-icon class="logo-icon">flight_takeoff</mat-icon>
+      <span class="logo-text">DestPlanner</span>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-links">
+      <button mat-button color="accent" (click)="scrollToFeatures()">Features</button>
+      <button mat-button color="accent" (click)="navigateToLogin()">Login</button>
+      <button mat-raised-button color="accent" (click)="navigateToRegister()">
+        Get Started
+      </button>
+    </div>
+  </div>
+</mat-toolbar>
+
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="hero-container">
+    <div class="hero-content">
+      <h1 class="hero-title">
+        Plan Your Perfect Trip<br />
+        <span class="hero-highlight">All in One Place</span>
+      </h1>
+      <p class="hero-subtitle">
+        Discover destinations, create itineraries, track expenses, and collaborate with travel companions.
+        Save time and money with intelligent trip planning.
+      </p>
+      <div class="hero-buttons">
+        <button mat-raised-button color="accent" class="cta-primary" (click)="navigateToRegister()">
+          <mat-icon>rocket_launch</mat-icon>
+          Start Planning 
+        </button>
+        <button mat-stroked-button class="cta-secondary" (click)="scrollToFeatures()">
+          <mat-icon>play_circle</mat-icon>
+          See How It Works
+        </button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat" *ngFor="let benefit of benefits">
+          <div class="stat-value">{{ benefit.value }}</div>
+          <div class="stat-label">{{ benefit.label }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-image">
+      <div class="hero-visual">
+        <mat-icon class="floating-icon icon-1">place</mat-icon>
+        <mat-icon class="floating-icon icon-2">flight</mat-icon>
+        <mat-icon class="floating-icon icon-3">hotel</mat-icon>
+        <mat-icon class="floating-icon icon-4">restaurant</mat-icon>
+        <mat-icon class="floating-icon icon-5">photo_camera</mat-icon>
+        <div class="hero-circle"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="features-section">
+  <div class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">Everything You Need to Plan Amazing Trips</h2>
+      <p class="section-subtitle">
+        Powerful features designed to make travel planning effortless and enjoyable
+      </p>
+    </div>
+    <div class="features-grid">
+      <mat-card class="feature-card" *ngFor="let feature of features">
+        <mat-card-content>
+          <div class="feature-icon-wrapper">
+            <mat-icon class="feature-icon">{{ feature.icon }}</mat-icon>
+          </div>
+          <h3 class="feature-title">{{ feature.title }}</h3>
+          <p class="feature-description">{{ feature.description }}</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works-section">
+  <div class="section-container">
+    <div class="section-header">
+      <h2 class="section-title">Start Planning in 3 Simple Steps</h2>
+    </div>
+    <div class="steps-container">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h3>Create Your Account</h3>
+          <p>Sign up for free and set your travel preferences</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h3>Discover & Plan</h3>
+          <p>Browse destinations and build your perfect itinerary</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h3>Travel with Confidence</h3>
+          <p>Access all your plans and documents on the go</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="cta-container">
+    <h2 class="cta-title">Ready to Start Your Adventure?</h2>
+    <p class="cta-text">
+      Join thousands of travelers who plan smarter, save money, and create unforgettable memories.
+    </p>
+    <button mat-raised-button color="accent" class="cta-button-large" (click)="navigateToRegister()">
+      <mat-icon>explore</mat-icon>
+      Create Account
+    </button>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-container">
+    <div class="footer-content">
+      <div class="footer-section">
+        <div class="footer-logo">
+          <mat-icon class="footer-logo-icon">flight_takeoff</mat-icon>
+          <span class="footer-logo-text">DestPlanner</span>
+        </div>
+        <p class="footer-tagline">
+          Your intelligent travel planning companion
+        </p>
+      </div>
+      
+      <div class="footer-section">
+        <h4 class="footer-heading">Product</h4>
+        <ul class="footer-links">
+          <li><a (click)="scrollToFeatures()">Features</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">How it Works</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-section">
+        <h4 class="footer-heading">Company</h4>
+        <ul class="footer-links">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Careers</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-section">
+        <h4 class="footer-heading">Legal</h4>
+        <ul class="footer-links">
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Cookie Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <p class="footer-copyright">
+        © 2026 DestPlanner. All rights reserved.
+      </p>
+      <div class="footer-social">
+        <mat-icon class="social-icon">facebook</mat-icon>
+        <mat-icon class="social-icon">twitter</mat-icon>
+        <mat-icon class="social-icon">instagram</mat-icon>
+        <mat-icon class="social-icon">linkedin</mat-icon>
+      </div>
+    </div>
+  </div>
+</footer>
