@@ -112,3 +112,23 @@ Rishitha Pydipati - Frontend<br>
 Tarun Reddy Chittela - Frontend<br>
 Nikhitha Pydipati - Backend<br>
 Ashritha Narne - Backend<br>
+
+## Environment Setup
+
+### Frontend
+```bash
+# Node.js 18+
+# Angular CLI 17+
+npm install
+ng serve
+# Runs on http://localhost:4200
+```
+
+### Backend
+```bash
+# Go 1.21+
+# PostgreSQL 14+
+go mod download
+go run main.go
+# Runs on http://localhost:8080
+```
