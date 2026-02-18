@@ -1,0 +1,193 @@
+/* Navbar */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #1A1A2E !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: 64px !important;
+}
+
+.navbar-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.logo:hover {
+  opacity: 0.8;
+}
+
+.logo-icon {
+  font-size: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  color: #FF6B6B;
+}
+
+.logo-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.5px;
+}
+
+.logo-highlight {
+  color: #FF6B6B;
+}
+
+/* Spacer */
+.nav-spacer {
+  flex: 1;
+}
+
+/* Desktop Navigation Links */
+.nav-links {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.nav-links button {
+  color: white !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.nav-links button mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.active-link {
+  background: rgba(255, 107, 107, 0.1) !important;
+  color: #FF6B6B !important;
+}
+
+.cta-button {
+  background: #FF6B6B !important;
+  color: white !important;
+  margin-left: 8px !important;
+}
+
+.user-menu-button {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* Mobile Menu Button (Hidden on Desktop) */
+.mobile-menu-button {
+  display: none;
+  color: white !important;
+}
+
+/* Mobile Menu Dropdown */
+.mobile-menu {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  background: #1A1A2E;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  z-index: 999;
+}
+
+.mobile-menu-open {
+  max-height: 500px;
+}
+
+.mobile-menu-item {
+  width: 100%;
+  text-align: left !important;
+  color: white !important;
+  padding: 16px 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.mobile-menu-item mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.mobile-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  background: rgba(255, 107, 107, 0.1);
+  color: white;
+  font-weight: 600;
+  border-bottom: 2px solid #FF6B6B;
+}
+
+.mobile-user-info mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  color: #FF6B6B;
+}
+
+.cta-mobile {
+  background: #FF6B6B !important;
+  color: white !important;
+  margin: 12px 24px !important;
+  width: calc(100% - 48px) !important;
+}
+
+.logout-button {
+  color: #FF6B6B !important;
+}
+
+/* Responsive - Tablet and Below */
+@media (max-width: 768px) {
+  .desktop-menu {
+    display: none !important;
+  }
+
+  .mobile-menu-button {
+    display: block !important;
+  }
+
+  .navbar-container {
+    padding: 0 16px;
+  }
+
+  .logo-text {
+    font-size: 18px;
+  }
+}
+
+/* Desktop Only */
+@media (min-width: 769px) {
+  .mobile-menu {
+    display: none !important;
+  }
+}
