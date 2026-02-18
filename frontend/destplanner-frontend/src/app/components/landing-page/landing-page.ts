@@ -63,15 +63,13 @@ export class LandingPageComponent {
 
   constructor(private router: Router) {}
 
-  navigateToRegister(): void {
-    console.log('Navigate to register');
-    // this.router.navigate(['/register']);
-  }
+navigateToRegister(): void {
+  this.router.navigate(['/register']);
+}
 
-  navigateToLogin(): void {
-    console.log('Navigate to login');
-    // this.router.navigate(['/login']);
-  }
+navigateToLogin(): void {
+  this.router.navigate(['/login']);
+}
 
   scrollToFeatures(): void {
     const element = document.getElementById('features');
