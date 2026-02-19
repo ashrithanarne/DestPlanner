@@ -360,10 +360,10 @@
 - Additional time spent on implementing proper error handling and security measures
 - Logout endpoint deferred to Sprint 2
 
-Submission Links :
+## Submission Links :
 
-Github Repository:
+### Github Repository:
 https://github.com/ashrithanarne/DestPlanner
 
-Demo Video: 
+### Demo Video: 
 https://drive.google.com/file/d/1XQCNaxZp0BWVaGUecmymmHQpyYEHQJOb/view
