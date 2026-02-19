@@ -7,8 +7,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Change this to a secure secret key in production (should be loaded from environment variables)
-var jwtSecret = []byte("your-secret-key-change-this-in-production")
+
+var jwtSecret = []byte("jwt-secret")
 
 // Claims represents the JWT claims
 type Claims struct {
