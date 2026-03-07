@@ -58,6 +58,7 @@ func main() {
 	{
 		api.GET("/profile", handlers.GetProfile)
 		api.PUT("/profile", handlers.UpdateProfile)
+		api.POST("/bookmarks", handlers.SaveBookmark)
 	}
 
 	// Start server

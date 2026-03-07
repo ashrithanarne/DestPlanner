@@ -40,6 +40,22 @@ func InitDB(dataSourceName string) error {
 		return err
 	}
 
+	// Create bookmarks table
+	createBookmarksTable := `
+    CREATE TABLE IF NOT EXISTS bookmarks (
+	    id INTEGER PRIMARY KEY AUTOINCREMENT,
+	    user_id INTEGER NOT NULL,
+	    destination TEXT NOT NULL,
+	    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	    FOREIGN KEY(user_id) REFERENCES users(id)
+    );
+ `
+
+	_, err = DB.Exec(createBookmarksTable)
+	if err != nil {
+		return err
+	}
+
 	log.Println("Database initialized successfully")
 	return nil
 }
