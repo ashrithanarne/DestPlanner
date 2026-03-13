@@ -58,7 +58,11 @@ func main() {
 	{
 		api.GET("/profile", handlers.GetProfile)
 		api.PUT("/profile", handlers.UpdateProfile)
+
 		api.POST("/bookmarks", handlers.SaveBookmark)
+		api.GET("/bookmarks", handlers.GetBookmarks)
+		api.DELETE("/bookmarks/:id", handlers.DeleteBookmark)
+
 	}
 
 	// Start server
