@@ -40,6 +40,24 @@ func InitDB(dataSourceName string) error {
 		return err
 	}
 
+	// Create destinations table if it doesn't exist
+	createDestinationsTable := `
+	CREATE TABLE IF NOT EXISTS destinations (
+	    id INTEGER PRIMARY KEY AUTOINCREMENT,
+	    name TEXT NOT NULL,
+	    country TEXT NOT NULL,
+	    budget REAL NOT NULL,
+	    description TEXT,
+	    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	`
+
+	_, err = DB.Exec(createDestinationsTable)
+	if err != nil {
+		return err
+	}
+
 	// Create bookmarks table
 	createBookmarksTable := `
     CREATE TABLE IF NOT EXISTS bookmarks (
