@@ -4,9 +4,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
+	"backend/database"
 	"backend/models"
 	"backend/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 // AuthMiddleware validates JWT tokens for Gin
@@ -35,6 +37,29 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		tokenString := parts[1]
+
+		// Check if token is empty
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+				Error:   "unauthorized",
+				Message: "Token cannot be empty",
+			})
+			c.Abort()
+			return
+		}
+
+		// Check if token is blacklisted
+		var count int
+		checkBlacklistQuery := "SELECT COUNT(*) FROM token_blacklist WHERE token = ?"
+		err := database.DB.QueryRow(checkBlacklistQuery, tokenString).Scan(&count)
+		if err == nil && count > 0 {
+			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+				Error:   "unauthorized",
+				Message: "Token has been invalidated",
+			})
+			c.Abort()
+			return
+		}
 
 		// Validate token
 		claims, err := utils.ValidateToken(tokenString)

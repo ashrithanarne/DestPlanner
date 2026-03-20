@@ -127,8 +127,8 @@ ng serve
 ### Backend
 ```bash
 # Go 1.21+
-# PostgreSQL 14+
+cd backend
 go mod download
-go run main.go
+go run router.go
 # Runs on http://localhost:8080
 ```
