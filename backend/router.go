@@ -50,6 +50,10 @@ func main() {
 	{
 		auth.POST("/login", handlers.Login)
 		auth.POST("/register", handlers.Register)
+
+		auth.GET("/destinations", handlers.GetDestinations)
+		auth.GET("/destinations/:id", handlers.GetDestinationByID)
+		auth.GET("/destinations/suggest", handlers.SuggestDestinations)
 	}
 
 	// Protected routes - require JWT authentication
@@ -58,6 +62,14 @@ func main() {
 	{
 		api.GET("/profile", handlers.GetProfile)
 		api.PUT("/profile", handlers.UpdateProfile)
+
+		api.POST("/bookmarks", handlers.SaveBookmark)
+		api.GET("/bookmarks", handlers.GetBookmarks)
+		api.DELETE("/bookmarks/:id", handlers.DeleteBookmark)
+
+		api.POST("/destinations", handlers.CreateDestination)
+		api.DELETE("/destinations/:id", handlers.DeleteDestination)
+		api.PUT("/destinations/:id", handlers.UpdateDestination)
 	}
 
 	// Start server
