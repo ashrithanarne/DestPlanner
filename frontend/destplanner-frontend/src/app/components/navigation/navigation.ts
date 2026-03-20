@@ -1,6 +1,7 @@
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,6 +9,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatDividerModule } from '@angular/material/divider';
+
+import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-navigation',
@@ -25,32 +28,37 @@ import { MatDividerModule } from '@angular/material/divider';
   templateUrl: './navigation.html',
   styleUrl: './navigation.css'
 })
-export class NavigationComponent implements OnInit {
+export class NavigationComponent implements OnInit, OnDestroy {
 
   isAuthenticated = false;
   userName = '';
   isMobileMenuOpen = false;
 
+  private subs = new Subscription();
+
   constructor(
     private router: Router,
+    private authService: AuthService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
-    // Only run authentication check in browser
-    if (isPlatformBrowser(this.platformId)) {
-      this.checkAuthentication();
-    }
+    // Subscribe to auth state changes — works on both server and browser
+    // BehaviorSubject emits immediately so nav updates right after login
+    this.subs.add(
+      this.authService.isLoggedIn$.subscribe((loggedIn) => {
+        this.isAuthenticated = loggedIn;
+      })
+    );
+    this.subs.add(
+      this.authService.currentUser$.subscribe((user) => {
+        this.userName = user ? `${user.first_name} ${user.last_name}` : '';
+      })
+    );
   }
 
-  checkAuthentication(): void {
-    const token = localStorage.getItem('token');
-    this.isAuthenticated = !!token;
-
-    if (this.isAuthenticated) {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      this.userName = user.firstName || 'User';
-    }
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
   }
 
   toggleMobileMenu(): void {
@@ -58,13 +66,7 @@ export class NavigationComponent implements OnInit {
   }
 
   logout(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    }
-
-    this.isAuthenticated = false;
-    this.userName = '';
+    this.authService.logout();
     this.router.navigate(['/']);
   }
 
