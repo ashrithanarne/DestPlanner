@@ -63,7 +63,7 @@ export class LoginComponent {
           localStorage.setItem('rememberedEmail', email);
         }
         this.snack.open(`Welcome back, ${res.user.first_name}!`, 'OK', { duration: 2500 });
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/']);
       },
       error: (err) => {
         this.loading = false;

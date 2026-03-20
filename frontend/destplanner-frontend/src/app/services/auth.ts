@@ -57,8 +57,8 @@ export class AuthService {
       .post<LoginResponse>(`${this.baseUrl}/auth/login`, { email, password })
       .pipe(
         tap((res) => {
-          localStorage.setItem('token', res.token);
-          localStorage.setItem('user', JSON.stringify(res.user));
+          sessionStorage.setItem('token', res.token);
+          sessionStorage.setItem('user', JSON.stringify(res.user));
           this.loggedIn.next(true);
           this.currentUser.next(res.user);
         })
@@ -67,20 +67,20 @@ export class AuthService {
 
   // Logout - POST /api/auth/logout
   logout(): void {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       this.http.post(`${this.baseUrl}/auth/logout`, {}).subscribe({
         error: () => {}
       });
     }
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     this.loggedIn.next(false);
     this.currentUser.next(null);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return sessionStorage.getItem('token');
   }
 
   isLoggedIn(): boolean {
@@ -92,13 +92,13 @@ export class AuthService {
   }
 
   private hasToken(): boolean {
-    if (typeof localStorage === 'undefined') return false;
-    return !!localStorage.getItem('token');
+    if (typeof sessionStorage === 'undefined') return false;
+    return !!sessionStorage.getItem('token');
   }
 
   private getStoredUser(): User | null {
-    if (typeof localStorage === 'undefined') return null;
-    const raw = localStorage.getItem('user');
+    if (typeof sessionStorage === 'undefined') return null;
+    const raw = sessionStorage.getItem('user');
     try {
       return raw ? JSON.parse(raw) : null;
     } catch {
