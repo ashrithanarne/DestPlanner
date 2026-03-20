@@ -74,3 +74,19 @@ mat-form-field {
   font-weight: 600;
 }
 
+
+.auth-subtitle {
+  text-align: center;
+  color: #718096;
+  margin: -10px 0 10px;
+  font-size: 0.9rem;
+}
+
+.name-row {
+  display: flex;
+  gap: 12px;
+}
+
+.name-row mat-form-field {
+  flex: 1;
+}

@@ -1,19 +1,30 @@
 <div class="auth-page">
-
   <div class="auth-card">
 
     <h2>Create Account</h2>
+    <p class="auth-subtitle">Join DestPlanner and start planning</p>
 
     <form [formGroup]="registerForm" (ngSubmit)="submit()">
 
-      <mat-form-field appearance="outline">
-        <mat-label>Name</mat-label>
-        <input matInput formControlName="name">
-      </mat-form-field>
+      <div class="name-row">
+        <mat-form-field appearance="outline">
+          <mat-label>First Name</mat-label>
+          <input matInput formControlName="first_name" placeholder="Jane">
+          <mat-error *ngIf="registerForm.get('first_name')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Last Name</mat-label>
+          <input matInput formControlName="last_name" placeholder="Doe">
+          <mat-error *ngIf="registerForm.get('last_name')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+      </div>
 
       <mat-form-field appearance="outline">
         <mat-label>Email</mat-label>
-        <input matInput formControlName="email">
+        <input matInput type="email" formControlName="email" placeholder="you@email.com">
+        <mat-error *ngIf="registerForm.get('email')?.hasError('required')">Email is required</mat-error>
+        <mat-error *ngIf="registerForm.get('email')?.hasError('email')">Enter a valid email</mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -22,16 +33,20 @@
           matInput
           type="password"
           formControlName="password"
+          placeholder="Min 8 chars, 1 uppercase, 1 number"
           (input)="checkStrength(registerForm.value.password || '')"
         >
+        <mat-error *ngIf="registerForm.get('password')?.hasError('required')">Password is required</mat-error>
+        <mat-error *ngIf="registerForm.get('password')?.hasError('minlength')">Minimum 8 characters</mat-error>
+        <mat-error *ngIf="registerForm.get('password')?.hasError('pattern')">Must include 1 uppercase letter and 1 number</mat-error>
       </mat-form-field>
 
-      <p class="strength">
-        Password strength: {{ passwordStrength }}
+      <p class="strength" *ngIf="passwordStrength">
+        Password strength: <strong>{{ passwordStrength }}</strong>
       </p>
 
-      <button mat-raised-button class="register-btn" [disabled]="loading">
-        Register
+      <button mat-raised-button class="register-btn" type="submit" [disabled]="loading">
+        {{ loading ? 'Creating account...' : 'Register' }}
       </button>
 
     </form>
@@ -42,5 +57,4 @@
     </p>
 
   </div>
-
 </div>
