@@ -149,3 +149,49 @@ func Register(c *gin.Context) {
 		"user_id": userID,
 	})
 }
+
+// Logout handles user logout by blacklisting the token
+func Logout(c *gin.Context) {
+	// Get user from context (set by AuthMiddleware)
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "User not authenticated",
+		})
+		return
+	}
+
+	claims, ok := userInterface.(*utils.Claims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "Invalid user claims",
+		})
+		return
+	}
+
+	// Get the token from Authorization header
+	authHeader := c.GetHeader("Authorization")
+	tokenString := authHeader[7:] // Remove "Bearer " prefix
+
+	// Insert token into blacklist
+	query := `
+		INSERT INTO token_blacklist (token, user_id, expires_at)
+		VALUES (?, ?, ?)
+	`
+
+	expiresAt := claims.ExpiresAt.Time
+	_, err := database.DB.Exec(query, tokenString, claims.UserID, expiresAt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "server_error",
+			Message: "Failed to logout user",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Logged out successfully",
+	})
+}
