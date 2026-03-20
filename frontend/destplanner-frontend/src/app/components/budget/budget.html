@@ -1,0 +1,338 @@
+<div class="budget-page">
+
+  <!-- ── Page Header ───────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-title-group">
+        <mat-icon class="header-icon">account_balance_wallet</mat-icon>
+        <div>
+          <h1 class="page-title">Trip Budget Tracker</h1>
+          <p class="page-subtitle">Track every dollar. Travel stress-free.</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-stroked-button class="btn-set-budget" (click)="toggleBudgetForm()" data-cy="set-budget-btn">
+          <mat-icon>edit</mat-icon>
+          {{ summary?.total_budget ? 'Update Budget' : 'Set Budget' }}
+        </button>
+        <button mat-raised-button class="btn-add-expense" (click)="toggleExpenseForm()" data-cy="add-expense-btn">
+          <mat-icon>add</mat-icon>
+          Add Expense
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="budget-container">
+
+    <!-- ── Loading State ─────────────────────────────────────────────── -->
+    <div *ngIf="loadingSummary" class="loading-state">
+      <mat-icon class="spin-icon">sync</mat-icon>
+      <p>Loading budget data…</p>
+    </div>
+
+    <ng-container *ngIf="!loadingSummary">
+
+      <!-- ── Set Budget Form ────────────────────────────────────────────── -->
+      <mat-card class="form-card" *ngIf="showBudgetForm" data-cy="budget-form">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>savings</mat-icon>
+          <mat-card-title>Set Trip Budget</mat-card-title>
+          <mat-card-subtitle>Define the total amount you plan to spend</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="budgetForm" (ngSubmit)="submitBudget()" class="budget-form">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="field-budget">
+                <mat-label>Total Budget</mat-label>
+                <span matTextPrefix>$&nbsp;</span>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="total_budget"
+                  placeholder="0.00"
+                  min="1"
+                  data-cy="budget-input"
+                />
+                <mat-error *ngIf="budgetForm.get('total_budget')?.hasError('required')">
+                  Budget is required
+                </mat-error>
+                <mat-error *ngIf="budgetForm.get('total_budget')?.hasError('min')">
+                  Budget must be at least $1
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field-currency">
+                <mat-label>Currency</mat-label>
+                <mat-select formControlName="currency" data-cy="currency-select">
+                  <mat-option value="USD">USD — US Dollar</mat-option>
+                  <mat-option value="EUR">EUR — Euro</mat-option>
+                  <mat-option value="GBP">GBP — British Pound</mat-option>
+                  <mat-option value="INR">INR — Indian Rupee</mat-option>
+                  <mat-option value="JPY">JPY — Japanese Yen</mat-option>
+                  <mat-option value="CAD">CAD — Canadian Dollar</mat-option>
+                  <mat-option value="AUD">AUD — Australian Dollar</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="form-actions">
+              <button mat-button type="button" (click)="toggleBudgetForm()">Cancel</button>
+              <button
+                mat-raised-button
+                class="btn-save"
+                type="submit"
+                [disabled]="loadingBudget"
+                data-cy="save-budget-btn"
+              >
+                {{ loadingBudget ? 'Saving…' : 'Save Budget' }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- ── Add Expense Form ───────────────────────────────────────────── -->
+      <mat-card class="form-card" *ngIf="showExpenseForm" data-cy="expense-form">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>receipt_long</mat-icon>
+          <mat-card-title>Add Expense</mat-card-title>
+          <mat-card-subtitle>Record a new trip expense</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="expenseForm" (ngSubmit)="submitExpense()" class="expense-form">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="field-amount">
+                <mat-label>Amount</mat-label>
+                <span matTextPrefix>$&nbsp;</span>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="amount"
+                  placeholder="0.00"
+                  min="0.01"
+                  step="0.01"
+                  data-cy="expense-amount"
+                />
+                <mat-error *ngIf="expenseForm.get('amount')?.hasError('required')">
+                  Amount is required
+                </mat-error>
+                <mat-error *ngIf="expenseForm.get('amount')?.hasError('min')">
+                  Amount must be positive
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field-category">
+                <mat-label>Category</mat-label>
+                <mat-select formControlName="category" data-cy="expense-category">
+                  <mat-option *ngFor="let cat of categories" [value]="cat">
+                    <mat-icon>{{ getCategoryIcon(cat) }}</mat-icon>
+                    {{ cat }}
+                  </mat-option>
+                </mat-select>
+                <mat-error *ngIf="expenseForm.get('category')?.hasError('required')">
+                  Category is required
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="field-description">
+                <mat-label>Description (optional)</mat-label>
+                <input matInput formControlName="description" placeholder="e.g. Dinner at La Piazza" data-cy="expense-description" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field-date">
+                <mat-label>Date</mat-label>
+                <input matInput type="date" formControlName="date" data-cy="expense-date" />
+              </mat-form-field>
+            </div>
+
+            <div class="form-actions">
+              <button mat-button type="button" (click)="toggleExpenseForm()">Cancel</button>
+              <button
+                mat-raised-button
+                class="btn-save"
+                type="submit"
+                [disabled]="loadingExpense"
+                data-cy="save-expense-btn"
+              >
+                {{ loadingExpense ? 'Adding…' : 'Add Expense' }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- ── Summary Cards ──────────────────────────────────────────────── -->
+      <div class="summary-grid" *ngIf="summary">
+
+        <mat-card class="summary-card card-budget" data-cy="total-budget-card">
+          <div class="summary-card-inner">
+            <div class="summary-icon-wrap bg-blue">
+              <mat-icon>savings</mat-icon>
+            </div>
+            <div class="summary-text">
+              <p class="summary-label">Total Budget</p>
+              <p class="summary-value" data-cy="budget-value">
+                {{ formatCurrency(summary.total_budget) }}
+              </p>
+            </div>
+          </div>
+        </mat-card>
+
+        <mat-card class="summary-card card-spent" data-cy="total-spent-card">
+          <div class="summary-card-inner">
+            <div class="summary-icon-wrap bg-orange">
+              <mat-icon>shopping_cart</mat-icon>
+            </div>
+            <div class="summary-text">
+              <p class="summary-label">Total Spent</p>
+              <p class="summary-value" data-cy="spent-value">
+                {{ formatCurrency(summary.total_expenses) }}
+              </p>
+            </div>
+          </div>
+        </mat-card>
+
+        <mat-card
+          class="summary-card"
+          [class.card-safe]="summary.remaining_budget >= 0"
+          [class.card-danger]="summary.remaining_budget < 0"
+          data-cy="remaining-budget-card"
+        >
+          <div class="summary-card-inner">
+            <div class="summary-icon-wrap" [class.bg-green]="summary.remaining_budget >= 0" [class.bg-red]="summary.remaining_budget < 0">
+              <mat-icon>{{ summary.remaining_budget >= 0 ? 'check_circle' : 'warning' }}</mat-icon>
+            </div>
+            <div class="summary-text">
+              <p class="summary-label">Remaining</p>
+              <p class="summary-value" data-cy="remaining-value">
+                {{ formatCurrency(summary.remaining_budget) }}
+              </p>
+            </div>
+          </div>
+        </mat-card>
+
+        <mat-card class="summary-card card-pct" data-cy="percentage-card">
+          <div class="summary-card-inner">
+            <div class="summary-icon-wrap bg-purple">
+              <mat-icon>pie_chart</mat-icon>
+            </div>
+            <div class="summary-text">
+              <p class="summary-label">Budget Used</p>
+              <p class="summary-value">{{ getSpentPercentage() }}%</p>
+            </div>
+          </div>
+        </mat-card>
+
+      </div>
+
+      <!-- ── Progress Bar ────────────────────────────────────────────────── -->
+      <mat-card class="progress-card" *ngIf="summary && summary.total_budget > 0">
+        <div class="progress-header">
+          <span class="progress-label">Budget Progress</span>
+          <span class="progress-pct">{{ getSpentPercentage() }}% used</span>
+        </div>
+        <mat-progress-bar
+          [value]="getSpentPercentage()"
+          [color]="getProgressColor()"
+          class="budget-progress-bar"
+          data-cy="budget-progress"
+        ></mat-progress-bar>
+        <div class="progress-footer">
+          <span class="progress-spent">Spent: {{ formatCurrency(summary.total_expenses) }}</span>
+          <span class="progress-remaining">Remaining: {{ formatCurrency(summary.remaining_budget) }}</span>
+        </div>
+      </mat-card>
+
+      <!-- ── No Budget Set ───────────────────────────────────────────────── -->
+      <mat-card class="empty-state" *ngIf="!summary || summary.total_budget === 0">
+        <mat-icon class="empty-icon">account_balance_wallet</mat-icon>
+        <h3>No budget set yet</h3>
+        <p>Click <strong>Set Budget</strong> above to get started tracking your trip spending.</p>
+      </mat-card>
+
+      <!-- ── Category Breakdown ─────────────────────────────────────────── -->
+      <mat-card class="category-card" *ngIf="summary && categoryTotals.length > 0">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>donut_large</mat-icon>
+            Spending by Category
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="category-list">
+            <div class="category-row" *ngFor="let cat of categoryTotals">
+              <div class="category-badge" [style.background]="getCategoryColor(cat.category)">
+                <mat-icon>{{ getCategoryIcon(cat.category) }}</mat-icon>
+              </div>
+              <div class="category-info">
+                <div class="category-name-row">
+                  <span class="category-name">{{ cat.category }}</span>
+                  <span class="category-amount">{{ formatCurrency(cat.total) }}</span>
+                </div>
+                <mat-progress-bar
+                  [value]="summary!.total_expenses > 0 ? (cat.total / summary!.total_expenses) * 100 : 0"
+                  color="primary"
+                  class="category-bar"
+                ></mat-progress-bar>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- ── Expense List ────────────────────────────────────────────────── -->
+      <mat-card class="expense-list-card" *ngIf="summary && summary.expenses && summary.expenses.length > 0">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>receipt_long</mat-icon>
+            All Expenses
+          </mat-card-title>
+          <mat-card-subtitle>{{ summary.expenses.length }} expense(s) recorded</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="expense-items">
+            <div
+              class="expense-item"
+              *ngFor="let expense of summary.expenses; trackBy: trackByExpenseId"
+              data-cy="expense-item"
+            >
+              <div class="expense-icon" [style.background]="getCategoryColor(expense.category)">
+                <mat-icon>{{ getCategoryIcon(expense.category) }}</mat-icon>
+              </div>
+              <div class="expense-details">
+                <p class="expense-desc">{{ expense.description || expense.category }}</p>
+                <div class="expense-meta">
+                  <span class="category-chip">{{ expense.category }}</span>
+                  <span class="expense-date" *ngIf="expense.date">{{ expense.date }}</span>
+                </div>
+              </div>
+              <div class="expense-right">
+                <p class="expense-amount">{{ formatCurrency(expense.amount) }}</p>
+                <button
+                  mat-icon-button
+                  class="btn-delete"
+                  (click)="deleteExpense(expense)"
+                  matTooltip="Remove expense"
+                  data-cy="delete-expense-btn"
+                >
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- ── No Expenses Yet ────────────────────────────────────────────── -->
+      <mat-card class="empty-state" *ngIf="summary && summary.total_budget > 0 && (!summary.expenses || summary.expenses.length === 0)">
+        <mat-icon class="empty-icon">receipt</mat-icon>
+        <h3>No expenses yet</h3>
+        <p>Click <strong>Add Expense</strong> to start recording your spending.</p>
+      </mat-card>
+
+    </ng-container>
+  </div>
+</div>

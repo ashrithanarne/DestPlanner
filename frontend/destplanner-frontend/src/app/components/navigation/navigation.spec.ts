@@ -1,18 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { Navigation } from './navigation';
+import { provideRouter } from '@angular/router';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { NavigationComponent } from './navigation';
 
 describe('Navigation', () => {
-  let component: Navigation;
-  let fixture: ComponentFixture<Navigation>;
+  let component: NavigationComponent;
+  let fixture: ComponentFixture<NavigationComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Navigation]
-    })
-    .compileComponents();
+      imports: [NavigationComponent],
+      providers: [provideRouter([]), provideAnimations()]
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(Navigation);
+    fixture = TestBed.createComponent(NavigationComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
