@@ -19,7 +19,7 @@ type Claims struct {
 
 // GenerateToken generates a JWT token for a user
 func GenerateToken(userID int, email string) (string, int64, error) {
-	expirationTime := time.Now().Add(24 * time.Hour) // Token valid for 24 hours
+	expirationTime := time.Now().Add(30 * time.Minute) // Token valid for 30 minutes
 
 	claims := &Claims{
 		UserID: userID,
