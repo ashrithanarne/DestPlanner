@@ -1303,16 +1303,6 @@ Comprehensive unit tests have been written for all backend handlers to ensure re
  
 ---
  
-### Total Test Summary
- 
-| Handler | Tests | Pass | Fail | Coverage |
-|---------|-------|------|------|----------|
-| Authentication | 11 | 11 | 0 | 100% |
-| Profile | 7 | 7 | 0 | 100% |
-| Budget | 10 | 10 | 0 | 100% |
-| Expense | 11 | 11 | 0 | 100% |
-| **TOTAL** | **39** | **39** | **0** | **100%** |
- 
 ### Running the Tests
  
 To run all unit tests:
