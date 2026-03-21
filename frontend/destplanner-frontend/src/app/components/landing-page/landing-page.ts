@@ -63,6 +63,17 @@ export class LandingPageComponent {
 
   constructor(private router: Router) {}
 
+  navigateToFeature(title: string): void {
+    if (title === 'Budget Tracking') {
+      const token = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('token') : null;
+      if (token) {
+        this.router.navigate(['/budget']);
+      } else {
+        this.router.navigate(['/login'], { queryParams: { returnUrl: '/budget' } });
+      }
+    }
+  }
+
 navigateToRegister(): void {
   this.router.navigate(['/register']);
 }
