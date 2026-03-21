@@ -199,6 +199,80 @@ func InitDB(dataSourceName string) error {
 		return err
 	}
 
+	// Create groups table
+	createGroupsTable := `
+	CREATE TABLE IF NOT EXISTS groups (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		trip_id INTEGER,
+		created_by INTEGER NOT NULL,
+		group_name TEXT NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(created_by) REFERENCES users(id),
+		FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE SET NULL
+	);
+	`
+	_, err = DB.Exec(createGroupsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create group_members table
+	createGroupMembersTable := `
+	CREATE TABLE IF NOT EXISTS group_members (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		group_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(group_id) REFERENCES groups(id) ON DELETE CASCADE,
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		UNIQUE(group_id, user_id)
+	);
+	`
+	_, err = DB.Exec(createGroupMembersTable)
+	if err != nil {
+		return err
+	}
+
+	// Create group_expenses table
+	createGroupExpensesTable := `
+	CREATE TABLE IF NOT EXISTS group_expenses (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		group_id INTEGER NOT NULL,
+		paid_by INTEGER NOT NULL,
+		amount REAL NOT NULL,
+		category TEXT NOT NULL,
+		description TEXT,
+		expense_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(group_id) REFERENCES groups(id) ON DELETE CASCADE,
+		FOREIGN KEY(paid_by) REFERENCES users(id)
+	);
+	`
+	_, err = DB.Exec(createGroupExpensesTable)
+	if err != nil {
+		return err
+	}
+
+	// Create expense_splits table
+	createExpenseSplitsTable := `
+	CREATE TABLE IF NOT EXISTS expense_splits (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		expense_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		amount_owed REAL NOT NULL,
+		is_settled INTEGER DEFAULT 0,
+		settled_at DATETIME,
+		FOREIGN KEY(expense_id) REFERENCES group_expenses(id) ON DELETE CASCADE,
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		UNIQUE(expense_id, user_id)
+	);
+	`
+	_, err = DB.Exec(createExpenseSplitsTable)
+	if err != nil {
+		return err
+	}
+
 	log.Println("Database initialized successfully")
 	return nil
 }
