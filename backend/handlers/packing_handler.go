@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -167,7 +168,9 @@ func CreatePackingList(c *gin.Context) {
 				INSERT INTO packing_items (packing_list_id, item_name, category, quantity, is_suggested)
 				VALUES (?, ?, ?, ?, 1)
 			`
-			database.DB.Exec(insertItemQuery, packingListID, item.ItemName, item.Category, item.Quantity)
+			if _, err := database.DB.Exec(insertItemQuery, packingListID, item.ItemName, item.Category, item.Quantity); err != nil {
+				log.Printf("Warning: failed to insert suggested item '%s': %v", item.ItemName, err)
+			}
 		}
 	}
 
@@ -264,6 +267,7 @@ func GetPackingList(c *gin.Context) {
 
 	for rows.Next() {
 		var item models.PackingItem
+		var notes sql.NullString
 		err := rows.Scan(
 			&item.ID,
 			&item.PackingListID,
@@ -272,12 +276,17 @@ func GetPackingList(c *gin.Context) {
 			&item.Quantity,
 			&item.IsChecked,
 			&item.IsSuggested,
-			&item.Notes,
+			&notes,
 			&item.CreatedAt,
 		)
 
 		if err != nil {
+			log.Printf("Error scanning packing item: %v", err)
 			continue
+		}
+
+		if notes.Valid {
+			item.Notes = notes.String
 		}
 
 		if item.IsChecked {
