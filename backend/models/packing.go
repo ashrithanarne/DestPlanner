@@ -33,6 +33,7 @@ type CreatePackingListRequest struct {
 	Destination  string `json:"destination,omitempty"`
 	Climate      string `json:"climate,omitempty"`
 	DurationDays int    `json:"duration_days,omitempty"`
+	AutoPopulate bool   `json:"auto_populate,omitempty"`
 }
 
 // AddPackingItemRequest represents the request to add an item to a packing list

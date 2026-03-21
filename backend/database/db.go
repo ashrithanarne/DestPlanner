@@ -186,7 +186,6 @@ func InitDB(dataSourceName string) error {
 		destination TEXT,
 		start_date DATETIME,
 		end_date DATETIME,
-		budget REAL DEFAULT 0,
 		notes TEXT,
 		status TEXT DEFAULT 'planning',
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
