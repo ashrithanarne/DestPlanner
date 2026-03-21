@@ -100,7 +100,7 @@ func main() {
 		api.DELETE("/trips/:id/packing-list", handlers.DeletePackingList)
 		api.POST("/trips/:id/packing-list/items", handlers.AddPackingItem)
 		api.GET("/packing-list/suggest", handlers.GetSuggestedItems)
-		
+
 		// Packing item routes
 		api.PUT("/packing-items/:itemId", handlers.UpdatePackingItem)
 		api.DELETE("/packing-items/:itemId", handlers.DeletePackingItem)
@@ -111,6 +111,16 @@ func main() {
 		api.GET("/trips/:id", handlers.GetTripByID)
 		api.PUT("/trips/:id", handlers.UpdateTrip)
 		api.DELETE("/trips/:id", handlers.DeleteTrip)
+
+		// Group routes
+		api.POST("/groups", handlers.CreateGroup)
+		api.GET("/groups", handlers.GetGroups)
+		api.POST("/groups/:id/members", handlers.AddMember)
+		api.DELETE("/groups/:id/members/:userId", handlers.RemoveMember)
+		api.POST("/groups/:id/expenses", handlers.AddGroupExpense)
+		api.GET("/groups/:id/expenses", handlers.GetGroupExpenses)
+		api.GET("/groups/:id/balances", handlers.GetGroupBalances)
+		api.PUT("/groups/:id/expenses/:expenseId/settle", handlers.SettleExpense)
 	}
 
 	// Start server
