@@ -133,6 +133,47 @@ func InitDB(dataSourceName string) error {
 		return err
 	}
 
+	// Create packing lists table
+	createPackingListsTable := `
+	CREATE TABLE IF NOT EXISTS packing_lists (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		trip_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		destination TEXT,
+		climate TEXT,
+		duration_days INTEGER,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(user_id) REFERENCES users(id)
+	);
+	`
+
+	_, err = DB.Exec(createPackingListsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create packing items table
+	createPackingItemsTable := `
+	CREATE TABLE IF NOT EXISTS packing_items (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		packing_list_id INTEGER NOT NULL,
+		item_name TEXT NOT NULL,
+		category TEXT,
+		quantity INTEGER DEFAULT 1,
+		is_checked BOOLEAN DEFAULT 0,
+		is_suggested BOOLEAN DEFAULT 0,
+		notes TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(packing_list_id) REFERENCES packing_lists(id) ON DELETE CASCADE
+	);
+	`
+
+	_, err = DB.Exec(createPackingItemsTable)
+	if err != nil {
+		return err
+	}
+
 	log.Println("Database initialized successfully")
 	return nil
 }
