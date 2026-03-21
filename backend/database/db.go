@@ -60,13 +60,14 @@ func InitDB(dataSourceName string) error {
 
 	// Create bookmarks table
 	createBookmarksTable := `
-    CREATE TABLE IF NOT EXISTS bookmarks (
-	    id INTEGER PRIMARY KEY AUTOINCREMENT,
-	    user_id INTEGER NOT NULL,
-	    destination TEXT NOT NULL,
-	    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-	    FOREIGN KEY(user_id) REFERENCES users(id)
-    );
+	CREATE TABLE IF NOT EXISTS bookmarks (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		destination_id INTEGER NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		FOREIGN KEY(destination_id) REFERENCES destinations(id)
+	);
  `
 
 	_, err = DB.Exec(createBookmarksTable)
@@ -96,6 +97,7 @@ func InitDB(dataSourceName string) error {
 	CREATE TABLE IF NOT EXISTS budgets (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,
+		trip_id INTEGER,
 		trip_name TEXT NOT NULL,
 		total_budget REAL NOT NULL,
 		spent_amount REAL DEFAULT 0,
@@ -105,7 +107,8 @@ func InitDB(dataSourceName string) error {
 		notes TEXT,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY(user_id) REFERENCES users(id)
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE SET NULL
 	);
 	`
 
@@ -129,6 +132,144 @@ func InitDB(dataSourceName string) error {
 	`
 
 	_, err = DB.Exec(createExpensesTable)
+	if err != nil {
+		return err
+	}
+
+	// Create packing lists table
+	createPackingListsTable := `
+	CREATE TABLE IF NOT EXISTS packing_lists (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		trip_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		destination TEXT,
+		climate TEXT,
+		duration_days INTEGER,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE CASCADE
+	);
+	`
+
+	_, err = DB.Exec(createPackingListsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create packing items table
+	createPackingItemsTable := `
+	CREATE TABLE IF NOT EXISTS packing_items (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		packing_list_id INTEGER NOT NULL,
+		item_name TEXT NOT NULL,
+		category TEXT,
+		quantity INTEGER DEFAULT 1,
+		is_checked BOOLEAN DEFAULT 0,
+		is_suggested BOOLEAN DEFAULT 0,
+		notes TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(packing_list_id) REFERENCES packing_lists(id) ON DELETE CASCADE
+	);
+	`
+
+	_, err = DB.Exec(createPackingItemsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create trips table
+	createTripsTable := `
+	CREATE TABLE IF NOT EXISTS trips (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		trip_name TEXT NOT NULL,
+		destination TEXT,
+		start_date DATETIME,
+		end_date DATETIME,
+		notes TEXT,
+		status TEXT DEFAULT 'planning',
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(user_id) REFERENCES users(id)
+	);
+	`
+
+	_, err = DB.Exec(createTripsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create groups table
+	createGroupsTable := `
+	CREATE TABLE IF NOT EXISTS groups (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		trip_id INTEGER,
+		created_by INTEGER NOT NULL,
+		group_name TEXT NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(created_by) REFERENCES users(id),
+		FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE SET NULL
+	);
+	`
+	_, err = DB.Exec(createGroupsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create group_members table
+	createGroupMembersTable := `
+	CREATE TABLE IF NOT EXISTS group_members (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		group_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(group_id) REFERENCES groups(id) ON DELETE CASCADE,
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		UNIQUE(group_id, user_id)
+	);
+	`
+	_, err = DB.Exec(createGroupMembersTable)
+	if err != nil {
+		return err
+	}
+
+	// Create group_expenses table
+	createGroupExpensesTable := `
+	CREATE TABLE IF NOT EXISTS group_expenses (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		group_id INTEGER NOT NULL,
+		paid_by INTEGER NOT NULL,
+		amount REAL NOT NULL,
+		category TEXT NOT NULL,
+		description TEXT,
+		expense_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(group_id) REFERENCES groups(id) ON DELETE CASCADE,
+		FOREIGN KEY(paid_by) REFERENCES users(id)
+	);
+	`
+	_, err = DB.Exec(createGroupExpensesTable)
+	if err != nil {
+		return err
+	}
+
+	// Create expense_splits table
+	createExpenseSplitsTable := `
+	CREATE TABLE IF NOT EXISTS expense_splits (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		expense_id INTEGER NOT NULL,
+		user_id INTEGER NOT NULL,
+		amount_owed REAL NOT NULL,
+		is_settled INTEGER DEFAULT 0,
+		settled_at DATETIME,
+		FOREIGN KEY(expense_id) REFERENCES group_expenses(id) ON DELETE CASCADE,
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		UNIQUE(expense_id, user_id)
+	);
+	`
+	_, err = DB.Exec(createExpenseSplitsTable)
 	if err != nil {
 		return err
 	}

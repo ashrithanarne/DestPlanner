@@ -3,8 +3,11 @@ package handlers
 import (
 	"backend/database"
 	"backend/models"
+	"backend/utils"
 	"database/sql"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -49,84 +52,149 @@ func CreateDestination(c *gin.Context) {
 
 // GetDestinations retrieves all destinations, optionally filtered by budget
 func GetDestinations(c *gin.Context) {
-
 	budget := c.Query("budget")
+	country := c.Query("country")
 
+	db := database.DB
 	var rows *sql.Rows
 	var err error
 
-	if budget != "" {
-
-		rows, err = database.DB.Query(
-			"SELECT id, name, country, budget, description FROM destinations WHERE budget <= ?",
-			budget,
-		)
-
-	} else {
-
-		rows, err = database.DB.Query(
-			"SELECT id, name, country, budget, description FROM destinations",
-		)
-
+	// Check if user is logged in
+	var userID int
+	userClaims, exists := c.Get("user")
+	if exists {
+		claims := userClaims.(*utils.Claims)
+		userID = claims.UserID
 	}
 
+	// Base query and args
+	query := "SELECT id, name, country, budget, description"
+	args := []interface{}{}
+
+	if exists {
+		// Logged-in user: include bookmark info
+		query += ", CASE WHEN b.id IS NOT NULL THEN 1 ELSE 0 END AS is_bookmarked " +
+			"FROM destinations t " +
+			"LEFT JOIN bookmarks b ON b.destination_id = t.id AND b.user_id = ? "
+		args = append(args, userID)
+	} else {
+		// Public user: no bookmark info
+		query += " FROM destinations t "
+	}
+
+	// Add WHERE conditions
+	where := []string{}
+	if budget != "" {
+		where = append(where, "t.budget <= ?")
+		args = append(args, budget)
+	}
+	if country != "" {
+		where = append(where, "t.country = ?")
+		args = append(args, country)
+	}
+
+	if len(where) > 0 {
+		query += " WHERE " + strings.Join(where, " AND ")
+	}
+
+	// Execute query
+	rows, err = db.Query(query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch destinations"})
 		return
 	}
-
 	defer rows.Close()
 
-	var destinations []models.Destination
-
+	// Scan results
+	destinations := []models.DestinationResponse{}
 	for rows.Next() {
-
-		var d models.Destination
-
-		err := rows.Scan(
-			&d.ID,
-			&d.Name,
-			&d.Country,
-			&d.Budget,
-			&d.Description,
-		)
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading destinations"})
-			return
+		var d models.DestinationResponse
+		if exists {
+			// Include is_bookmarked
+			var isBookmarked int
+			if err := rows.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description, &isBookmarked); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading destinations"})
+				return
+			}
+			d.IsBookmarked = isBookmarked == 1
+		} else {
+			// No bookmark info
+			if err := rows.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading destinations"})
+				return
+			}
+			d.IsBookmarked = false
 		}
-
 		destinations = append(destinations, d)
-
 	}
 
 	c.JSON(http.StatusOK, destinations)
-
 }
 
 // GetDestinationByID retrieves a single destination by its ID
 func GetDestinationByID(c *gin.Context) {
-
-	id := c.Param("id")
-
-	row := database.DB.QueryRow(
-		"SELECT id, name, country, budget, description FROM destinations WHERE id = ?",
-		id,
-	)
-
-	var d models.Destination
-
-	err := row.Scan(
-		&d.ID,
-		&d.Name,
-		&d.Country,
-		&d.Budget,
-		&d.Description,
-	)
-
+	idParam := c.Param("id")
+	destID, err := strconv.Atoi(idParam)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Destination not found"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid destination ID"})
 		return
+	}
+
+	db := database.DB
+
+	// Check if user is logged in
+	var userID int
+	userClaims, exists := c.Get("user")
+	if exists {
+		claims := userClaims.(*utils.Claims)
+		userID = claims.UserID
+	}
+
+	// Base query
+	query := "SELECT id, name, country, budget, description"
+	args := []interface{}{destID}
+
+	if exists {
+		// Logged-in user: include bookmark info
+		query += ", CASE WHEN b.id IS NOT NULL THEN 1 ELSE 0 END AS is_bookmarked " +
+			"FROM destinations t " +
+			"LEFT JOIN bookmarks b ON b.destination_id = t.id AND b.user_id = ? " +
+			"WHERE t.id = ?"
+		args = append([]interface{}{userID}, args...) // first userID, then destID
+	} else {
+		// Public user: no bookmark info
+		query += " FROM destinations t WHERE t.id = ?"
+	}
+
+	row := db.QueryRow(query, args...)
+
+	var d models.DestinationResponse
+
+	if exists {
+		// Logged-in: scan is_bookmarked
+		var isBookmarked int
+		err = row.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description, &isBookmarked)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Destination not found"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching destination"})
+			}
+			return
+		}
+		d.IsBookmarked = isBookmarked == 1
+	} else {
+		// Public user: no bookmark info
+		err = row.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Destination not found"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching destination"})
+			}
+			return
+		}
+		d.IsBookmarked = false
 	}
 
 	c.JSON(http.StatusOK, d)
