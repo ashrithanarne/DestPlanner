@@ -71,6 +71,10 @@ func main() {
 		api.GET("/profile", handlers.GetProfile)
 		api.PUT("/profile", handlers.UpdateProfile)
 
+		// User search (for adding group members)
+		api.GET("/users/search", handlers.SearchUsers)
+		api.GET("/users/:id", handlers.GetUserByID)
+
 		// Bookmark routes
 		api.POST("/bookmarks", handlers.SaveBookmark)
 		api.GET("/bookmarks", handlers.GetBookmarks)
@@ -115,6 +119,7 @@ func main() {
 		// Group routes
 		api.POST("/groups", handlers.CreateGroup)
 		api.GET("/groups", handlers.GetGroups)
+		api.GET("/groups/:id", handlers.GetGroupByID)
 		api.POST("/groups/:id/members", handlers.AddMember)
 		api.DELETE("/groups/:id/members/:userId", handlers.RemoveMember)
 		api.POST("/groups/:id/expenses", handlers.AddGroupExpense)

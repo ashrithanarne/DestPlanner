@@ -14,6 +14,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ── helpers ──────────────────────────────────────────────────────────────────
+
 // isGroupMember checks whether a user belongs to a group
 func isGroupMember(groupID, userID int) (bool, error) {
 	var id int
@@ -180,6 +182,110 @@ func fetchGroupMembers(groupID int) ([]models.GroupMemberDetail, error) {
 		members = append(members, m)
 	}
 	return members, nil
+}
+
+// ── GetGroupByID ──────────────────────────────────────────────────────────────
+
+// GetGroupByID returns a single group with its members and expenses
+func GetGroupByID(c *gin.Context) {
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{Error: "unauthorized", Message: "User not authenticated"})
+		return
+	}
+	claims := userInterface.(*utils.Claims)
+
+	groupID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "bad_request", Message: "Invalid group ID"})
+		return
+	}
+
+	// Verify caller is a member
+	member, err := isGroupMember(groupID, claims.UserID)
+	if err != nil || !member {
+		c.JSON(http.StatusForbidden, models.ErrorResponse{Error: "forbidden", Message: "You are not a member of this group"})
+		return
+	}
+
+	// Fetch group
+	var g models.Group
+	var tripID sql.NullInt64
+	var createdByName string
+	err = database.DB.QueryRow(`
+		SELECT g.id, g.group_name, g.created_by, g.trip_id, g.created_at, g.updated_at,
+		       u.first_name || ' ' || u.last_name
+		FROM groups g
+		JOIN users u ON g.created_by = u.id
+		WHERE g.id = ?
+	`, groupID).Scan(&g.ID, &g.GroupName, &g.CreatedBy, &tripID, &g.CreatedAt, &g.UpdatedAt, &createdByName)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "not_found", Message: "Group not found"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "server_error", Message: "Failed to retrieve group"})
+		return
+	}
+
+	if tripID.Valid {
+		id := int(tripID.Int64)
+		g.TripID = &id
+	}
+
+	// Fetch members
+	members, err := fetchGroupMembers(groupID)
+	if err != nil {
+		members = []models.GroupMemberDetail{}
+	}
+
+	// Fetch expenses with splits
+	rows, err := database.DB.Query(`
+		SELECT ge.id, ge.group_id, ge.paid_by, ge.amount, ge.category, ge.description,
+		       ge.expense_date, ge.created_at,
+		       u.first_name || ' ' || u.last_name AS paid_by_name
+		FROM group_expenses ge
+		JOIN users u ON ge.paid_by = u.id
+		WHERE ge.group_id = ?
+		ORDER BY ge.expense_date DESC
+	`, groupID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "server_error", Message: "Failed to retrieve expenses"})
+		return
+	}
+	defer rows.Close()
+
+	expenses := []models.GroupExpenseWithSplits{}
+	for rows.Next() {
+		var e models.GroupExpenseWithSplits
+		var desc sql.NullString
+		if err := rows.Scan(
+			&e.ID, &e.GroupID, &e.PaidBy, &e.Amount, &e.Category,
+			&desc, &e.ExpenseDate, &e.CreatedAt, &e.PaidByName,
+		); err != nil {
+			continue
+		}
+		if desc.Valid {
+			e.Description = desc.String
+		}
+		splits, _ := fetchExpenseSplits(e.ID)
+		e.Splits = splits
+		expenses = append(expenses, e)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"group": gin.H{
+			"id":              g.ID,
+			"group_name":      g.GroupName,
+			"created_by":      g.CreatedBy,
+			"created_by_name": createdByName,
+			"trip_id":         g.TripID,
+			"created_at":      g.CreatedAt,
+			"updated_at":      g.UpdatedAt,
+			"members":         members,
+		},
+		"expenses": expenses,
+	})
 }
 
 // ── AddMember ─────────────────────────────────────────────────────────────────
