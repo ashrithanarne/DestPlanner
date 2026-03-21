@@ -1310,6 +1310,7 @@ To run all unit tests:
 ```bash
 # Run all tests
 cd backend
+go mod tidy
 go test ./handlers/... -v
  
 # Run with coverage

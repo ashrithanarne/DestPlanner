@@ -93,6 +93,17 @@ func main() {
 		api.GET("/budgets/:id/expenses", handlers.GetExpenses)
 		api.PUT("/budgets/:id/expenses/:expenseId", handlers.UpdateExpense)
 		api.DELETE("/budgets/:id/expenses/:expenseId", handlers.DeleteExpense)
+
+		// Packing list routes
+		api.POST("/trips/:id/packing-list", handlers.CreatePackingList)
+		api.GET("/trips/:id/packing-list", handlers.GetPackingList)
+		api.DELETE("/trips/:id/packing-list", handlers.DeletePackingList)
+		api.POST("/trips/:id/packing-list/items", handlers.AddPackingItem)
+		api.GET("/packing-list/suggest", handlers.GetSuggestedItems)
+		
+		// Packing item routes
+		api.PUT("/packing-items/:itemId", handlers.UpdatePackingItem)
+		api.DELETE("/packing-items/:itemId", handlers.DeletePackingItem)
 	}
 
 	// Start server
