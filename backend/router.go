@@ -104,6 +104,13 @@ func main() {
 		// Packing item routes
 		api.PUT("/packing-items/:itemId", handlers.UpdatePackingItem)
 		api.DELETE("/packing-items/:itemId", handlers.DeletePackingItem)
+
+		// Trip routes
+		api.POST("/trips", handlers.CreateTrip)
+		api.GET("/trips", handlers.GetTrips)
+		api.GET("/trips/:id", handlers.GetTripByID)
+		api.PUT("/trips/:id", handlers.UpdateTrip)
+		api.DELETE("/trips/:id", handlers.DeleteTrip)
 	}
 
 	// Start server

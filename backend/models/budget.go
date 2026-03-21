@@ -6,6 +6,7 @@ import "time"
 type Budget struct {
 	ID          int       `json:"id"`
 	UserID      int       `json:"user_id"`
+	TripID      *int      `json:"trip_id,omitempty"`
 	TripName    string    `json:"trip_name"`
 	TotalBudget float64   `json:"total_budget"`
 	SpentAmount float64   `json:"spent_amount"`
@@ -30,6 +31,7 @@ type Expense struct {
 
 // CreateBudgetRequest represents the request to create a budget
 type CreateBudgetRequest struct {
+	TripID      int     `json:"trip_id,omitempty"`
 	TripName    string  `json:"trip_name" binding:"required"`
 	TotalBudget float64 `json:"total_budget" binding:"required,gt=0"`
 	Currency    string  `json:"currency"`
