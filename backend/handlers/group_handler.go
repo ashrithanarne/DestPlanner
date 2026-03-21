@@ -14,8 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-
 // isGroupMember checks whether a user belongs to a group
 func isGroupMember(groupID, userID int) (bool, error) {
 	var id int
