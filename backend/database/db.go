@@ -60,13 +60,14 @@ func InitDB(dataSourceName string) error {
 
 	// Create bookmarks table
 	createBookmarksTable := `
-    CREATE TABLE IF NOT EXISTS bookmarks (
-	    id INTEGER PRIMARY KEY AUTOINCREMENT,
-	    user_id INTEGER NOT NULL,
-	    destination TEXT NOT NULL,
-	    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-	    FOREIGN KEY(user_id) REFERENCES users(id)
-    );
+	CREATE TABLE IF NOT EXISTS bookmarks (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		destination_id INTEGER NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		FOREIGN KEY(destination_id) REFERENCES destinations(id)
+	);
  `
 
 	_, err = DB.Exec(createBookmarksTable)

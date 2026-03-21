@@ -10,11 +10,10 @@ import (
 )
 
 type BookmarkRequest struct {
-	Destination string `json:"destination"`
+	DestinationID int `json:"destination_id"`
 }
 
 func SaveBookmark(c *gin.Context) {
-
 	var req BookmarkRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -23,45 +22,60 @@ func SaveBookmark(c *gin.Context) {
 	}
 
 	// Get user from JWT claims
-	userClaims, exists := c.Get("user")
-	if !exists {
+	userClaims, exist := c.Get("user")
+	if !exist {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 
 	claims := userClaims.(*utils.Claims)
 	userID := claims.UserID
-
 	db := database.DB
 
-	// Check if bookmark already exists
-	var existingID int
-	err := db.QueryRow(
-		"SELECT id FROM bookmarks WHERE user_id = ? AND destination = ?",
-		userID,
-		req.Destination,
-	).Scan(&existingID)
-
-	if err == nil {
-		// Bookmark already exists
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Bookmark already exists for this destination",
-		})
+	// Check if destination exists
+	var destExists int
+	err := db.QueryRow("SELECT COUNT(*) FROM destinations WHERE id = ?", req.DestinationID).Scan(&destExists)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking destination"})
 		return
 	}
 
-	query := `INSERT INTO bookmarks (user_id, destination) VALUES (?, ?)`
+	if destExists == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Destination ID does not exist"})
+		return
+	}
 
-	_, err = db.Exec(query, userID, req.Destination)
+	// Check if bookmark already exists
+	var exists int
+	err = db.QueryRow(
+		"SELECT COUNT(*) FROM bookmarks WHERE user_id = ? AND destination_id = ?",
+		userID,
+		req.DestinationID,
+	).Scan(&exists)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking bookmark"})
+		return
+	}
+
+	if exists > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bookmark already exists"})
+		return
+	}
+
+	// Insert bookmark
+	_, err = db.Exec(
+		"INSERT INTO bookmarks (user_id, destination_id) VALUES (?, ?)",
+		userID,
+		req.DestinationID,
+	)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save bookmark"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Bookmark saved successfully",
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "Bookmark saved successfully"})
 }
 
 // GetBookmarks retrieves all bookmarks for the authenticated user
@@ -77,35 +91,33 @@ func GetBookmarks(c *gin.Context) {
 	claims := userClaims.(*utils.Claims)
 	userID := claims.UserID
 
-	rows, err := database.DB.Query(
-		"SELECT id, user_id, destination FROM bookmarks WHERE user_id = ?",
-		userID,
-	)
+	query := `
+	SELECT b.id, d.name
+	FROM bookmarks b
+	JOIN destinations d 
+		ON b.destination_id = d.id
+	WHERE b.user_id = ?
+	`
 
+	rows, err := database.DB.Query(query, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch bookmarks"})
 		return
 	}
-
 	defer rows.Close()
 
-	var bookmarks []models.Bookmark
+	var bookmarks []models.BookmarkResponse
 
 	for rows.Next() {
-		var bookmark models.Bookmark
+		var bm models.BookmarkResponse
 
-		err := rows.Scan(
-			&bookmark.ID,
-			&bookmark.UserID,
-			&bookmark.Destination,
-		)
-
+		err := rows.Scan(&bm.ID, &bm.Destination)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading bookmarks"})
 			return
 		}
 
-		bookmarks = append(bookmarks, bookmark)
+		bookmarks = append(bookmarks, bm)
 	}
 
 	c.JSON(http.StatusOK, bookmarks)
