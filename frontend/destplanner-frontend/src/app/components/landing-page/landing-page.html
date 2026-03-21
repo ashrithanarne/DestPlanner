@@ -1,5 +1,3 @@
-
-
 <!-- Hero Section -->
 <section class="hero-section">
   <div class="hero-container">
@@ -52,7 +50,9 @@
       </p>
     </div>
     <div class="features-grid">
-      <mat-card class="feature-card" *ngFor="let feature of features">
+      <mat-card class="feature-card" *ngFor="let feature of features"
+        [class.clickable-card]="feature.title === 'Budget Tracking'"
+        (click)="navigateToFeature(feature.title)">
         <mat-card-content>
           <div class="feature-icon-wrapper">
             <mat-icon class="feature-icon">{{ feature.icon }}</mat-icon>
