@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -30,11 +30,13 @@ export class LoginComponent {
 
   loginForm: ReturnType<FormBuilder['group']>;
   loading = false;
+  private returnUrl = '/';
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private snack: MatSnackBar,
     private cdr: ChangeDetectorRef
   ) {
@@ -43,6 +45,9 @@ export class LoginComponent {
       password: ['', Validators.required],
       rememberMe: [false]
     });
+
+    // Read returnUrl from query params (set by auth guard)
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
   }
 
   submit() {
@@ -63,7 +68,8 @@ export class LoginComponent {
           localStorage.setItem('rememberedEmail', email);
         }
         this.snack.open(`Welcome back, ${res.user.first_name}!`, 'OK', { duration: 2500 });
-        this.router.navigate(['/']);
+        // Redirect to intended page or home
+        this.router.navigateByUrl(this.returnUrl);
       },
       error: (err) => {
         this.loading = false;

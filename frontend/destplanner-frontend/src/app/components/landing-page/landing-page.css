@@ -592,3 +592,14 @@
     padding: 24px !important;
   }
 }
+.clickable-card {
+  cursor: pointer !important;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s !important;
+}
+
+.clickable-card:hover {
+  border-color: #667eea !important;
+  transform: translateY(-10px) !important;
+  box-shadow: 0 16px 32px rgba(102, 126, 234, 0.25) !important;
+}
