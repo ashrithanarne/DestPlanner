@@ -43,10 +43,28 @@ func CreatePackingList(c *gin.Context) {
 		return
 	}
 
+	// Verify trip exists and belongs to user
+	var tripID int
+	checkTripQuery := "SELECT id FROM trips WHERE id = ? AND user_id = ?"
+	err := database.DB.QueryRow(checkTripQuery, req.TripID, claims.UserID).Scan(&tripID)
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error:   "not_found",
+			Message: "Trip not found",
+		})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "server_error",
+			Message: "Failed to verify trip",
+		})
+		return
+	}
+
 	// Check if packing list already exists for this trip
 	var existingID int
 	checkQuery := "SELECT id FROM packing_lists WHERE trip_id = ? AND user_id = ?"
-	err := database.DB.QueryRow(checkQuery, req.TripID, claims.UserID).Scan(&existingID)
+	err = database.DB.QueryRow(checkQuery, req.TripID, claims.UserID).Scan(&existingID)
 	if err == nil {
 		c.JSON(http.StatusConflict, models.ErrorResponse{
 			Error:   "conflict",

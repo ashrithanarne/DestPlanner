@@ -49,6 +49,29 @@ func CreateBudget(c *gin.Context) {
 		req.Currency = "USD"
 	}
 
+	// Verify trip exists if trip_id is provided
+	var tripID interface{}
+	tripID = nil
+	if req.TripID > 0 {
+		var existingTripID int
+		checkTripQuery := "SELECT id FROM trips WHERE id = ? AND user_id = ?"
+		err := database.DB.QueryRow(checkTripQuery, req.TripID, claims.UserID).Scan(&existingTripID)
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, models.ErrorResponse{
+				Error:   "not_found",
+				Message: "Trip not found",
+			})
+			return
+		} else if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   "server_error",
+				Message: "Failed to verify trip",
+			})
+			return
+		}
+		tripID = req.TripID
+	}
+
 	// Parse dates if provided
 	var startDate, endDate interface{}
 	startDate, endDate = nil, nil
@@ -69,12 +92,13 @@ func CreateBudget(c *gin.Context) {
 
 	// Insert budget into database
 	query := `
-		INSERT INTO budgets (user_id, trip_name, total_budget, currency, start_date, end_date, notes)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO budgets (user_id, trip_id, trip_name, total_budget, currency, start_date, end_date, notes)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	result, err := database.DB.Exec(query,
 		claims.UserID,
+		tripID,
 		req.TripName,
 		req.TotalBudget,
 		req.Currency,
@@ -122,7 +146,7 @@ func GetBudgets(c *gin.Context) {
 
 	// Query budgets
 	query := `
-		SELECT id, user_id, trip_name, total_budget, spent_amount, currency, 
+		SELECT id, user_id, trip_id, trip_name, total_budget, spent_amount, currency, 
 		       start_date, end_date, notes, created_at, updated_at
 		FROM budgets
 		WHERE user_id = ?
@@ -144,10 +168,12 @@ func GetBudgets(c *gin.Context) {
 	for rows.Next() {
 		var budget models.Budget
 		var startDate, endDate sql.NullTime
+		var tripID sql.NullInt64
 
 		err := rows.Scan(
 			&budget.ID,
 			&budget.UserID,
+			&tripID,
 			&budget.TripName,
 			&budget.TotalBudget,
 			&budget.SpentAmount,
@@ -161,6 +187,11 @@ func GetBudgets(c *gin.Context) {
 
 		if err != nil {
 			continue
+		}
+
+		if tripID.Valid {
+			tripIDInt := int(tripID.Int64)
+			budget.TripID = &tripIDInt
 		}
 
 		if startDate.Valid {
@@ -221,7 +252,7 @@ func GetBudgetByID(c *gin.Context) {
 
 	// Query budget
 	query := `
-		SELECT id, user_id, trip_name, total_budget, spent_amount, currency, 
+		SELECT id, user_id, trip_id, trip_name, total_budget, spent_amount, currency, 
 		       start_date, end_date, notes, created_at, updated_at
 		FROM budgets
 		WHERE id = ? AND user_id = ?
@@ -229,10 +260,12 @@ func GetBudgetByID(c *gin.Context) {
 
 	var budget models.Budget
 	var startDate, endDate sql.NullTime
+	var tripID sql.NullInt64
 
 	err = database.DB.QueryRow(query, budgetID, claims.UserID).Scan(
 		&budget.ID,
 		&budget.UserID,
+		&tripID,
 		&budget.TripName,
 		&budget.TotalBudget,
 		&budget.SpentAmount,
@@ -256,6 +289,11 @@ func GetBudgetByID(c *gin.Context) {
 			Message: "Failed to retrieve budget",
 		})
 		return
+	}
+
+	if tripID.Valid {
+		tripIDInt := int(tripID.Int64)
+		budget.TripID = &tripIDInt
 	}
 
 	if startDate.Valid {

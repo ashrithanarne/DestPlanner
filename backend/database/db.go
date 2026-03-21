@@ -96,6 +96,7 @@ func InitDB(dataSourceName string) error {
 	CREATE TABLE IF NOT EXISTS budgets (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		user_id INTEGER NOT NULL,
+		trip_id INTEGER,
 		trip_name TEXT NOT NULL,
 		total_budget REAL NOT NULL,
 		spent_amount REAL DEFAULT 0,
@@ -105,7 +106,8 @@ func InitDB(dataSourceName string) error {
 		notes TEXT,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY(user_id) REFERENCES users(id)
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE SET NULL
 	);
 	`
 
@@ -144,7 +146,8 @@ func InitDB(dataSourceName string) error {
 		duration_days INTEGER,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY(user_id) REFERENCES users(id)
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE CASCADE
 	);
 	`
 
@@ -170,6 +173,29 @@ func InitDB(dataSourceName string) error {
 	`
 
 	_, err = DB.Exec(createPackingItemsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create trips table
+	createTripsTable := `
+	CREATE TABLE IF NOT EXISTS trips (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		trip_name TEXT NOT NULL,
+		destination TEXT,
+		start_date DATETIME,
+		end_date DATETIME,
+		budget REAL DEFAULT 0,
+		notes TEXT,
+		status TEXT DEFAULT 'planning',
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(user_id) REFERENCES users(id)
+	);
+	`
+
+	_, err = DB.Exec(createTripsTable)
 	if err != nil {
 		return err
 	}
