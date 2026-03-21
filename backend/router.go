@@ -50,14 +50,49 @@ func main() {
 	{
 		auth.POST("/login", handlers.Login)
 		auth.POST("/register", handlers.Register)
+
+		auth.GET("/destinations", handlers.GetDestinations)
+		auth.GET("/destinations/:id", handlers.GetDestinationByID)
+		auth.GET("/destinations/suggest", handlers.SuggestDestinations)
+	}
+
+	// Protected auth routes (require authentication)
+	authProtected := r.Group("/api/auth")
+	authProtected.Use(middleware.AuthMiddleware())
+	{
+		authProtected.POST("/logout", handlers.Logout)
 	}
 
 	// Protected routes - require JWT authentication
 	api := r.Group("/api")
 	api.Use(middleware.AuthMiddleware())
 	{
+		// Profile routes
 		api.GET("/profile", handlers.GetProfile)
 		api.PUT("/profile", handlers.UpdateProfile)
+
+		// Bookmark routes
+		api.POST("/bookmarks", handlers.SaveBookmark)
+		api.GET("/bookmarks", handlers.GetBookmarks)
+		api.DELETE("/bookmarks/:id", handlers.DeleteBookmark)
+
+		// Destination routes
+		api.POST("/destinations", handlers.CreateDestination)
+		api.DELETE("/destinations/:id", handlers.DeleteDestination)
+		api.PUT("/destinations/:id", handlers.UpdateDestination)
+
+		// Budget routes
+		api.POST("/budgets", handlers.CreateBudget)
+		api.GET("/budgets", handlers.GetBudgets)
+		api.GET("/budgets/:id", handlers.GetBudgetByID)
+		api.PUT("/budgets/:id", handlers.UpdateBudget)
+		api.DELETE("/budgets/:id", handlers.DeleteBudget)
+
+		// Expense routes (under budget)
+		api.POST("/budgets/:id/expenses", handlers.AddExpense)
+		api.GET("/budgets/:id/expenses", handlers.GetExpenses)
+		api.PUT("/budgets/:id/expenses/:expenseId", handlers.UpdateExpense)
+		api.DELETE("/budgets/:id/expenses/:expenseId", handlers.DeleteExpense)
 	}
 
 	// Start server

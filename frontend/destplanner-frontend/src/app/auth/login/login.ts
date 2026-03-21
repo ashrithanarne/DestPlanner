@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth';
@@ -35,36 +35,43 @@ export class LoginComponent {
     private fb: FormBuilder,
     private auth: AuthService,
     private router: Router,
-    private snack: MatSnackBar
+    private snack: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) {
     this.loginForm = this.fb.group({
-      username: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
       rememberMe: [false]
     });
   }
 
-  async submit() {
+  submit() {
     if (this.loginForm.invalid) {
       this.snack.open('Please fill in all required fields', 'Close', { duration: 3000 });
       return;
     }
 
     this.loading = true;
-    const { username, rememberMe } = this.loginForm.value;
+    this.cdr.detectChanges();
+    const { email, password, rememberMe } = this.loginForm.value;
 
-    try {
-      await this.auth.login(username);
-      if (rememberMe) {
-        localStorage.setItem('username', username);
+    this.auth.login(email, password).subscribe({
+      next: (res) => {
+        this.loading = false;
+        this.cdr.detectChanges();
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', email);
+        }
+        this.snack.open(`Welcome back, ${res.user.first_name}!`, 'OK', { duration: 2500 });
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        this.loading = false;
+        this.cdr.detectChanges();
+        const msg = err?.error?.message || 'Invalid email or password';
+        this.snack.open(msg, 'Close', { duration: 3000 });
       }
-      this.snack.open('Login successful!', 'OK', { duration: 2000 });
-      this.router.navigate(['/dashboard']);
-    } catch (err: any) {
-      this.snack.open(err || 'Login failed', 'Close', { duration: 3000 });
-    }
-
-    this.loading = false;
+    });
   }
 
   navigateToRegister() {
