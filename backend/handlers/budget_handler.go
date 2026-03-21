@@ -150,10 +150,22 @@ func GetBudgets(c *gin.Context) {
 		       start_date, end_date, notes, created_at, updated_at
 		FROM budgets
 		WHERE user_id = ?
-		ORDER BY created_at DESC
 	`
+	args := []interface{}{claims.UserID}
 
-	rows, err := database.DB.Query(query, claims.UserID)
+	// Optional trip_id filter
+	tripIDParam := c.Query("trip_id")
+	if tripIDParam != "" {
+		tripID, err := strconv.Atoi(tripIDParam)
+		if err == nil {
+			query += " AND trip_id = ?"
+			args = append(args, tripID)
+		}
+	}
+
+	query += " ORDER BY created_at DESC"
+
+	rows, err := database.DB.Query(query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error:   "server_error",

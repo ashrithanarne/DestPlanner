@@ -12,6 +12,61 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// getSuggestedItems returns suggested packing items based on climate and duration
+func getSuggestedItems(climate string, duration int) []models.PackingItem {
+	// Base items for all trips
+	suggestions := []models.PackingItem{
+		{ItemName: "Passport/ID", Category: "Documents", Quantity: 1, IsSuggested: true},
+		{ItemName: "Phone charger", Category: "Electronics", Quantity: 1, IsSuggested: true},
+		{ItemName: "Toiletries", Category: "Personal Care", Quantity: 1, IsSuggested: true},
+		{ItemName: "Medications", Category: "Health", Quantity: 1, IsSuggested: true},
+		{ItemName: "Underwear", Category: "Clothing", Quantity: duration, IsSuggested: true},
+		{ItemName: "Socks", Category: "Clothing", Quantity: duration, IsSuggested: true},
+	}
+
+	// Climate-specific items
+	switch climate {
+	case "tropical", "hot", "summer":
+		suggestions = append(suggestions,
+			models.PackingItem{ItemName: "Sunscreen", Category: "Personal Care", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Sunglasses", Category: "Accessories", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Hat", Category: "Accessories", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Light clothing", Category: "Clothing", Quantity: 3, IsSuggested: true},
+			models.PackingItem{ItemName: "Sandals", Category: "Footwear", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Swimsuit", Category: "Clothing", Quantity: 1, IsSuggested: true},
+		)
+	case "cold", "winter", "snow":
+		suggestions = append(suggestions,
+			models.PackingItem{ItemName: "Winter coat", Category: "Clothing", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Gloves", Category: "Accessories", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Scarf", Category: "Accessories", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Warm hat", Category: "Accessories", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Thermal underwear", Category: "Clothing", Quantity: 2, IsSuggested: true},
+			models.PackingItem{ItemName: "Winter boots", Category: "Footwear", Quantity: 1, IsSuggested: true},
+		)
+	case "rainy", "monsoon":
+		suggestions = append(suggestions,
+			models.PackingItem{ItemName: "Rain jacket", Category: "Clothing", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Umbrella", Category: "Accessories", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Waterproof bag", Category: "Accessories", Quantity: 1, IsSuggested: true},
+		)
+	default:
+		suggestions = append(suggestions,
+			models.PackingItem{ItemName: "Light jacket", Category: "Clothing", Quantity: 1, IsSuggested: true},
+			models.PackingItem{ItemName: "Comfortable shoes", Category: "Footwear", Quantity: 1, IsSuggested: true},
+		)
+	}
+
+	// Duration-based items
+	if duration > 7 {
+		suggestions = append(suggestions,
+			models.PackingItem{ItemName: "Laundry detergent", Category: "Personal Care", Quantity: 1, IsSuggested: true},
+		)
+	}
+
+	return suggestions
+}
+
 // CreatePackingList creates a new packing list for a trip
 func CreatePackingList(c *gin.Context) {
 	// Get user from context
@@ -102,6 +157,19 @@ func CreatePackingList(c *gin.Context) {
 	}
 
 	packingListID, _ := result.LastInsertId()
+
+	// Auto-populate with suggested items if requested
+	if req.AutoPopulate && req.Climate != "" {
+		suggestions := getSuggestedItems(req.Climate, req.DurationDays)
+
+		for _, item := range suggestions {
+			insertItemQuery := `
+				INSERT INTO packing_items (packing_list_id, item_name, category, quantity, is_suggested)
+				VALUES (?, ?, ?, ?, 1)
+			`
+			database.DB.Exec(insertItemQuery, packingListID, item.ItemName, item.Category, item.Quantity)
+		}
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message":         "Packing list created successfully",
@@ -531,61 +599,13 @@ func GetSuggestedItems(c *gin.Context) {
 	// Get parameters
 	climate := c.Query("climate")
 	durationStr := c.Query("duration_days")
-	
+
 	duration := 0
 	if durationStr != "" {
 		duration, _ = strconv.Atoi(durationStr)
 	}
 
-	// Base items for all trips
-	suggestions := []models.PackingItem{
-		{ItemName: "Passport/ID", Category: "Documents", Quantity: 1, IsSuggested: true},
-		{ItemName: "Phone charger", Category: "Electronics", Quantity: 1, IsSuggested: true},
-		{ItemName: "Toiletries", Category: "Personal Care", Quantity: 1, IsSuggested: true},
-		{ItemName: "Medications", Category: "Health", Quantity: 1, IsSuggested: true},
-		{ItemName: "Underwear", Category: "Clothing", Quantity: duration, IsSuggested: true},
-		{ItemName: "Socks", Category: "Clothing", Quantity: duration, IsSuggested: true},
-	}
-
-	// Climate-specific items
-	switch climate {
-	case "tropical", "hot", "summer":
-		suggestions = append(suggestions,
-			models.PackingItem{ItemName: "Sunscreen", Category: "Personal Care", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Sunglasses", Category: "Accessories", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Hat", Category: "Accessories", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Light clothing", Category: "Clothing", Quantity: 3, IsSuggested: true},
-			models.PackingItem{ItemName: "Sandals", Category: "Footwear", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Swimsuit", Category: "Clothing", Quantity: 1, IsSuggested: true},
-		)
-	case "cold", "winter", "snow":
-		suggestions = append(suggestions,
-			models.PackingItem{ItemName: "Winter coat", Category: "Clothing", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Gloves", Category: "Accessories", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Scarf", Category: "Accessories", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Warm hat", Category: "Accessories", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Thermal underwear", Category: "Clothing", Quantity: 2, IsSuggested: true},
-			models.PackingItem{ItemName: "Winter boots", Category: "Footwear", Quantity: 1, IsSuggested: true},
-		)
-	case "rainy", "monsoon":
-		suggestions = append(suggestions,
-			models.PackingItem{ItemName: "Rain jacket", Category: "Clothing", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Umbrella", Category: "Accessories", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Waterproof bag", Category: "Accessories", Quantity: 1, IsSuggested: true},
-		)
-	default:
-		suggestions = append(suggestions,
-			models.PackingItem{ItemName: "Light jacket", Category: "Clothing", Quantity: 1, IsSuggested: true},
-			models.PackingItem{ItemName: "Comfortable shoes", Category: "Footwear", Quantity: 1, IsSuggested: true},
-		)
-	}
-
-	// Duration-based items
-	if duration > 7 {
-		suggestions = append(suggestions,
-			models.PackingItem{ItemName: "Laundry detergent", Category: "Personal Care", Quantity: 1, IsSuggested: true},
-		)
-	}
+	suggestions := getSuggestedItems(climate, duration)
 
 	c.JSON(http.StatusOK, gin.H{
 		"suggestions": suggestions,

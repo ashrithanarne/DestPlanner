@@ -64,8 +64,8 @@ func CreateTrip(c *gin.Context) {
 
 	// Insert trip
 	query := `
-		INSERT INTO trips (user_id, trip_name, destination, start_date, end_date, budget, notes, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?, 'planning')
+		INSERT INTO trips (user_id, trip_name, destination, start_date, end_date, notes, status)
+		VALUES (?, ?, ?, ?, ?, ?, 'planning')
 	`
 
 	result, err := database.DB.Exec(query,
@@ -74,7 +74,6 @@ func CreateTrip(c *gin.Context) {
 		req.Destination,
 		startDate,
 		endDate,
-		req.Budget,
 		req.Notes,
 	)
 
@@ -121,7 +120,7 @@ func GetTrips(c *gin.Context) {
 	// Build query
 	query := `
 		SELECT id, user_id, trip_name, destination, start_date, end_date, 
-		       budget, notes, status, created_at, updated_at
+		       notes, status, created_at, updated_at
 		FROM trips
 		WHERE user_id = ?
 	`
@@ -157,7 +156,6 @@ func GetTrips(c *gin.Context) {
 			&trip.Destination,
 			&startDate,
 			&endDate,
-			&trip.Budget,
 			&trip.Notes,
 			&trip.Status,
 			&trip.CreatedAt,
@@ -184,14 +182,11 @@ func GetTrips(c *gin.Context) {
 
 		// Check if packing list exists
 		var packingListID int
-		hasPackingList := false
 		packingProgress := 0.0
 
 		checkPackingQuery := "SELECT id FROM packing_lists WHERE trip_id = ?"
 		err = database.DB.QueryRow(checkPackingQuery, trip.ID).Scan(&packingListID)
 		if err == nil {
-			hasPackingList = true
-
 			// Get packing progress
 			var totalItems, checkedItems int
 			progressQuery := `
@@ -205,20 +200,9 @@ func GetTrips(c *gin.Context) {
 			}
 		}
 
-		// Check if budget exists
-		var budgetID int
-		hasBudget := false
-		checkBudgetQuery := "SELECT id FROM budgets WHERE trip_id = ?"
-		err = database.DB.QueryRow(checkBudgetQuery, trip.ID).Scan(&budgetID)
-		if err == nil {
-			hasBudget = true
-		}
-
 		summary := models.TripSummary{
 			Trip:            trip,
 			DurationDays:    durationDays,
-			HasPackingList:  hasPackingList,
-			HasBudget:       hasBudget,
 			PackingProgress: packingProgress,
 		}
 
@@ -264,7 +248,7 @@ func GetTripByID(c *gin.Context) {
 	// Query trip
 	query := `
 		SELECT id, user_id, trip_name, destination, start_date, end_date, 
-		       budget, notes, status, created_at, updated_at
+		       notes, status, created_at, updated_at
 		FROM trips
 		WHERE id = ? AND user_id = ?
 	`
@@ -279,7 +263,6 @@ func GetTripByID(c *gin.Context) {
 		&trip.Destination,
 		&startDate,
 		&endDate,
-		&trip.Budget,
 		&trip.Notes,
 		&trip.Status,
 		&trip.CreatedAt,
@@ -316,14 +299,11 @@ func GetTripByID(c *gin.Context) {
 
 	// Check if packing list exists
 	var packingListID int
-	hasPackingList := false
 	packingProgress := 0.0
 
 	checkPackingQuery := "SELECT id FROM packing_lists WHERE trip_id = ?"
 	err = database.DB.QueryRow(checkPackingQuery, trip.ID).Scan(&packingListID)
 	if err == nil {
-		hasPackingList = true
-
 		// Get packing progress
 		var totalItems, checkedItems int
 		progressQuery := `
@@ -337,20 +317,9 @@ func GetTripByID(c *gin.Context) {
 		}
 	}
 
-	// Check if budget exists
-	var budgetID int
-	hasBudget := false
-	checkBudgetQuery := "SELECT id FROM budgets WHERE trip_id = ?"
-	err = database.DB.QueryRow(checkBudgetQuery, trip.ID).Scan(&budgetID)
-	if err == nil {
-		hasBudget = true
-	}
-
 	summary := models.TripSummary{
 		Trip:            trip,
 		DurationDays:    durationDays,
-		HasPackingList:  hasPackingList,
-		HasBudget:       hasBudget,
 		PackingProgress: packingProgress,
 	}
 
@@ -423,10 +392,6 @@ func UpdateTrip(c *gin.Context) {
 			query += ", end_date = ?"
 			args = append(args, parsedEnd)
 		}
-	}
-	if req.Budget > 0 {
-		query += ", budget = ?"
-		args = append(args, req.Budget)
 	}
 	if req.Notes != "" {
 		query += ", notes = ?"
