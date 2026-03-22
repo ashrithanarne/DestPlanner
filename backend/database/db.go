@@ -68,9 +68,53 @@ func InitDB(dataSourceName string) error {
 		FOREIGN KEY(user_id) REFERENCES users(id),
 		FOREIGN KEY(destination_id) REFERENCES destinations(id)
 	);
- `
+`
 
 	_, err = DB.Exec(createBookmarksTable)
+	if err != nil {
+		return err
+	}
+
+	// Create itineraries table
+	createItinerariesTable := `
+   CREATE TABLE IF NOT EXISTS itineraries (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       name TEXT NOT NULL,
+       created_by INTEGER NOT NULL,
+       FOREIGN KEY (created_by) REFERENCES users(id)
+    );
+    `
+	_, err = DB.Exec(createItinerariesTable)
+	if err != nil {
+		return err
+	}
+
+	// Create itinerary_destinations table (many-to-many)
+	createItineraryDestinationsTable := `
+   CREATE TABLE IF NOT EXISTS itinerary_destinations (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       itinerary_id INTEGER NOT NULL,
+       destination_id INTEGER NOT NULL,
+       FOREIGN KEY (itinerary_id) REFERENCES itineraries(id),
+       FOREIGN KEY (destination_id) REFERENCES destinations(id)
+   );
+   `
+	_, err = DB.Exec(createItineraryDestinationsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create itinerary_collaborators table (many-to-many users <-> itineraries)
+	createItineraryCollaboratorsTable := `
+   CREATE TABLE IF NOT EXISTS itinerary_collaborators (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       itinerary_id INTEGER NOT NULL,
+       user_id INTEGER NOT NULL,
+       FOREIGN KEY (itinerary_id) REFERENCES itineraries(id),
+       FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    `
+	_, err = DB.Exec(createItineraryCollaboratorsTable)
 	if err != nil {
 		return err
 	}
