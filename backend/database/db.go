@@ -11,6 +11,11 @@ var DB *sql.DB
 
 // InitDB initializes the SQLite database connection and creates tables
 func InitDB(dataSourceName string) error {
+	// Close existing connection if any
+	if DB != nil {
+		DB.Close()
+	}
+
 	var err error
 	DB, err = sql.Open("sqlite", dataSourceName)
 	if err != nil {
@@ -68,9 +73,53 @@ func InitDB(dataSourceName string) error {
 		FOREIGN KEY(user_id) REFERENCES users(id),
 		FOREIGN KEY(destination_id) REFERENCES destinations(id)
 	);
- `
+`
 
 	_, err = DB.Exec(createBookmarksTable)
+	if err != nil {
+		return err
+	}
+
+	// Create itineraries table
+	createItinerariesTable := `
+   CREATE TABLE IF NOT EXISTS itineraries (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       name TEXT NOT NULL,
+       created_by INTEGER NOT NULL,
+       FOREIGN KEY (created_by) REFERENCES users(id)
+    );
+    `
+	_, err = DB.Exec(createItinerariesTable)
+	if err != nil {
+		return err
+	}
+
+	// Create itinerary_destinations table (many-to-many)
+	createItineraryDestinationsTable := `
+   CREATE TABLE IF NOT EXISTS itinerary_destinations (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       itinerary_id INTEGER NOT NULL,
+       destination_id INTEGER NOT NULL,
+       FOREIGN KEY (itinerary_id) REFERENCES itineraries(id),
+       FOREIGN KEY (destination_id) REFERENCES destinations(id)
+   );
+   `
+	_, err = DB.Exec(createItineraryDestinationsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create itinerary_collaborators table (many-to-many users <-> itineraries)
+	createItineraryCollaboratorsTable := `
+   CREATE TABLE IF NOT EXISTS itinerary_collaborators (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       itinerary_id INTEGER NOT NULL,
+       user_id INTEGER NOT NULL,
+       FOREIGN KEY (itinerary_id) REFERENCES itineraries(id),
+       FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    `
+	_, err = DB.Exec(createItineraryCollaboratorsTable)
 	if err != nil {
 		return err
 	}
@@ -88,6 +137,28 @@ func InitDB(dataSourceName string) error {
 	`
 
 	_, err = DB.Exec(createBlacklistTable)
+	if err != nil {
+		return err
+	}
+
+	// Create trips table (MUST be before budgets and packing_lists that reference it)
+	createTripsTable := `
+	CREATE TABLE IF NOT EXISTS trips (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		trip_name TEXT NOT NULL,
+		destination TEXT,
+		start_date DATETIME,
+		end_date DATETIME,
+		notes TEXT,
+		status TEXT DEFAULT 'planning',
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(user_id) REFERENCES users(id)
+	);
+	`
+
+	_, err = DB.Exec(createTripsTable)
 	if err != nil {
 		return err
 	}
@@ -174,28 +245,6 @@ func InitDB(dataSourceName string) error {
 	`
 
 	_, err = DB.Exec(createPackingItemsTable)
-	if err != nil {
-		return err
-	}
-
-	// Create trips table
-	createTripsTable := `
-	CREATE TABLE IF NOT EXISTS trips (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		user_id INTEGER NOT NULL,
-		trip_name TEXT NOT NULL,
-		destination TEXT,
-		start_date DATETIME,
-		end_date DATETIME,
-		notes TEXT,
-		status TEXT DEFAULT 'planning',
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY(user_id) REFERENCES users(id)
-	);
-	`
-
-	_, err = DB.Exec(createTripsTable)
 	if err != nil {
 		return err
 	}
