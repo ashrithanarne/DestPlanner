@@ -7,6 +7,7 @@ import { environment } from '../../environments/environment';
 export interface Budget {
   id: number;
   user_id: number;
+  trip_id?: number;
   trip_name: string;
   total_budget: number;
   spent_amount: number;
@@ -21,6 +22,7 @@ export interface Budget {
 export interface BudgetSummary {
   id: number;
   user_id: number;
+  trip_id?: number;
   trip_name: string;
   total_budget: number;
   spent_amount: number;
@@ -45,8 +47,18 @@ export interface Expense {
 }
 
 export interface CreateBudgetPayload {
+  trip_id?: number;
   trip_name: string;
   total_budget: number;
+  currency?: string;
+  start_date?: string;
+  end_date?: string;
+  notes?: string;
+}
+
+export interface UpdateBudgetPayload {
+  trip_name?: string;
+  total_budget?: number;
   currency?: string;
   start_date?: string;
   end_date?: string;
@@ -94,9 +106,12 @@ export class BudgetService {
     );
   }
 
-  // GET /api/budgets
-  getBudgets(): Observable<{ budgets: BudgetSummary[] }> {
-    return this.http.get<{ budgets: BudgetSummary[] }>(`${this.baseUrl}/budgets`).pipe(
+  // GET /api/budgets (optional ?trip_id filter)
+  getBudgets(tripId?: number): Observable<{ budgets: BudgetSummary[] }> {
+    const url = tripId
+      ? `${this.baseUrl}/budgets?trip_id=${tripId}`
+      : `${this.baseUrl}/budgets`;
+    return this.http.get<{ budgets: BudgetSummary[] }>(url).pipe(
       tap((res) => this.budgetsSubject.next(res.budgets ?? []))
     );
   }
@@ -109,7 +124,7 @@ export class BudgetService {
   }
 
   // PUT /api/budgets/:id
-  updateBudget(id: number, payload: Partial<CreateBudgetPayload>): Observable<{ message: string }> {
+  updateBudget(id: number, payload: UpdateBudgetPayload): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.baseUrl}/budgets/${id}`, payload);
   }
 

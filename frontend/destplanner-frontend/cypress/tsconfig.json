@@ -2,12 +2,13 @@
   "compilerOptions": {
     "target": "ES2017",
     "lib": ["ES2017", "DOM"],
-    "types": ["cypress","node"],
+    "types": ["cypress", "node","jest"],
     "moduleResolution": "node",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "composite": true
   },
   "include": ["**/*.ts"]
 }
