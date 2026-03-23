@@ -1,9 +1,8 @@
 /*  Page Layout  */
 .budget-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
   background: #f4f6fb;
   padding-bottom: 60px;
-  margin-top: 64px;
 }
 
 /*  Page Header */
@@ -201,6 +200,15 @@
   font-size: 0.8rem;
   color: #a0aec0;
   margin: 0;
+}
+
+.budget-trip-link {
+  font-size: 0.75rem;
+  color: #667eea;
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .btn-delete-budget {
@@ -534,3 +542,165 @@
 }
 
 .btn-edit:hover { opacity: 1; }
+/* ── Trip Selector Styles ─────────────────────────────────── */
+.trip-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.trip-option-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.trip-option-name {
+  font-weight: 600;
+  color: #2d3748;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trip-option-dest {
+  font-size: 0.82rem;
+  color: #718096;
+}
+
+.trip-option-status {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #e9d8fd;
+  color: #553c9a;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.loading-option {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+/* Selected trip preview card */
+.trip-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: linear-gradient(135deg, #667eea15, #764ba215);
+  border: 1px solid #667eea40;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.trip-preview mat-icon {
+  color: #667eea;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.trip-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.trip-preview-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #2d3748;
+}
+
+.trip-preview-detail {
+  font-size: 0.83rem;
+  color: #718096;
+}
+
+.create-trip-link {
+  color: #667eea;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.82rem;
+}
+
+/* ── Empty state (budget page) ──────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.empty-state h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 12px 0 8px;
+}
+
+.empty-state p {
+  color: #718096;
+  margin: 0 0 20px;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-goto-trips {
+  color: #667eea !important;
+  border-color: #667eea !important;
+  font-weight: 600 !important;
+}
+
+/* ── Edit Budget ─────────────────────────────────────────────── */
+.btn-edit-budget {
+  background: rgba(255,255,255,0.15) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(255,255,255,0.4) !important;
+  margin-right: 8px !important;
+}
+
+.btn-edit-budget:hover {
+  background: rgba(255,255,255,0.25) !important;
+}
+
+.edit-budget-card {
+  border-left: 4px solid #f6a623 !important;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.budget-card-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.btn-edit-budget-icon {
+  color: #667eea !important;
+  opacity: 0.6;
+}
+
+.btn-edit-budget-icon:hover {
+  opacity: 1;
+}

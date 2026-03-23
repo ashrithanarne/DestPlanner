@@ -1,22 +1,47 @@
 // cypress/e2e/budget.cy.ts
 // Sprint 2 — Cypress E2E test: Budget Tracker feature
 // Frontend owner: Rishitha Pydipati
-
-import { beforeEach, describe, it } from "vitest";
-import "cypress";
+/// <reference types="cypress" />
 
 describe('Budget Tracker', () => {
+
   beforeEach(() => {
+
+    cy.request({
+      method: 'POST',
+      url: 'http://localhost:8080/api/auth/login',
+      body: {
+        email: 'rishitha@gmail.com',   
+        password: 'Rishitha@2607'
+      }
+    }).then((res) => {
+
+      expect(res.status).toEqual(200);
+
+      
+      const cookies = res.headers['set-cookie'];
+
+      if (cookies) {
+        cookies.forEach((cookie: string) => {
+          const parts = cookie.split(';')[0].split('=');
+          const name = parts[0];
+          const value = parts[1];
+
+          cy.setCookie(name, value);
+        });
+      }
+    });
+
     cy.visit('/budget');
   });
 
-  // ── Page loads correctly ─────────────────────────────────────────────────
+  //  Page loads correctly 
   it('should display the Budget Tracker page with header', () => {
-    cy.contains('Budget Tracker').should('be.visible');
+    cy.contains('Budget Tracker', { timeout: 10000 }).should('be.visible');
     cy.contains('New Budget').should('be.visible');
   });
 
-  // ── Create Budget form opens ─────────────────────────────────────────────
+  // Create Budget form opens 
   it('should open the Create Budget form when clicking New Budget button', () => {
     cy.get('[data-cy=create-budget-btn]').click();
     cy.get('[data-cy=budget-form]').should('be.visible');
@@ -24,7 +49,7 @@ describe('Budget Tracker', () => {
     cy.get('[data-cy=budget-input]').should('exist');
   });
 
-  // ── Create Budget — fill and submit ──────────────────────────────────────
+  // Create Budget — fill and submit 
   it('should allow user to fill in trip name and budget amount and submit', () => {
     cy.get('[data-cy=create-budget-btn]').click();
     cy.get('[data-cy=budget-form]').should('be.visible');
@@ -37,15 +62,17 @@ describe('Budget Tracker', () => {
     cy.get('[data-cy=budget-form]').should('not.exist');
   });
 
-  // ── Form closes on cancel ────────────────────────────────────────────────
+  //  Form closes on cancel
   it('should close the budget form when Cancel is clicked', () => {
     cy.get('[data-cy=create-budget-btn]').click();
     cy.get('[data-cy=budget-form]').should('be.visible');
+
     cy.contains('Cancel').click();
+
     cy.get('[data-cy=budget-form]').should('not.exist');
   });
 
-  // ── Add Expense inside a budget ──────────────────────────────────────────
+  //  Add Expense inside a budget 
   it('should open Add Expense form when inside a budget', () => {
     cy.get('body').then(($body) => {
       if ($body.find('.budget-card').length) {
@@ -58,7 +85,7 @@ describe('Budget Tracker', () => {
     });
   });
 
-  // ── Add Expense — fill and submit ────────────────────────────────────────
+  // Add Expense — fill and submit
   it('should allow user to fill in and submit an expense', () => {
     cy.get('body').then(($body) => {
       if ($body.find('.budget-card').length) {
@@ -77,4 +104,5 @@ describe('Budget Tracker', () => {
       }
     });
   });
+
 });
