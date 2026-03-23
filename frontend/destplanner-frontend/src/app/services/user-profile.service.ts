@@ -26,7 +26,7 @@ export class UserProfileService {
     return this.http.get<User>(`${this.baseUrl}/profile`).pipe(
       tap((user) => {
         this.profileSubject.next(user);
-        localStorage.setItem('user', JSON.stringify(user));
+        if (typeof localStorage !== 'undefined') localStorage.setItem('user', JSON.stringify(user));
       })
     );
   }
@@ -36,7 +36,7 @@ export class UserProfileService {
     return this.http.put<User>(`${this.baseUrl}/profile`, payload).pipe(
       tap((user) => {
         this.profileSubject.next(user);
-        localStorage.setItem('user', JSON.stringify(user));
+        if (typeof localStorage !== 'undefined') localStorage.setItem('user', JSON.stringify(user));
       })
     );
   }
