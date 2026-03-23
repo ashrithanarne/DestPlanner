@@ -38,6 +38,6 @@ type UpdateTripRequest struct {
 // TripSummary represents a trip with related information
 type TripSummary struct {
 	Trip
-	DurationDays    int     `json:"duration_days"`
-	PackingProgress float64 `json:"packing_progress,omitempty"`
+	DurationDays    int      `json:"duration_days"`
+	PackingProgress *float64 `json:"packing_progress,omitempty"` // nil = no list, 0.0 = list exists but nothing packed
 }

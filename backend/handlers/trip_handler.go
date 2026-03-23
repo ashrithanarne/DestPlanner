@@ -13,6 +13,35 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// packingProgressForTrip returns packing progress for a trip
+// Returns nil if no packing list exists, or a pointer to the percentage (0.0-100.0)
+func packingProgressForTrip(tripID int) *float64 {
+	var packingListID int
+	checkPackingQuery := "SELECT id FROM packing_lists WHERE trip_id = ?"
+	err := database.DB.QueryRow(checkPackingQuery, tripID).Scan(&packingListID)
+
+	if err != nil {
+		// No packing list exists
+		return nil
+	}
+
+	// Get packing progress
+	var totalItems, checkedItems int
+	progressQuery := `
+		SELECT COUNT(*), SUM(CASE WHEN is_checked = 1 THEN 1 ELSE 0 END)
+		FROM packing_items
+		WHERE packing_list_id = ?
+	`
+	database.DB.QueryRow(progressQuery, packingListID).Scan(&totalItems, &checkedItems)
+
+	percentage := 0.0
+	if totalItems > 0 {
+		percentage = (float64(checkedItems) / float64(totalItems)) * 100
+	}
+
+	return &percentage
+}
+
 // CreateTrip creates a new trip
 func CreateTrip(c *gin.Context) {
 	// Get user from context
@@ -180,30 +209,10 @@ func GetTrips(c *gin.Context) {
 			durationDays = int(duration.Hours() / 24)
 		}
 
-		// Check if packing list exists
-		var packingListID int
-		packingProgress := 0.0
-
-		checkPackingQuery := "SELECT id FROM packing_lists WHERE trip_id = ?"
-		err = database.DB.QueryRow(checkPackingQuery, trip.ID).Scan(&packingListID)
-		if err == nil {
-			// Get packing progress
-			var totalItems, checkedItems int
-			progressQuery := `
-				SELECT COUNT(*), SUM(CASE WHEN is_checked = 1 THEN 1 ELSE 0 END)
-				FROM packing_items
-				WHERE packing_list_id = ?
-			`
-			database.DB.QueryRow(progressQuery, packingListID).Scan(&totalItems, &checkedItems)
-			if totalItems > 0 {
-				packingProgress = (float64(checkedItems) / float64(totalItems)) * 100
-			}
-		}
-
 		summary := models.TripSummary{
 			Trip:            trip,
 			DurationDays:    durationDays,
-			PackingProgress: packingProgress,
+			PackingProgress: packingProgressForTrip(trip.ID),
 		}
 
 		trips = append(trips, summary)
@@ -297,30 +306,10 @@ func GetTripByID(c *gin.Context) {
 		durationDays = int(duration.Hours() / 24)
 	}
 
-	// Check if packing list exists
-	var packingListID int
-	packingProgress := 0.0
-
-	checkPackingQuery := "SELECT id FROM packing_lists WHERE trip_id = ?"
-	err = database.DB.QueryRow(checkPackingQuery, trip.ID).Scan(&packingListID)
-	if err == nil {
-		// Get packing progress
-		var totalItems, checkedItems int
-		progressQuery := `
-			SELECT COUNT(*), SUM(CASE WHEN is_checked = 1 THEN 1 ELSE 0 END)
-			FROM packing_items
-			WHERE packing_list_id = ?
-		`
-		database.DB.QueryRow(progressQuery, packingListID).Scan(&totalItems, &checkedItems)
-		if totalItems > 0 {
-			packingProgress = (float64(checkedItems) / float64(totalItems)) * 100
-		}
-	}
-
 	summary := models.TripSummary{
 		Trip:            trip,
 		DurationDays:    durationDays,
-		PackingProgress: packingProgress,
+		PackingProgress: packingProgressForTrip(trip.ID),
 	}
 
 	c.JSON(http.StatusOK, summary)
