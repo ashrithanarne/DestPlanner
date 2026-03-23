@@ -8,6 +8,7 @@ import { vi } from 'vitest';
 
 import { BudgetComponent } from './budget';
 import { BudgetService, BudgetSummary, Expense } from '../../services/budget';
+import { TripService, Trip } from '../../services/trip.service';
 
 const MOCK_BUDGET: BudgetSummary = {
   id: 1,
@@ -27,9 +28,22 @@ const MOCK_EXPENSES: Expense[] = [
   { id: 2, budget_id: 1, category: 'Food & Dining', amount: 200, description: 'Meals', expense_date: '2025-06-02', created_at: '2025-06-02' },
 ];
 
+const MOCK_TRIP: Trip = {
+  id: 1, user_id: 1,
+  trip_name: 'Paris Trip', destination: 'Paris, France',
+  start_date: '2025-06-01', end_date: '2025-06-10',
+  notes: '', status: 'planning',
+  duration_days: 9, packing_progress: 0,
+  created_at: '2025-01-01', updated_at: '2025-01-01',
+};
+
 describe('BudgetComponent', () => {
   let component: BudgetComponent;
   let fixture: ComponentFixture<BudgetComponent>;
+
+  const mockTripService = {
+    getTrips: vi.fn(() => of({ trips: [MOCK_TRIP] })),
+  };
 
   const mockBudgetService = {
     budgets$: new BehaviorSubject<BudgetSummary[]>([MOCK_BUDGET]).asObservable(),
@@ -60,6 +74,7 @@ describe('BudgetComponent', () => {
       imports: [BudgetComponent],
       providers: [
         { provide: BudgetService, useValue: mockBudgetService },
+        { provide: TripService, useValue: mockTripService },
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
@@ -124,13 +139,14 @@ describe('BudgetComponent', () => {
 
   // ── submitCreateBudget — valid ───────────────────────────────────────────
   it('submitCreateBudget: should call createBudget and reload on success', async () => {
-    component.createForm.setValue({
-      trip_name: 'Paris Trip', total_budget: 1500,
-      currency: 'USD', start_date: '', end_date: '', notes: ''
-    });
+    // Pre-load trips so getSelectedTrip() can resolve trip_id → trip object
+    component.trips = [MOCK_TRIP];
+    component.createForm.patchValue({ trip_id: 1, total_budget: 1500, currency: 'USD', notes: '' });
     component.submitCreateBudget();
     await fixture.whenStable();
-    expect(mockBudgetService.createBudget).toHaveBeenCalled();
+    expect(mockBudgetService.createBudget).toHaveBeenCalledWith(expect.objectContaining({
+      trip_id: 1, trip_name: 'Paris Trip', total_budget: 1500, currency: 'USD',
+    }));
     expect(component.showCreateForm).toBe(false);
   });
 
