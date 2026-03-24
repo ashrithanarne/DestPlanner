@@ -39,7 +39,8 @@
           <div class="form-row">
             <mat-form-field appearance="outline" class="field-wide">
               <mat-label>Destination</mat-label>
-              <input matInput formControlName="destination" placeholder="e.g. Paris, France" data-cy="destination-input">
+              <input matInput formControlName="destination" placeholder="e.g. Paris, France"
+                data-cy="destination-input">
               <mat-icon matSuffix>place</mat-icon>
             </mat-form-field>
           </div>
@@ -101,7 +102,8 @@
     <!-- ── Empty State ───────────────────────────────────────────── -->
     <div class="empty-state" *ngIf="!loadingTrips && filteredTrips.length === 0 && !showCreateForm">
       <div class="empty-illustration">
-        <mat-icon class="empty-icon">{{ activeFilter === 'all' ? 'luggage' : getStatusConfig(activeFilter).icon }}</mat-icon>
+        <mat-icon class="empty-icon">{{ activeFilter === 'all' ? 'luggage' : getStatusConfig(activeFilter).icon
+          }}</mat-icon>
       </div>
       <h3>{{ activeFilter === 'all' ? 'No trips yet' : 'No ' + activeFilter + ' trips' }}</h3>
       <p *ngIf="activeFilter === 'all'">Click <strong>New Trip</strong> to start planning your first adventure.</p>
@@ -197,14 +199,12 @@
                 </p>
               </div>
               <div class="trip-card-actions">
-                <button mat-icon-button (click)="startEdit(trip, $event)" matTooltip="Edit trip" data-cy="edit-trip-btn">
+                <button mat-icon-button (click)="startEdit(trip, $event)" matTooltip="Edit trip"
+                  data-cy="edit-trip-btn">
                   <mat-icon>edit</mat-icon>
                 </button>
-                <button mat-icon-button class="btn-delete"
-                  (click)="deleteTrip(trip, $event)"
-                  [disabled]="deletingTripId === trip.id"
-                  matTooltip="Delete trip"
-                  data-cy="delete-trip-btn">
+                <button mat-icon-button class="btn-delete" (click)="deleteTrip(trip, $event)"
+                  [disabled]="deletingTripId === trip.id" matTooltip="Delete trip" data-cy="delete-trip-btn">
                   <mat-icon>{{ deletingTripId === trip.id ? 'hourglass_empty' : 'delete_outline' }}</mat-icon>
                 </button>
               </div>
@@ -233,9 +233,7 @@
                 <span class="packing-label"><mat-icon>inventory_2</mat-icon> Packing</span>
                 <span class="packing-pct">{{ trip.packing_progress | number:'1.0-0' }}%</span>
               </div>
-              <mat-progress-bar
-                [value]="trip.packing_progress"
-                [color]="getPackingProgressColor(trip.packing_progress)"
+              <mat-progress-bar [value]="trip.packing_progress" [color]="getPackingProgressColor(trip.packing_progress)"
                 class="packing-bar">
               </mat-progress-bar>
             </div>
@@ -244,35 +242,38 @@
 
           <!-- Card Footer -->
           <mat-card-actions class="trip-card-footer">
-            <!-- Has a linked budget: show spend summary -->
-            <ng-container *ngIf="budgetsByTrip[trip.id] as budget">
-              <button mat-stroked-button class="btn-budget btn-budget-linked"
-                (click)="openBudget(trip, $event)"
-                matTooltip="View budget">
-                <mat-icon>account_balance_wallet</mat-icon>
-                {{ budget.currency }} {{ budget.total_budget | number:'1.0-0' }}
-              </button>
-              <div class="budget-mini-bar">
-                <mat-progress-bar
-                  [value]="budget.percentage_used"
-                  [color]="budget.percentage_used >= 90 ? 'warn' : budget.percentage_used >= 70 ? 'accent' : 'primary'"
-                  class="mini-bar">
-                </mat-progress-bar>
-                <span class="mini-bar-label">{{ budget.percentage_used | number:'1.0-0' }}% used</span>
-              </div>
-            </ng-container>
+            <!-- Itinerary button -->
+            <button mat-stroked-button color="primary" class="btn-itinerary" (click)="openItinerary(trip, $event)"
+              matTooltip="Manage daily itinerary" style="margin-right: 8px;">
+              <mat-icon>format_list_numbered</mat-icon>
+              Itinerary
+            </button>
+              <!-- Has a linked budget: show spend summary -->
+              <ng-container *ngIf="budgetsByTrip[trip.id] as budget">
+                <button mat-stroked-button class="btn-budget btn-budget-linked" (click)="openBudget(trip, $event)"
+                  matTooltip="View budget">
+                  <mat-icon>account_balance_wallet</mat-icon>
+                  {{ budget.currency }} {{ budget.total_budget | number:'1.0-0' }}
+                </button>
+                <div class="budget-mini-bar">
+                  <mat-progress-bar [value]="budget.percentage_used"
+                    [color]="budget.percentage_used >= 90 ? 'warn' : budget.percentage_used >= 70 ? 'accent' : 'primary'"
+                    class="mini-bar">
+                  </mat-progress-bar>
+                  <span class="mini-bar-label">{{ budget.percentage_used | number:'1.0-0' }}% used</span>
+                </div>
+              </ng-container>
 
-            <!-- No budget yet: show create prompt -->
-            <ng-container *ngIf="!budgetsByTrip[trip.id]">
-              <button mat-stroked-button class="btn-budget btn-budget-empty"
-                (click)="openBudget(trip, $event)"
-                matTooltip="Add a budget for this trip">
-                <mat-icon>add_circle_outline</mat-icon>
-                Add Budget
-              </button>
-            </ng-container>
+              <!-- No budget yet: show create prompt -->
+              <ng-container *ngIf="!budgetsByTrip[trip.id]">
+                <button mat-stroked-button class="btn-budget btn-budget-empty" (click)="openBudget(trip, $event)"
+                  matTooltip="Add a budget for this trip">
+                  <mat-icon>add_circle_outline</mat-icon>
+                  Add Budget
+                </button>
+              </ng-container>
 
-            <span class="trip-created">{{ trip.created_at | date:'mediumDate' }}</span>
+              <span class="trip-created">{{ trip.created_at | date:'mediumDate' }}</span>
           </mat-card-actions>
 
         </mat-card>

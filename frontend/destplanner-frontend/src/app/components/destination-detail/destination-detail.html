@@ -1,0 +1,60 @@
+<div class="destination-detail-page">
+  <div class="header">
+    <button mat-icon-button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Destination Details</h1>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading destination details...</p>
+  </div>
+
+  <div *ngIf="!loading && destination" class="content">
+    <mat-card class="detail-card">
+      <div class="hero-image-placeholder">
+        <h2>{{ destination.name }}</h2>
+        
+        <button mat-fab class="bookmark-fab" 
+                (click)="toggleBookmark()"
+                [ngClass]="{'bookmarked': destination.is_bookmarked}">
+          <mat-icon>{{ destination.is_bookmarked ? 'favorite' : 'favorite_border' }}</mat-icon>
+        </button>
+      </div>
+
+      <mat-card-content class="detail-content">
+        <div class="meta-info">
+          <div class="meta-item">
+            <mat-icon color="primary">place</mat-icon>
+            <div class="meta-text">
+              <span class="meta-label">Location</span>
+              <span class="meta-value">{{ destination.country }}</span>
+            </div>
+          </div>
+          
+          <div class="meta-item">
+            <mat-icon color="primary">payments</mat-icon>
+            <div class="meta-text">
+              <span class="meta-label">Average Budget</span>
+              <span class="meta-value">${{ destination.budget }} per day</span>
+            </div>
+          </div>
+        </div>
+
+        <mat-divider style="margin: 2rem 0;"></mat-divider>
+
+        <div class="description-section">
+          <h3>About {{ destination.name }}</h3>
+          <p class="description-text">{{ destination.description }}</p>
+        </div>
+      </mat-card-content>
+      
+      <mat-card-actions class="card-actions">
+        <button mat-raised-button color="primary" routerLink="/my-trips">
+          <mat-icon>flight_takeoff</mat-icon> Plan a Trip Here
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

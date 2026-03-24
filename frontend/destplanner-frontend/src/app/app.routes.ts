@@ -10,8 +10,36 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'login', component: LoginComponent },
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
-  { path: 'my-trips', loadComponent: () => import('./components/mytrips/mytrips').then(m => m.MyTripsComponent), canActivate: [authGuard] },
-  { path: 'budget', loadComponent: () => import('./components/budget/budget').then(m => m.BudgetComponent), canActivate: [authGuard] },
-  { path: 'budget/:tripId', loadComponent: () => import('./components/budget/budget').then(m => m.BudgetComponent), canActivate: [authGuard] },
+
+  {
+    path: 'my-trips',
+    loadComponent: () => import('./components/mytrips/mytrips').then(m => m.MyTripsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'budget',
+    loadComponent: () => import('./components/budget/budget').then(m => m.BudgetComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'budget/:tripId',
+    loadComponent: () => import('./components/budget/budget').then(m => m.BudgetComponent),
+    canActivate: [authGuard]
+  },
+
+  {
+    path: 'trips/:tripId/itinerary',
+    loadComponent: () => import('./components/itinerary/itinerary').then(m => m.ItineraryComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'destinations',
+    loadComponent: () => import('./components/destinations/destinations').then(m => m.DestinationsComponent)
+  },
+  {
+    path: 'destinations/:id',
+    loadComponent: () => import('./components/destination-detail/destination-detail').then(m => m.DestinationDetailComponent)
+  },
+
   { path: '**', redirectTo: '' },
 ];
