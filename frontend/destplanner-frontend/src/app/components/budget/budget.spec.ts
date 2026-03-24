@@ -7,57 +7,74 @@ import { of, throwError, BehaviorSubject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { BudgetComponent } from './budget';
-import { BudgetService, BudgetSummary } from '../../services/budget';
+import { BudgetService, BudgetSummary, Expense } from '../../services/budget';
+import { TripService, Trip } from '../../services/trip.service';
 
-const MOCK_SUMMARY: BudgetSummary = {
-  trip_id: 'default-trip',
+const MOCK_BUDGET: BudgetSummary = {
+  id: 1,
+  user_id: 1,
+  trip_name: 'Paris Trip',
   total_budget: 1500,
-  total_expenses: 600,
+  spent_amount: 600,
   remaining_budget: 900,
+  percentage_used: 40,
   currency: 'USD',
-  expenses: [
-    { id: 1, trip_id: 'default-trip', amount: 400, category: 'Accommodation', description: 'Hotel', date: '2025-06-01' },
-    { id: 2, trip_id: 'default-trip', amount: 200, category: 'Food & Dining', description: 'Meals', date: '2025-06-02' },
-  ],
+  created_at: '2025-06-01',
+  updated_at: '2025-06-01',
+};
+
+const MOCK_EXPENSES: Expense[] = [
+  { id: 1, budget_id: 1, category: 'Accommodation', amount: 400, description: 'Hotel', expense_date: '2025-06-01', created_at: '2025-06-01' },
+  { id: 2, budget_id: 1, category: 'Food & Dining', amount: 200, description: 'Meals', expense_date: '2025-06-02', created_at: '2025-06-02' },
+];
+
+const MOCK_TRIP: Trip = {
+  id: 1, user_id: 1,
+  trip_name: 'Paris Trip', destination: 'Paris, France',
+  start_date: '2025-06-01', end_date: '2025-06-10',
+  notes: '', status: 'planning',
+  duration_days: 9, packing_progress: 0,
+  created_at: '2025-01-01', updated_at: '2025-01-01',
 };
 
 describe('BudgetComponent', () => {
   let component: BudgetComponent;
   let fixture: ComponentFixture<BudgetComponent>;
-  let summarySubject: BehaviorSubject<BudgetSummary | null>;
+
+  const mockTripService = {
+    getTrips: vi.fn(() => of({ trips: [MOCK_TRIP] })),
+  };
 
   const mockBudgetService = {
-    summary$: of(MOCK_SUMMARY) as any,
-    getBudgetSummary: vi.fn(() => of(MOCK_SUMMARY)),
-    setBudget: vi.fn(() => of(MOCK_SUMMARY)),
-    addExpense: vi.fn(() => of({ id: 99, trip_id: 'default-trip', amount: 50, category: 'Transport', description: 'Taxi', date: '2025-06-03' })),
-    getExpenses: vi.fn(() => of(MOCK_SUMMARY.expenses)),
-    deleteExpense: vi.fn(() => of(undefined)),
-    getCategoryTotals: vi.fn(() => [
-      { category: 'Accommodation', total: 400 },
-      { category: 'Food & Dining', total: 200 },
-    ]),
+    budgets$: new BehaviorSubject<BudgetSummary[]>([MOCK_BUDGET]).asObservable(),
+    selectedBudget$: new BehaviorSubject<BudgetSummary | null>(null).asObservable(),
+    expenses$: new BehaviorSubject<Expense[]>([]).asObservable(),
+    getBudgets: vi.fn(() => of({ budgets: [MOCK_BUDGET] })),
+    getBudgetById: vi.fn(() => of(MOCK_BUDGET)),
+    createBudget: vi.fn(() => of({ message: 'Budget created', budget_id: 1 })),
+    updateBudget: vi.fn(() => of({ message: 'Budget updated' })),
+    deleteBudget: vi.fn(() => of({ message: 'Budget deleted' })),
+    addExpense: vi.fn(() => of({ message: 'Expense added', expense_id: 99 })),
+    getExpenses: vi.fn(() => of({ expenses: MOCK_EXPENSES })),
+    updateExpense: vi.fn(() => of({ message: 'Expense updated' })),
+    deleteExpense: vi.fn(() => of({ message: 'Expense deleted' })),
+    getCategoryTotals: vi.fn(() => [{ category: 'Accommodation', total: 400 }]),
     getSpentPercentage: vi.fn(() => 40),
+    setSelectedBudget: vi.fn(),
     updateLocalSummary: vi.fn(),
   };
 
   beforeEach(async () => {
-    summarySubject = new BehaviorSubject<BudgetSummary | null>(MOCK_SUMMARY);
-    mockBudgetService.summary$ = summarySubject.asObservable();
-
-    // Reset all mocks between tests
     vi.clearAllMocks();
-    mockBudgetService.getBudgetSummary.mockReturnValue(of(MOCK_SUMMARY));
-    mockBudgetService.getCategoryTotals.mockReturnValue([
-      { category: 'Accommodation', total: 400 },
-      { category: 'Food & Dining', total: 200 },
-    ]);
+    mockBudgetService.getBudgets.mockReturnValue(of({ budgets: [MOCK_BUDGET] }));
+    mockBudgetService.getCategoryTotals.mockReturnValue([{ category: 'Accommodation', total: 400 }]);
     mockBudgetService.getSpentPercentage.mockReturnValue(40);
 
     await TestBed.configureTestingModule({
       imports: [BudgetComponent],
       providers: [
         { provide: BudgetService, useValue: mockBudgetService },
+        { provide: TripService, useValue: mockTripService },
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
@@ -77,170 +94,180 @@ describe('BudgetComponent', () => {
   });
 
   // ── ngOnInit ─────────────────────────────────────────────────────────────
-  it('ngOnInit: should load budget summary on init', () => {
-    expect(mockBudgetService.getBudgetSummary).toHaveBeenCalledWith('default-trip');
-    expect(component.summary).toEqual(MOCK_SUMMARY);
+  it('ngOnInit: should load budgets on init', () => {
+    expect(mockBudgetService.getBudgets).toHaveBeenCalled();
   });
 
-  // ── toggleBudgetForm ─────────────────────────────────────────────────────
-  it('toggleBudgetForm: should toggle showBudgetForm and close expense form', () => {
-    component.showExpenseForm = true;
-    component.toggleBudgetForm();
-    expect(component.showBudgetForm).toBe(true);
-    expect(component.showExpenseForm).toBe(false);
-
-    component.toggleBudgetForm();
-    expect(component.showBudgetForm).toBe(false);
+  // ── toggleCreateForm ─────────────────────────────────────────────────────
+  it('toggleCreateForm: should toggle showCreateForm', () => {
+    component.toggleCreateForm();
+    expect(component.showCreateForm).toBe(true);
+    component.toggleCreateForm();
+    expect(component.showCreateForm).toBe(false);
   });
 
   // ── toggleExpenseForm ────────────────────────────────────────────────────
-  it('toggleExpenseForm: should toggle showExpenseForm and close budget form', () => {
-    component.showBudgetForm = true;
+  it('toggleExpenseForm: should toggle showExpenseForm', () => {
     component.toggleExpenseForm();
     expect(component.showExpenseForm).toBe(true);
-    expect(component.showBudgetForm).toBe(false);
-
     component.toggleExpenseForm();
     expect(component.showExpenseForm).toBe(false);
   });
 
-  // ── submitBudget — invalid form ──────────────────────────────────────────
-  it('submitBudget: should not call service if form is invalid', () => {
-    component.budgetForm.reset();
-    component.submitBudget();
-    expect(mockBudgetService.setBudget).not.toHaveBeenCalled();
+  // ── selectBudget ─────────────────────────────────────────────────────────
+  it('selectBudget: should set selectedBudget and load expenses', () => {
+    component.selectBudget(MOCK_BUDGET);
+    expect(component.selectedBudget).toEqual(MOCK_BUDGET);
+    expect(mockBudgetService.getExpenses).toHaveBeenCalledWith(1);
   });
 
-  // ── submitBudget — valid form ────────────────────────────────────────────
-  it('submitBudget: should call setBudget and close form on success', async () => {
-    mockBudgetService.setBudget.mockReturnValue(of(MOCK_SUMMARY));
-    component.budgetForm.setValue({ total_budget: 1500, currency: 'USD' });
-    component.showBudgetForm = true;
+  // ── backToList ───────────────────────────────────────────────────────────
+  it('backToList: should clear selectedBudget and expenses', () => {
+    component.selectedBudget = MOCK_BUDGET;
+    component.expenses = MOCK_EXPENSES;
+    component.backToList();
+    expect(component.selectedBudget).toBeNull();
+    expect(component.expenses).toEqual([]);
+  });
 
-    component.submitBudget();
+  // ── submitCreateBudget — invalid ─────────────────────────────────────────
+  it('submitCreateBudget: should not call service if form is invalid', () => {
+    component.createForm.reset();
+    component.submitCreateBudget();
+    expect(mockBudgetService.createBudget).not.toHaveBeenCalled();
+  });
+
+  // ── submitCreateBudget — valid ───────────────────────────────────────────
+  it('submitCreateBudget: should call createBudget and reload on success', async () => {
+    // Pre-load trips so getSelectedTrip() can resolve trip_id → trip object
+    component.trips = [MOCK_TRIP];
+    component.createForm.patchValue({ trip_id: 1, total_budget: 1500, currency: 'USD', notes: '' });
+    component.submitCreateBudget();
     await fixture.whenStable();
-
-    expect(mockBudgetService.setBudget).toHaveBeenCalledWith({
-      trip_id: 'default-trip',
-      total_budget: 1500,
-      currency: 'USD',
-    });
-    expect(component.showBudgetForm).toBe(false);
-    expect(component.loadingBudget).toBe(false);
+    expect(mockBudgetService.createBudget).toHaveBeenCalledWith(expect.objectContaining({
+      trip_id: 1, trip_name: 'Paris Trip', total_budget: 1500, currency: 'USD',
+    }));
+    expect(component.showCreateForm).toBe(false);
   });
 
-  // ── submitBudget — backend error falls back to local update ──────────────
-  it('submitBudget: should call updateLocalSummary on backend error', async () => {
-    mockBudgetService.setBudget.mockReturnValue(throwError(() => new Error('offline')));
-    component.summary = MOCK_SUMMARY;
-    component.budgetForm.setValue({ total_budget: 2000, currency: 'USD' });
-
-    component.submitBudget();
+  // ── deleteBudget ─────────────────────────────────────────────────────────
+  it('deleteBudget: should call deleteBudget on service', async () => {
+    component.deleteBudget(MOCK_BUDGET);
     await fixture.whenStable();
-
-    expect(mockBudgetService.updateLocalSummary).toHaveBeenCalled();
-    expect(component.showBudgetForm).toBe(false);
+    expect(mockBudgetService.deleteBudget).toHaveBeenCalledWith(1);
   });
 
-  // ── submitExpense — invalid form ─────────────────────────────────────────
+  // ── submitExpense — invalid ──────────────────────────────────────────────
   it('submitExpense: should not call service if form is invalid', () => {
     component.expenseForm.reset();
     component.submitExpense();
     expect(mockBudgetService.addExpense).not.toHaveBeenCalled();
   });
 
-  // ── submitExpense — valid form ───────────────────────────────────────────
-  it('submitExpense: should call addExpense and close form on success', async () => {
+  // ── submitExpense — valid ────────────────────────────────────────────────
+  it('submitExpense: should call addExpense on valid form', async () => {
+    component.selectedBudget = MOCK_BUDGET;
     component.expenseForm.setValue({
-      amount: 50,
-      category: 'Transport',
-      description: 'Taxi',
-      date: '2025-06-03',
+      category: 'Transport', amount: 50,
+      description: 'Taxi', expense_date: '2025-06-03'
     });
-    component.showExpenseForm = true;
-
     component.submitExpense();
     await fixture.whenStable();
+    expect(mockBudgetService.addExpense).toHaveBeenCalledWith(1, expect.objectContaining({ category: 'Transport', amount: 50 }));
+  });
 
-    expect(mockBudgetService.addExpense).toHaveBeenCalled();
-    expect(component.showExpenseForm).toBe(false);
-    expect(component.loadingExpense).toBe(false);
+  // ── submitExpense — edit mode ────────────────────────────────────────────
+  it('submitExpense: should call updateExpense when editing', async () => {
+    component.selectedBudget = MOCK_BUDGET;
+    component.editingExpense = MOCK_EXPENSES[0];
+    component.expenseForm.setValue({
+      category: 'Transport', amount: 100,
+      description: 'Updated', expense_date: '2025-06-03'
+    });
+    component.submitExpense();
+    await fixture.whenStable();
+    expect(mockBudgetService.updateExpense).toHaveBeenCalledWith(1, 1, expect.objectContaining({ category: 'Transport', amount: 100 }));
   });
 
   // ── deleteExpense ────────────────────────────────────────────────────────
   it('deleteExpense: should call deleteExpense on service', async () => {
-    mockBudgetService.deleteExpense.mockReturnValue(of(undefined));
-    component.deleteExpense(MOCK_SUMMARY.expenses[0]);
+    component.selectedBudget = MOCK_BUDGET;
+    component.deleteExpense(MOCK_EXPENSES[0]);
     await fixture.whenStable();
-    expect(mockBudgetService.deleteExpense).toHaveBeenCalledWith(1, 'default-trip');
+    expect(mockBudgetService.deleteExpense).toHaveBeenCalledWith(1, 1);
   });
 
-  // ── deleteExpense — no id ────────────────────────────────────────────────
-  it('deleteExpense: should do nothing if expense has no id', () => {
-    const noId = { trip_id: 'default-trip', amount: 10, category: 'Other', description: '', date: '' };
-    component.deleteExpense(noId);
-    expect(mockBudgetService.deleteExpense).not.toHaveBeenCalled();
+  // ── startEditExpense ─────────────────────────────────────────────────────
+  it('startEditExpense: should set editingExpense and populate form', () => {
+    component.startEditExpense(MOCK_EXPENSES[0]);
+    expect(component.editingExpense).toEqual(MOCK_EXPENSES[0]);
+    expect(component.showExpenseForm).toBe(true);
+    expect(component.expenseForm.value.category).toBe('Accommodation');
+    expect(component.expenseForm.value.amount).toBe(400);
   });
 
   // ── getSpentPercentage ───────────────────────────────────────────────────
-  it('getSpentPercentage: should delegate to budgetService', () => {
-    component.summary = MOCK_SUMMARY;
-    const result = component.getSpentPercentage();
-    expect(mockBudgetService.getSpentPercentage).toHaveBeenCalledWith(MOCK_SUMMARY);
-    expect(result).toBe(40);
+  it('getSpentPercentage: should return 0 when no selectedBudget', () => {
+    component.selectedBudget = null;
+    expect(component.getSpentPercentage()).toBe(0);
+  });
+
+  it('getSpentPercentage: should delegate to service when budget selected', () => {
+    component.selectedBudget = MOCK_BUDGET;
+    expect(component.getSpentPercentage()).toBe(40);
   });
 
   // ── getProgressColor ─────────────────────────────────────────────────────
-  it('getProgressColor: should return primary for < 70% spent', () => {
+  it('getProgressColor: should return primary for < 70%', () => {
     mockBudgetService.getSpentPercentage.mockReturnValue(50);
+    component.selectedBudget = MOCK_BUDGET;
     expect(component.getProgressColor()).toBe('primary');
   });
 
-  it('getProgressColor: should return accent for 70–89% spent', () => {
+  it('getProgressColor: should return accent for 70-89%', () => {
     mockBudgetService.getSpentPercentage.mockReturnValue(75);
+    component.selectedBudget = MOCK_BUDGET;
     expect(component.getProgressColor()).toBe('accent');
   });
 
-  it('getProgressColor: should return warn for >= 90% spent', () => {
+  it('getProgressColor: should return warn for >= 90%', () => {
     mockBudgetService.getSpentPercentage.mockReturnValue(95);
+    component.selectedBudget = MOCK_BUDGET;
     expect(component.getProgressColor()).toBe('warn');
   });
 
   // ── formatCurrency ───────────────────────────────────────────────────────
-  it('formatCurrency: should format number as USD by default', () => {
-    component.summary = MOCK_SUMMARY;
-    const formatted = component.formatCurrency(1234.5);
-    expect(formatted).toContain('1,234.50');
+  it('formatCurrency: should format as USD', () => {
+    component.selectedBudget = MOCK_BUDGET;
+    expect(component.formatCurrency(1234.5)).toContain('1,234.50');
   });
 
   // ── getCategoryIcon ──────────────────────────────────────────────────────
-  it('getCategoryIcon: should return correct icon for known category', () => {
+  it('getCategoryIcon: should return correct icon', () => {
     expect(component.getCategoryIcon('Accommodation')).toBe('hotel');
-    expect(component.getCategoryIcon('Food & Dining')).toBe('restaurant');
     expect(component.getCategoryIcon('Transport')).toBe('directions_car');
   });
 
-  it('getCategoryIcon: should return fallback for unknown category', () => {
+  it('getCategoryIcon: should return fallback for unknown', () => {
     expect(component.getCategoryIcon('Unknown')).toBe('receipt');
   });
 
   // ── getCategoryColor ─────────────────────────────────────────────────────
-  it('getCategoryColor: should return correct color for known category', () => {
+  it('getCategoryColor: should return correct color', () => {
     expect(component.getCategoryColor('Accommodation')).toBe('#667eea');
-    expect(component.getCategoryColor('Food & Dining')).toBe('#f6a623');
   });
 
-  it('getCategoryColor: should return fallback for unknown category', () => {
+  it('getCategoryColor: should return fallback for unknown', () => {
     expect(component.getCategoryColor('XYZ')).toBe('#64748b');
   });
 
   // ── trackByExpenseId ─────────────────────────────────────────────────────
-  it('trackByExpenseId: should return expense id when available', () => {
-    expect(component.trackByExpenseId(0, MOCK_SUMMARY.expenses[0])).toBe(1);
+  it('trackByExpenseId: should return expense id', () => {
+    expect(component.trackByExpenseId(0, MOCK_EXPENSES[0])).toBe(1);
   });
 
-  it('trackByExpenseId: should return description when id is undefined', () => {
-    const expense = { trip_id: 'x', amount: 10, category: 'Other', description: 'snack', date: '' };
-    expect(component.trackByExpenseId(0, expense)).toBe('snack');
+  // ── trackByBudgetId ──────────────────────────────────────────────────────
+  it('trackByBudgetId: should return budget id', () => {
+    expect(component.trackByBudgetId(0, MOCK_BUDGET)).toBe(1);
   });
 });

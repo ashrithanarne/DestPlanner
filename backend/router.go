@@ -71,6 +71,10 @@ func main() {
 		api.GET("/profile", handlers.GetProfile)
 		api.PUT("/profile", handlers.UpdateProfile)
 
+		// User search (for adding group members)
+		api.GET("/users/search", handlers.SearchUsers)
+		api.GET("/users/:id", handlers.GetUserByID)
+
 		// Bookmark routes
 		api.POST("/bookmarks", handlers.SaveBookmark)
 		api.GET("/bookmarks", handlers.GetBookmarks)
@@ -93,6 +97,35 @@ func main() {
 		api.GET("/budgets/:id/expenses", handlers.GetExpenses)
 		api.PUT("/budgets/:id/expenses/:expenseId", handlers.UpdateExpense)
 		api.DELETE("/budgets/:id/expenses/:expenseId", handlers.DeleteExpense)
+
+		// Packing list routes
+		api.POST("/trips/:id/packing-list", handlers.CreatePackingList)
+		api.GET("/trips/:id/packing-list", handlers.GetPackingList)
+		api.DELETE("/trips/:id/packing-list", handlers.DeletePackingList)
+		api.POST("/trips/:id/packing-list/items", handlers.AddPackingItem)
+		api.GET("/packing-list/suggest", handlers.GetSuggestedItems)
+
+		// Packing item routes
+		api.PUT("/packing-items/:itemId", handlers.UpdatePackingItem)
+		api.DELETE("/packing-items/:itemId", handlers.DeletePackingItem)
+
+		// Trip routes
+		api.POST("/trips", handlers.CreateTrip)
+		api.GET("/trips", handlers.GetTrips)
+		api.GET("/trips/:id", handlers.GetTripByID)
+		api.PUT("/trips/:id", handlers.UpdateTrip)
+		api.DELETE("/trips/:id", handlers.DeleteTrip)
+
+		// Group routes
+		api.POST("/groups", handlers.CreateGroup)
+		api.GET("/groups", handlers.GetGroups)
+		api.GET("/groups/:id", handlers.GetGroupByID)
+		api.POST("/groups/:id/members", handlers.AddMember)
+		api.DELETE("/groups/:id/members/:userId", handlers.RemoveMember)
+		api.POST("/groups/:id/expenses", handlers.AddGroupExpense)
+		api.GET("/groups/:id/expenses", handlers.GetGroupExpenses)
+		api.GET("/groups/:id/balances", handlers.GetGroupBalances)
+		api.PUT("/groups/:id/expenses/:expenseId/settle", handlers.SettleExpense)
 	}
 
 	// Start server

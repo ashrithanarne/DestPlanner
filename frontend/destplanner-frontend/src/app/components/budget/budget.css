@@ -1,24 +1,17 @@
-/* ── Page Layout ────────────────────────────────────────────────────────── */
+/*  Page Layout  */
 .budget-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
   background: #f4f6fb;
   padding-bottom: 60px;
 }
 
-.budget-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 32px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-/* ── Page Header ────────────────────────────────────────────────────────── */
+/*  Page Header */
 .page-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 40px 20px 36px;
   color: white;
+  position: relative;
+  z-index: 1;
 }
 
 .header-content {
@@ -44,6 +37,10 @@
   opacity: 0.9;
 }
 
+.back-btn {
+  color: white !important;
+}
+
 .page-title {
   font-size: 2rem;
   font-weight: 800;
@@ -60,25 +57,29 @@
 .header-actions {
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
-}
-
-.btn-set-budget {
-  color: white !important;
-  border-color: rgba(255, 255, 255, 0.6) !important;
-}
-
-.btn-set-budget:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  position: relative;
+  z-index: 10;
 }
 
 .btn-add-expense {
   background: white !important;
   color: #667eea !important;
   font-weight: 600 !important;
+  cursor: pointer !important;
+  pointer-events: all !important;
 }
 
-/* ── Loading State ──────────────────────────────────────────────────────── */
+/* Budget Container  */
+.budget-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Loading State  */
 .loading-state {
   text-align: center;
   padding: 60px 20px;
@@ -98,7 +99,7 @@
   to   { transform: rotate(360deg); }
 }
 
-/* ── Form Cards ─────────────────────────────────────────────────────────── */
+/*  Form Cards  */
 .form-card {
   border-radius: 16px !important;
   box-shadow: 0 4px 20px rgba(102, 126, 234, 0.12) !important;
@@ -111,15 +112,10 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.form-card mat-card-header {
-  padding-bottom: 16px;
-}
-
-.budget-form,
-.expense-form {
+.budget-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   padding-top: 8px;
 }
 
@@ -129,16 +125,8 @@
   flex-wrap: wrap;
 }
 
-.field-budget   { flex: 2; min-width: 180px; }
-.field-currency { flex: 1; min-width: 160px; }
-.field-amount   { flex: 1; min-width: 160px; }
-.field-category { flex: 1; min-width: 180px; }
-.field-description { flex: 2; min-width: 200px; }
-.field-date     { flex: 1; min-width: 160px; }
-
-mat-form-field {
-  width: 100%;
-}
+.form-row mat-form-field { flex: 1; min-width: 160px; }
+.field-wide { width: 100%; }
 
 .form-actions {
   display: flex;
@@ -154,7 +142,122 @@ mat-form-field {
   padding: 0 28px !important;
 }
 
-/* ── Summary Cards Grid ─────────────────────────────────────────────────── */
+/*Budgets Grid */
+.budgets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.budget-card {
+  border-radius: 16px !important;
+  padding: 8px !important;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07) !important;
+}
+
+.budget-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.18) !important;
+}
+
+.budget-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 8px;
+}
+
+.budget-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.budget-card-icon mat-icon {
+  color: white;
+  font-size: 22px !important;
+  width: 22px !important;
+  height: 22px !important;
+}
+
+.budget-card-info { flex: 1; }
+
+.budget-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 2px;
+}
+
+.budget-currency {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  margin: 0;
+}
+
+.budget-trip-link {
+  font-size: 0.75rem;
+  color: #667eea;
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.btn-delete-budget {
+  color: #e53e3e !important;
+  opacity: 0.5;
+}
+
+.btn-delete-budget:hover { opacity: 1; }
+
+.budget-card-amounts {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 0 12px 12px;
+}
+
+.amount-label {
+  font-size: 0.72rem;
+  color: #a0aec0;
+  text-transform: uppercase;
+  margin: 0 0 2px;
+}
+
+.amount-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+}
+
+.amount-value.spent { color: #f6a623; }
+.over-budget { color: #e53e3e !important; }
+
+.budget-bar {
+  margin: 0 12px 4px !important;
+  border-radius: 4px !important;
+}
+
+.budget-pct {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  text-align: right;
+  padding: 0 12px 12px;
+  margin: 0;
+}
+
+/*  Summary Cards  */
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -223,7 +326,7 @@ mat-form-field {
   margin: 0;
 }
 
-/* ── Progress Bar Card ──────────────────────────────────────────────────── */
+/*  Progress Bar */
 .progress-card {
   border-radius: 16px !important;
   padding: 24px !important;
@@ -236,25 +339,13 @@ mat-form-field {
   margin-bottom: 12px;
 }
 
-.progress-label {
-  font-weight: 600;
-  color: #2d3748;
-  font-size: 1rem;
-}
-
-.progress-pct {
-  font-weight: 700;
-  color: #667eea;
-}
+.progress-label { font-weight: 600; color: #2d3748; }
+.progress-pct   { font-weight: 700; color: #667eea; }
 
 .budget-progress-bar {
   height: 12px !important;
   border-radius: 8px !important;
   overflow: hidden;
-}
-
-::ng-deep .budget-progress-bar .mdc-linear-progress__bar-inner {
-  border-radius: 8px;
 }
 
 .progress-footer {
@@ -265,7 +356,7 @@ mat-form-field {
   color: #718096;
 }
 
-/* ── Category Breakdown ─────────────────────────────────────────────────── */
+/* Category Breakdown */
 .category-card {
   border-radius: 16px !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07) !important;
@@ -308,9 +399,7 @@ mat-form-field {
   height: 20px !important;
 }
 
-.category-info {
-  flex: 1;
-}
+.category-info { flex: 1; }
 
 .category-name-row {
   display: flex;
@@ -318,24 +407,11 @@ mat-form-field {
   margin-bottom: 6px;
 }
 
-.category-name {
-  font-weight: 500;
-  color: #2d3748;
-  font-size: 0.9rem;
-}
+.category-name  { font-weight: 500; color: #2d3748; font-size: 0.9rem; }
+.category-amount { font-weight: 700; color: #2d3748; font-size: 0.9rem; }
+.category-bar { border-radius: 4px !important; height: 6px !important; }
 
-.category-amount {
-  font-weight: 700;
-  color: #2d3748;
-  font-size: 0.9rem;
-}
-
-.category-bar {
-  border-radius: 4px !important;
-  height: 6px !important;
-}
-
-/* ── Expense List ────────────────────────────────────────────────────────── */
+/*  Expense List */
 .expense-list-card {
   border-radius: 16px !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07) !important;
@@ -365,9 +441,7 @@ mat-form-field {
   transition: background 0.15s;
 }
 
-.expense-item:hover {
-  background: #edf2ff;
-}
+.expense-item:hover { background: #edf2ff; }
 
 .expense-icon {
   width: 40px;
@@ -386,10 +460,7 @@ mat-form-field {
   height: 20px !important;
 }
 
-.expense-details {
-  flex: 1;
-  min-width: 0;
-}
+.expense-details { flex: 1; min-width: 0; }
 
 .expense-desc {
   font-weight: 500;
@@ -404,7 +475,6 @@ mat-form-field {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .category-chip {
@@ -414,11 +484,6 @@ mat-form-field {
   padding: 2px 10px;
   border-radius: 12px;
   font-weight: 500;
-}
-
-.expense-date {
-  font-size: 0.78rem;
-  color: #a0aec0;
 }
 
 .expense-right {
@@ -439,14 +504,11 @@ mat-form-field {
 .btn-delete {
   color: #e53e3e !important;
   opacity: 0.6;
-  transition: opacity 0.15s;
 }
 
-.btn-delete:hover {
-  opacity: 1;
-}
+.btn-delete:hover { opacity: 1; }
 
-/* ── Empty State ────────────────────────────────────────────────────────── */
+/* Empty State  */
 .empty-state {
   text-align: center;
   padding: 52px 24px !important;
@@ -462,26 +524,183 @@ mat-form-field {
   margin-bottom: 16px;
 }
 
-.empty-state h3 {
-  font-size: 1.25rem;
-  color: #2d3748;
-  margin: 0 0 8px;
-}
+.empty-state h3 { font-size: 1.25rem; color: #2d3748; margin: 0 0 8px; }
+.empty-state p  { color: #718096; margin: 0; }
 
-.empty-state p {
-  color: #718096;
-  margin: 0;
-}
-
-/* ── Responsive ─────────────────────────────────────────────────────────── */
+/*  Responsive  */
 @media (max-width: 640px) {
   .page-title { font-size: 1.5rem; }
   .header-content { flex-direction: column; align-items: flex-start; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
   .form-row { flex-direction: column; }
-  .expense-item { flex-wrap: wrap; }
+  .budgets-grid { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 400px) {
-  .summary-grid { grid-template-columns: 1fr; }
+.btn-edit {
+  color: #667eea !important;
+  opacity: 0.6;
+}
+
+.btn-edit:hover { opacity: 1; }
+/* ── Trip Selector Styles ─────────────────────────────────── */
+.trip-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.trip-option-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.trip-option-name {
+  font-weight: 600;
+  color: #2d3748;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trip-option-dest {
+  font-size: 0.82rem;
+  color: #718096;
+}
+
+.trip-option-status {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #e9d8fd;
+  color: #553c9a;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.loading-option {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+/* Selected trip preview card */
+.trip-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: linear-gradient(135deg, #667eea15, #764ba215);
+  border: 1px solid #667eea40;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.trip-preview mat-icon {
+  color: #667eea;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.trip-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.trip-preview-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #2d3748;
+}
+
+.trip-preview-detail {
+  font-size: 0.83rem;
+  color: #718096;
+}
+
+.create-trip-link {
+  color: #667eea;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.82rem;
+}
+
+/* ── Empty state (budget page) ──────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.empty-state h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 12px 0 8px;
+}
+
+.empty-state p {
+  color: #718096;
+  margin: 0 0 20px;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-goto-trips {
+  color: #667eea !important;
+  border-color: #667eea !important;
+  font-weight: 600 !important;
+}
+
+/* ── Edit Budget ─────────────────────────────────────────────── */
+.btn-edit-budget {
+  background: rgba(255,255,255,0.15) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(255,255,255,0.4) !important;
+  margin-right: 8px !important;
+}
+
+.btn-edit-budget:hover {
+  background: rgba(255,255,255,0.25) !important;
+}
+
+.edit-budget-card {
+  border-left: 4px solid #f6a623 !important;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.budget-card-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.btn-edit-budget-icon {
+  color: #667eea !important;
+  opacity: 0.6;
+}
+
+.btn-edit-budget-icon:hover {
+  opacity: 1;
 }

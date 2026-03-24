@@ -3,10 +3,12 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
+	"strconv"
 	"strings"
-	"time"  
+	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"backend/database"
 	"backend/models"
 	"backend/utils"
@@ -61,6 +63,119 @@ func GetProfile(c *gin.Context) {
 
 	// Return user profile
 	c.JSON(http.StatusOK, user)
+}
+
+// GetUserByID returns basic public info of a user by their ID
+func GetUserByID(c *gin.Context) {
+	_, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "User not authenticated",
+		})
+		return
+	}
+
+	userID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "bad_request",
+			Message: "Invalid user ID",
+		})
+		return
+	}
+
+	var firstName, lastName, email string
+	var id int
+	err = database.DB.QueryRow(
+		"SELECT id, first_name, last_name, email FROM users WHERE id = ?", userID,
+	).Scan(&id, &firstName, &lastName, &email)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, models.ErrorResponse{
+			Error:   "not_found",
+			Message: "User not found",
+		})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "server_error",
+			Message: "Failed to retrieve user",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user_id":    id,
+		"first_name": firstName,
+		"last_name":  lastName,
+		"email":      email,
+	})
+}
+
+// SearchUsers searches for users by name or email (used for adding group members)
+func SearchUsers(c *gin.Context) {
+	// Get user from context
+	_, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "User not authenticated",
+		})
+		return
+	}
+
+	q := strings.TrimSpace(c.Query("q"))
+	if q == "" {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "bad_request",
+			Message: "Search query 'q' is required",
+		})
+		return
+	}
+
+	if len(q) < 2 {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error:   "bad_request",
+			Message: "Search query must be at least 2 characters",
+		})
+		return
+	}
+
+	like := "%" + q + "%"
+	query := `
+		SELECT id, first_name, last_name, email
+		FROM users
+		WHERE first_name LIKE ? OR last_name LIKE ? OR email LIKE ?
+		LIMIT 10
+	`
+	rows, err := database.DB.Query(query, like, like, like)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "server_error",
+			Message: "Failed to search users",
+		})
+		return
+	}
+	defer rows.Close()
+
+	type UserResult struct {
+		UserID    int    `json:"user_id"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Email     string `json:"email"`
+	}
+
+	users := []UserResult{}
+	for rows.Next() {
+		var u UserResult
+		if err := rows.Scan(&u.UserID, &u.FirstName, &u.LastName, &u.Email); err != nil {
+			continue
+		}
+		users = append(users, u)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"users": users})
 }
 
 // UpdateProfile updates the authenticated user's profile

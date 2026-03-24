@@ -1,33 +1,77 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
- 
-export interface Expense {
-  id?: number;
-  trip_id: string;
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-}
- 
-export interface BudgetSummary {
-  trip_id: string;
+
+export interface Budget {
+  id: number;
+  user_id: number;
+  trip_id?: number;
+  trip_name: string;
   total_budget: number;
-  total_expenses: number;
-  remaining_budget: number;
+  spent_amount: number;
   currency: string;
-  expenses: Expense[];
+  start_date?: string;
+  end_date?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
 }
- 
-export interface SetBudgetPayload {
-  trip_id: string;
+
+export interface BudgetSummary {
+  id: number;
+  user_id: number;
+  trip_id?: number;
+  trip_name: string;
+  total_budget: number;
+  spent_amount: number;
+  remaining_budget: number;
+  percentage_used: number;
+  currency: string;
+  start_date?: string;
+  end_date?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Expense {
+  id: number;
+  budget_id: number;
+  category: string;
+  amount: number;
+  description?: string;
+  expense_date: string;
+  created_at: string;
+}
+
+export interface CreateBudgetPayload {
+  trip_id?: number;
+  trip_name: string;
   total_budget: number;
   currency?: string;
+  start_date?: string;
+  end_date?: string;
+  notes?: string;
 }
- 
+
+export interface UpdateBudgetPayload {
+  trip_name?: string;
+  total_budget?: number;
+  currency?: string;
+  start_date?: string;
+  end_date?: string;
+  notes?: string;
+}
+
+export interface CreateExpensePayload {
+  category: string;
+  amount: number;
+  description?: string;
+  expense_date?: string;
+}
+
 export const EXPENSE_CATEGORIES = [
   'Accommodation',
   'Food & Dining',
@@ -37,61 +81,89 @@ export const EXPENSE_CATEGORIES = [
   'Health',
   'Other',
 ];
- 
+
 @Injectable({
   providedIn: 'root',
 })
 export class BudgetService {
   private baseUrl = environment.apiUrl;
- 
-  // Local state so the dashboard reacts immediately without extra GET calls
-  private summarySubject = new BehaviorSubject<BudgetSummary | null>(null);
-  summary$ = this.summarySubject.asObservable();
- 
+
+  private budgetsSubject = new BehaviorSubject<BudgetSummary[]>([]);
+  budgets$ = this.budgetsSubject.asObservable();
+
+  private selectedBudgetSubject = new BehaviorSubject<BudgetSummary | null>(null);
+  selectedBudget$ = this.selectedBudgetSubject.asObservable();
+
+  private expensesSubject = new BehaviorSubject<Expense[]>([]);
+  expenses$ = this.expensesSubject.asObservable();
+
   constructor(private http: HttpClient) {}
- 
-  // POST /expenses/budget  — set or update the budget for a trip
-  setBudget(payload: SetBudgetPayload): Observable<BudgetSummary> {
-    return this.http
-      .post<BudgetSummary>(`${this.baseUrl}/expenses/budget`, payload)
-      .pipe(tap((summary) => this.summarySubject.next(summary)));
-  }
- 
-  // POST /expenses  — add a single expense to a trip
-  addExpense(expense: Omit<Expense, 'id'>): Observable<Expense> {
-    return this.http.post<Expense>(`${this.baseUrl}/expenses`, expense).pipe(
-      tap(() => {
-        // After adding an expense, refresh the summary
-        this.getBudgetSummary(expense.trip_id).subscribe();
-      })
+
+  // POST /api/budgets
+  createBudget(payload: CreateBudgetPayload): Observable<{ message: string; budget_id: number }> {
+    return this.http.post<{ message: string; budget_id: number }>(
+      `${this.baseUrl}/budgets`, payload
     );
   }
- 
-  // GET /expenses?tripId=  — fetch all expenses for a trip
-  getExpenses(tripId: string): Observable<Expense[]> {
-    const params = new HttpParams().set('tripId', tripId);
-    return this.http.get<Expense[]>(`${this.baseUrl}/expenses`, { params });
+
+  // GET /api/budgets (optional ?trip_id filter)
+  getBudgets(tripId?: number): Observable<{ budgets: BudgetSummary[] }> {
+    const url = tripId
+      ? `${this.baseUrl}/budgets?trip_id=${tripId}`
+      : `${this.baseUrl}/budgets`;
+    return this.http.get<{ budgets: BudgetSummary[] }>(url).pipe(
+      tap((res) => this.budgetsSubject.next(res.budgets ?? []))
+    );
   }
- 
-  // GET /budget/{tripId}  — fetch budget summary (budget + computed totals)
-  getBudgetSummary(tripId: string): Observable<BudgetSummary> {
-    return this.http
-      .get<BudgetSummary>(`${this.baseUrl}/budget/${tripId}`)
-      .pipe(tap((summary) => this.summarySubject.next(summary)));
+
+  // GET /api/budgets/:id
+  getBudgetById(id: number): Observable<BudgetSummary> {
+    return this.http.get<BudgetSummary>(`${this.baseUrl}/budgets/${id}`).pipe(
+      tap((budget) => this.selectedBudgetSubject.next(budget))
+    );
   }
- 
-  // DELETE /expenses/{id}  — remove one expense
-  deleteExpense(expenseId: number, tripId: string): Observable<void> {
-    return this.http
-      .delete<void>(`${this.baseUrl}/expenses/${expenseId}`)
-      .pipe(
-        tap(() => {
-          this.getBudgetSummary(tripId).subscribe();
-        })
-      );
+
+  // PUT /api/budgets/:id
+  updateBudget(id: number, payload: UpdateBudgetPayload): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.baseUrl}/budgets/${id}`, payload);
   }
- 
-  // Helper: compute per-category totals from an expense list
+
+  // DELETE /api/budgets/:id
+  deleteBudget(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/budgets/${id}`);
+  }
+
+  // POST /api/budgets/:id/expenses
+  addExpense(budgetId: number, payload: CreateExpensePayload): Observable<{ message: string; expense_id: number }> {
+    return this.http.post<{ message: string; expense_id: number }>(
+      `${this.baseUrl}/budgets/${budgetId}/expenses`, payload
+    );
+  }
+
+  // GET /api/budgets/:id/expenses
+  getExpenses(budgetId: number): Observable<{ expenses: Expense[] }> {
+    return this.http.get<{ expenses: Expense[] }>(
+      `${this.baseUrl}/budgets/${budgetId}/expenses`
+    ).pipe(
+      tap((res) => this.expensesSubject.next(res.expenses ?? []))
+    );
+  }
+
+  // PUT /api/budgets/:id/expenses/:expenseId
+  updateExpense(budgetId: number, expenseId: number, payload: CreateExpensePayload): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.baseUrl}/budgets/${budgetId}/expenses/${expenseId}`, payload
+    );
+  }
+
+  // DELETE /api/budgets/:id/expenses/:expenseId
+  deleteExpense(budgetId: number, expenseId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.baseUrl}/budgets/${budgetId}/expenses/${expenseId}`
+    );
+  }
+
+  // Helper: compute per-category totals
   getCategoryTotals(expenses: Expense[]): { category: string; total: number }[] {
     const map: Record<string, number> = {};
     for (const e of expenses) {
@@ -101,16 +173,19 @@ export class BudgetService {
       .map(([category, total]) => ({ category, total }))
       .sort((a, b) => b.total - a.total);
   }
- 
-  // Helper: what percentage of the budget has been spent (0-100, capped at 100)
-  getSpentPercentage(summary: BudgetSummary): number {
-    if (!summary.total_budget || summary.total_budget === 0) return 0;
-    const pct = (summary.total_expenses / summary.total_budget) * 100;
-    return Math.min(Math.round(pct), 100);
+
+  // Helper: percentage spent (capped at 100)
+  getSpentPercentage(budget: BudgetSummary): number {
+    if (!budget.total_budget || budget.total_budget === 0) return 0;
+    return Math.min(Math.round((budget.spent_amount / budget.total_budget) * 100), 100);
   }
- 
-  // Helper: push an updated summary directly (used by the component during offline/mock mode)
+
+  // Helper: update local summary after add/delete expense
   updateLocalSummary(summary: BudgetSummary): void {
-    this.summarySubject.next(summary);
+    this.selectedBudgetSubject.next(summary);
+  }
+
+  setSelectedBudget(budget: BudgetSummary | null): void {
+    this.selectedBudgetSubject.next(budget);
   }
 }

@@ -1,0 +1,283 @@
+<div class="trips-page">
+
+  <!-- ── Page Header ────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-title-group">
+        <mat-icon class="header-icon">luggage</mat-icon>
+        <div>
+          <h1 class="page-title">My Trips</h1>
+          <p class="page-subtitle">Plan, track and manage all your travel adventures</p>
+        </div>
+      </div>
+      <button mat-raised-button class="btn-new-trip" (click)="toggleCreateForm()" data-cy="new-trip-btn">
+        <mat-icon>add</mat-icon>
+        New Trip
+      </button>
+    </div>
+  </div>
+
+  <div class="trips-container">
+
+    <!-- ── Create Trip Form ──────────────────────────────────────── -->
+    <mat-card class="form-card" *ngIf="showCreateForm" data-cy="trip-form">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>flight_takeoff</mat-icon>
+        <mat-card-title>Create New Trip</mat-card-title>
+        <mat-card-subtitle>Fill in your trip details to get started</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="createForm" (ngSubmit)="submitCreate()" class="trip-form">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="field-wide">
+              <mat-label>Trip Name</mat-label>
+              <input matInput formControlName="trip_name" placeholder="e.g. Summer in Europe" data-cy="trip-name-input">
+              <mat-icon matSuffix>luggage</mat-icon>
+              <mat-error>Trip name is required</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="field-wide">
+              <mat-label>Destination</mat-label>
+              <input matInput formControlName="destination" placeholder="e.g. Paris, France" data-cy="destination-input">
+              <mat-icon matSuffix>place</mat-icon>
+            </mat-form-field>
+          </div>
+          <div class="form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Start Date</mat-label>
+              <input matInput type="date" formControlName="start_date" data-cy="start-date-input">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>End Date</mat-label>
+              <input matInput type="date" formControlName="end_date" data-cy="end-date-input">
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline" class="field-wide">
+            <mat-label>Notes (optional)</mat-label>
+            <textarea matInput formControlName="notes" rows="2" placeholder="Any notes about this trip..."></textarea>
+          </mat-form-field>
+          <div class="form-actions">
+            <button mat-button type="button" (click)="toggleCreateForm()">Cancel</button>
+            <button mat-raised-button class="btn-save" type="submit" [disabled]="savingTrip" data-cy="save-trip-btn">
+              <mat-icon>{{ savingTrip ? 'hourglass_empty' : 'check' }}</mat-icon>
+              {{ savingTrip ? 'Creating...' : 'Create Trip' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- ── Status Filter Tabs ─────────────────────────────────────── -->
+    <div class="filter-tabs" *ngIf="!loadingTrips">
+      <button class="filter-tab" [class.active]="activeFilter === 'all'" (click)="applyFilter('all')">
+        <mat-icon>list</mat-icon>
+        All <span class="filter-count">{{ getStatusCounts()['all'] }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="activeFilter === 'planning'" (click)="applyFilter('planning')">
+        <mat-icon>edit_calendar</mat-icon>
+        Planning <span class="filter-count">{{ getStatusCounts()['planning'] }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="activeFilter === 'ongoing'" (click)="applyFilter('ongoing')">
+        <mat-icon>flight_takeoff</mat-icon>
+        Ongoing <span class="filter-count">{{ getStatusCounts()['ongoing'] }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="activeFilter === 'completed'" (click)="applyFilter('completed')">
+        <mat-icon>check_circle</mat-icon>
+        Completed <span class="filter-count">{{ getStatusCounts()['completed'] }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="activeFilter === 'cancelled'" (click)="applyFilter('cancelled')">
+        <mat-icon>cancel</mat-icon>
+        Cancelled <span class="filter-count">{{ getStatusCounts()['cancelled'] }}</span>
+      </button>
+    </div>
+
+    <!-- ── Loading ───────────────────────────────────────────────── -->
+    <div *ngIf="loadingTrips" class="loading-state">
+      <mat-icon class="spin-icon">sync</mat-icon>
+      <p>Loading your trips...</p>
+    </div>
+
+    <!-- ── Empty State ───────────────────────────────────────────── -->
+    <div class="empty-state" *ngIf="!loadingTrips && filteredTrips.length === 0 && !showCreateForm">
+      <div class="empty-illustration">
+        <mat-icon class="empty-icon">{{ activeFilter === 'all' ? 'luggage' : getStatusConfig(activeFilter).icon }}</mat-icon>
+      </div>
+      <h3>{{ activeFilter === 'all' ? 'No trips yet' : 'No ' + activeFilter + ' trips' }}</h3>
+      <p *ngIf="activeFilter === 'all'">Click <strong>New Trip</strong> to start planning your first adventure.</p>
+      <p *ngIf="activeFilter !== 'all'">You have no trips with status "{{ getStatusConfig(activeFilter).label }}".</p>
+      <button mat-raised-button class="btn-save" (click)="toggleCreateForm()" *ngIf="activeFilter === 'all'">
+        <mat-icon>add</mat-icon> Create My First Trip
+      </button>
+    </div>
+
+    <!-- ── Trip Cards Grid ───────────────────────────────────────── -->
+    <div class="trips-grid" *ngIf="!loadingTrips && filteredTrips.length > 0">
+
+      <ng-container *ngFor="let trip of filteredTrips; trackBy: trackByTripId">
+
+        <!-- ── Edit Form (inline, replaces card) ── -->
+        <mat-card class="form-card edit-card" *ngIf="editingTrip?.id === trip.id">
+          <mat-card-header>
+            <mat-icon mat-card-avatar>edit</mat-icon>
+            <mat-card-title>Edit Trip</mat-card-title>
+            <mat-card-subtitle>{{ trip.trip_name }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <form [formGroup]="editForm" (ngSubmit)="submitEdit()" class="trip-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="field-wide">
+                  <mat-label>Trip Name</mat-label>
+                  <input matInput formControlName="trip_name">
+                  <mat-error>Trip name is required</mat-error>
+                </mat-form-field>
+              </div>
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="field-wide">
+                  <mat-label>Destination</mat-label>
+                  <input matInput formControlName="destination" placeholder="e.g. Paris, France">
+                  <mat-icon matSuffix>place</mat-icon>
+                </mat-form-field>
+              </div>
+              <div class="form-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Start Date</mat-label>
+                  <input matInput type="date" formControlName="start_date">
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>End Date</mat-label>
+                  <input matInput type="date" formControlName="end_date">
+                </mat-form-field>
+              </div>
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="field-wide">
+                  <mat-label>Status</mat-label>
+                  <mat-select formControlName="status">
+                    <mat-option *ngFor="let s of statuses" [value]="s">
+                      <div class="status-option">
+                        <mat-icon [style.color]="getStatusConfig(s).color">{{ getStatusConfig(s).icon }}</mat-icon>
+                        {{ getStatusConfig(s).label }}
+                      </div>
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <mat-form-field appearance="outline" class="field-wide">
+                <mat-label>Notes</mat-label>
+                <textarea matInput formControlName="notes" rows="2"></textarea>
+              </mat-form-field>
+              <div class="form-actions">
+                <button mat-button type="button" (click)="cancelEdit()">Cancel</button>
+                <button mat-raised-button class="btn-save" type="submit" [disabled]="savingTrip">
+                  <mat-icon>check</mat-icon>
+                  {{ savingTrip ? 'Saving...' : 'Save Changes' }}
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- ── Trip Card ── -->
+        <mat-card class="trip-card" *ngIf="editingTrip?.id !== trip.id" data-cy="trip-card">
+
+          <!-- Status Banner -->
+          <div class="trip-status-bar" [style.background]="getStatusConfig(trip.status).color">
+            <mat-icon>{{ getStatusConfig(trip.status).icon }}</mat-icon>
+            <span>{{ getStatusConfig(trip.status).label }}</span>
+          </div>
+
+          <mat-card-content class="trip-card-body">
+
+            <!-- Title & Actions -->
+            <div class="trip-card-header">
+              <div class="trip-card-title-group">
+                <h3 class="trip-name">{{ trip.trip_name }}</h3>
+                <p class="trip-destination" *ngIf="trip.destination">
+                  <mat-icon>place</mat-icon> {{ trip.destination }}
+                </p>
+              </div>
+              <div class="trip-card-actions">
+                <button mat-icon-button (click)="startEdit(trip, $event)" matTooltip="Edit trip" data-cy="edit-trip-btn">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button class="btn-delete"
+                  (click)="deleteTrip(trip, $event)"
+                  [disabled]="deletingTripId === trip.id"
+                  matTooltip="Delete trip"
+                  data-cy="delete-trip-btn">
+                  <mat-icon>{{ deletingTripId === trip.id ? 'hourglass_empty' : 'delete_outline' }}</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <mat-divider></mat-divider>
+
+            <!-- Date & Duration -->
+            <div class="trip-meta">
+              <div class="meta-item">
+                <mat-icon>calendar_month</mat-icon>
+                <span>{{ formatDateRange(trip) }}</span>
+              </div>
+              <div class="meta-item duration-badge" *ngIf="getDurationLabel(trip)">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ getDurationLabel(trip) }}</span>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <p class="trip-notes" *ngIf="trip.notes">{{ trip.notes }}</p>
+
+            <!-- Packing Progress -->
+            <div class="packing-section" *ngIf="trip.packing_progress !== undefined && trip.packing_progress !== null">
+              <div class="packing-header">
+                <span class="packing-label"><mat-icon>inventory_2</mat-icon> Packing</span>
+                <span class="packing-pct">{{ trip.packing_progress | number:'1.0-0' }}%</span>
+              </div>
+              <mat-progress-bar
+                [value]="trip.packing_progress"
+                [color]="getPackingProgressColor(trip.packing_progress)"
+                class="packing-bar">
+              </mat-progress-bar>
+            </div>
+
+          </mat-card-content>
+
+          <!-- Card Footer -->
+          <mat-card-actions class="trip-card-footer">
+            <!-- Has a linked budget: show spend summary -->
+            <ng-container *ngIf="budgetsByTrip[trip.id] as budget">
+              <button mat-stroked-button class="btn-budget btn-budget-linked"
+                (click)="openBudget(trip, $event)"
+                matTooltip="View budget">
+                <mat-icon>account_balance_wallet</mat-icon>
+                {{ budget.currency }} {{ budget.total_budget | number:'1.0-0' }}
+              </button>
+              <div class="budget-mini-bar">
+                <mat-progress-bar
+                  [value]="budget.percentage_used"
+                  [color]="budget.percentage_used >= 90 ? 'warn' : budget.percentage_used >= 70 ? 'accent' : 'primary'"
+                  class="mini-bar">
+                </mat-progress-bar>
+                <span class="mini-bar-label">{{ budget.percentage_used | number:'1.0-0' }}% used</span>
+              </div>
+            </ng-container>
+
+            <!-- No budget yet: show create prompt -->
+            <ng-container *ngIf="!budgetsByTrip[trip.id]">
+              <button mat-stroked-button class="btn-budget btn-budget-empty"
+                (click)="openBudget(trip, $event)"
+                matTooltip="Add a budget for this trip">
+                <mat-icon>add_circle_outline</mat-icon>
+                Add Budget
+              </button>
+            </ng-container>
+
+            <span class="trip-created">{{ trip.created_at | date:'mediumDate' }}</span>
+          </mat-card-actions>
+
+        </mat-card>
+      </ng-container>
+    </div>
+
+  </div>
+</div>

@@ -1,7 +1,7 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { MatCardModule } from '@angular/material/card';
@@ -14,6 +14,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import {
   BudgetService,
@@ -21,6 +22,7 @@ import {
   Expense,
   EXPENSE_CATEGORIES,
 } from '../../services/budget';
+import { TripService, Trip } from '../../services/trip.service';
 
 @Component({
   selector: 'app-budget',
@@ -38,268 +40,409 @@ import {
     MatSnackBarModule,
     MatDividerModule,
     MatTooltipModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './budget.html',
   styleUrls: ['./budget.css'],
 })
 export class BudgetComponent implements OnInit, OnDestroy {
-  tripId = 'default-trip';
-  summary: BudgetSummary | null = null;
+  budgets: BudgetSummary[] = [];
+  selectedBudget: BudgetSummary | null = null;
+  expenses: Expense[] = [];
   categoryTotals: { category: string; total: number }[] = [];
   categories = EXPENSE_CATEGORIES;
 
-  // Which panel is open
-  showBudgetForm = false;
+  trips: Trip[] = [];
+  tripsMap: Record<number, Trip> = {};
+  loadingTrips = false;
+
+  showCreateForm = false;
   showExpenseForm = false;
 
-  loadingBudget = false;
-  loadingExpense = false;
-  loadingSummary = false;
+  // Edit budget state
+  editingBudget: BudgetSummary | null = null;
+  savingBudgetEdit = false;
 
-  private summarySubscription!: Subscription;
+  editingExpense: Expense | null = null;
+  loadingBudgets = false;
+  loadingExpenses = false;
+  savingBudget = false;
+  savingExpense = false;
 
-  budgetForm: ReturnType<FormBuilder['group']>;
+  private subs = new Subscription();
+
+  createForm: ReturnType<FormBuilder['group']>;
+  editBudgetForm: ReturnType<FormBuilder['group']>;
   expenseForm: ReturnType<FormBuilder['group']>;
 
   constructor(
     private fb: FormBuilder,
     private budgetService: BudgetService,
+    private tripService: TripService,
     private snack: MatSnackBar,
+    public router: Router,
     private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    this.budgetForm = this.fb.group({
+    this.createForm = this.fb.group({
+      trip_id: [null, Validators.required],
       total_budget: ['', [Validators.required, Validators.min(1)]],
       currency: ['USD'],
+      notes: [''],
+    });
+
+    this.editBudgetForm = this.fb.group({
+      trip_name: ['', Validators.required],
+      total_budget: ['', [Validators.required, Validators.min(1)]],
+      currency: ['USD'],
+      start_date: [''],
+      end_date: [''],
+      notes: [''],
     });
 
     this.expenseForm = this.fb.group({
-      amount: ['', [Validators.required, Validators.min(0.01)]],
       category: ['', Validators.required],
+      amount: ['', [Validators.required, Validators.min(0.01)]],
       description: [''],
-      date: [new Date().toISOString().slice(0, 10)],
+      expense_date: [new Date().toISOString().slice(0, 10)],
     });
   }
 
   ngOnInit(): void {
-    // Allow trip ID to come from the route, e.g. /budget/:tripId
-    const paramTripId = this.route.snapshot.paramMap.get('tripId');
-    if (paramTripId) {
-      this.tripId = paramTripId;
-    }
-
-    // Subscribe to reactive summary updates from the service
-    this.summarySubscription = this.budgetService.summary$.subscribe((s) => {
-      if (s) {
-        this.summary = s;
-        this.categoryTotals = this.budgetService.getCategoryTotals(s.expenses ?? []);
-      }
-    });
-
-    // Only load from backend in the browser — skip during SSR to avoid timeout
     if (isPlatformBrowser(this.platformId)) {
-      this.loadSummary();
-    } else {
-      this.loadingSummary = false;
-      this.summary = {
-        trip_id: this.tripId,
-        total_budget: 0,
-        total_expenses: 0,
-        remaining_budget: 0,
-        currency: 'USD',
-        expenses: [],
-      };
+      window.scrollTo(0, 0);
+      this.loadBudgets();
+      this.loadTrips(() => {
+        const tripIdParam = this.route.snapshot.queryParamMap.get('trip_id');
+        if (tripIdParam) {
+          const tripId = Number(tripIdParam);
+          this.showCreateForm = true;
+          this.createForm.patchValue({ trip_id: tripId });
+          this.cdr.detectChanges();
+        }
+      });
     }
   }
 
   ngOnDestroy(): void {
-    this.summarySubscription?.unsubscribe();
+    this.subs.unsubscribe();
   }
 
-  // ─── Data loading ────────────────────────────────────────────────────────────
+  // ── Trips ─────────────────────────────────────────────────────────────────
 
-  loadSummary(): void {
-    this.loadingSummary = true;
-
-    // Fallback after 3 seconds if backend is unreachable
-    const timeout = setTimeout(() => {
-      this.loadingSummary = false;
-      if (!this.summary) {
-        this.summary = {
-          trip_id: this.tripId,
-          total_budget: 0,
-          total_expenses: 0,
-          remaining_budget: 0,
-          currency: 'USD',
-          expenses: [],
-        };
-      }
-    }, 3000);
-
-    this.budgetService.getBudgetSummary(this.tripId).subscribe({
-      next: () => {
-        clearTimeout(timeout);
-        this.loadingSummary = false;
+  loadTrips(onComplete?: () => void): void {
+    this.loadingTrips = true;
+    this.tripService.getTrips().subscribe({
+      next: (res) => {
+        this.trips = res?.trips ?? [];
+        this.tripsMap = {};
+        for (const t of this.trips) this.tripsMap[t.id] = t;
+        this.loadingTrips = false;
+        this.cdr.detectChanges();
+        onComplete?.();
       },
       error: () => {
-        clearTimeout(timeout);
-        this.loadingSummary = false;
-        this.summary = {
-          trip_id: this.tripId,
-          total_budget: 0,
-          total_expenses: 0,
-          remaining_budget: 0,
-          currency: 'USD',
-          expenses: [],
-        };
+        this.loadingTrips = false;
+        this.cdr.detectChanges();
+        onComplete?.();
       },
     });
   }
 
-  // ─── Budget form ─────────────────────────────────────────────────────────────
+  getSelectedTrip(): Trip | undefined {
+    const tripId = this.createForm.get('trip_id')?.value;
+    return this.trips.find(t => t.id === tripId);
+  }
 
-  toggleBudgetForm(): void {
-    this.showBudgetForm = !this.showBudgetForm;
+  // ── Budgets ───────────────────────────────────────────────────────────────
+
+  loadBudgets(): void {
+    this.loadingBudgets = true;
+    const timeout = setTimeout(() => {
+      this.loadingBudgets = false;
+      this.cdr.detectChanges();
+    }, 5000);
+
+    this.budgetService.getBudgets().subscribe({
+      next: (res) => {
+        clearTimeout(timeout);
+        this.budgets = res?.budgets ?? [];
+        this.loadingBudgets = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        clearTimeout(timeout);
+        this.loadingBudgets = false;
+        this.cdr.detectChanges();
+        if (err.status === 401) {
+          this.snack.open('Session expired. Please log in again.', 'Close', { duration: 3000 });
+          this.router.navigate(['/login'], { queryParams: { returnUrl: '/budget' } });
+        } else {
+          this.snack.open('Failed to load budgets.', 'Close', { duration: 3000 });
+        }
+      },
+    });
+  }
+
+  selectBudget(budget: BudgetSummary): void {
+    if (this.editingBudget?.id === budget.id) return; // don't nav while editing
+    this.selectedBudget = budget;
+    this.editingBudget = null;
     this.showExpenseForm = false;
-    if (this.showBudgetForm && this.summary?.total_budget) {
-      this.budgetForm.patchValue({
-        total_budget: this.summary.total_budget,
-        currency: this.summary.currency,
-      });
+    this.loadExpenses(budget.id);
+  }
+
+  backToList(): void {
+    this.selectedBudget = null;
+    this.editingBudget = null;
+    this.expenses = [];
+    this.categoryTotals = [];
+    this.loadBudgets();
+  }
+
+  // ── Create Budget ─────────────────────────────────────────────────────────
+
+  toggleCreateForm(): void {
+    this.showCreateForm = !this.showCreateForm;
+    if (!this.showCreateForm) {
+      this.createForm.reset({ currency: 'USD', trip_id: null });
     }
   }
 
-  submitBudget(): void {
-    if (this.budgetForm.invalid) {
-      this.snack.open('Please enter a valid budget amount.', 'Close', { duration: 3000 });
+  submitCreateBudget(): void {
+    if (this.createForm.invalid) {
+      this.snack.open('Please select a trip and enter a budget amount.', 'Close', { duration: 3000 });
       return;
     }
 
-    this.loadingBudget = true;
-    const { total_budget, currency } = this.budgetForm.value;
+    const { trip_id, total_budget, currency, notes } = this.createForm.value;
+    const selectedTrip = this.getSelectedTrip();
+    if (!selectedTrip) {
+      this.snack.open('Selected trip not found. Please try again.', 'Close', { duration: 3000 });
+      return;
+    }
 
-    this.budgetService
-      .setBudget({ trip_id: this.tripId, total_budget: Number(total_budget), currency })
-      .subscribe({
-        next: () => {
-          this.snack.open('Budget saved!', 'OK', { duration: 2500 });
-          this.showBudgetForm = false;
-          this.loadingBudget = false;
-        },
-        error: () => {
-          // Optimistic local update if backend is unavailable
-          const budget = Number(total_budget);
-          const current = this.summary ?? {
-            trip_id: this.tripId,
-            total_expenses: 0,
-            expenses: [],
-            currency: currency ?? 'USD',
-          };
-          const updated: BudgetSummary = {
-            ...current,
-            total_budget: budget,
-            remaining_budget: budget - (current.total_expenses ?? 0),
-            currency: currency ?? 'USD',
-          };
-          this.budgetService.updateLocalSummary(updated);
-          this.snack.open('Budget saved locally (backend offline).', 'OK', { duration: 3000 });
-          this.showBudgetForm = false;
-          this.loadingBudget = false;
-        },
-      });
+    this.savingBudget = true;
+    this.cdr.detectChanges();
+
+    this.budgetService.createBudget({
+      trip_id: Number(trip_id),
+      trip_name: selectedTrip.trip_name,
+      total_budget: Number(total_budget),
+      currency: currency || 'USD',
+      start_date: selectedTrip.start_date || undefined,
+      end_date: selectedTrip.end_date || undefined,
+      notes: notes || undefined,
+    }).subscribe({
+      next: () => {
+        this.savingBudget = false;
+        this.showCreateForm = false;
+        this.createForm.reset({ currency: 'USD', trip_id: null });
+        this.router.navigate([], { queryParams: {}, replaceUrl: true });
+        this.cdr.detectChanges();
+        this.snack.open('Budget created!', 'OK', { duration: 2500 });
+        this.loadBudgets();
+      },
+      error: (err) => {
+        this.savingBudget = false;
+        this.cdr.detectChanges();
+        this.snack.open(err?.error?.message || 'Failed to create budget.', 'Close', { duration: 3000 });
+      },
+    });
   }
 
-  // ─── Expense form ─────────────────────────────────────────────────────────────
+  // ── Edit Budget ───────────────────────────────────────────────────────────
+
+  startEditBudget(budget: BudgetSummary, event?: Event): void {
+    event?.stopPropagation();
+    this.editingBudget = budget;
+    this.showCreateForm = false;
+    this.editBudgetForm.patchValue({
+      trip_name: budget.trip_name,
+      total_budget: budget.total_budget,
+      currency: budget.currency,
+      start_date: budget.start_date ? budget.start_date.slice(0, 10) : '',
+      end_date: budget.end_date ? budget.end_date.slice(0, 10) : '',
+      notes: budget.notes || '',
+    });
+    this.cdr.detectChanges();
+  }
+
+  cancelEditBudget(): void {
+    this.editingBudget = null;
+    this.editBudgetForm.reset({ currency: 'USD' });
+    this.cdr.detectChanges();
+  }
+
+  submitEditBudget(): void {
+    if (!this.editingBudget || this.editBudgetForm.invalid) return;
+    this.savingBudgetEdit = true;
+    this.cdr.detectChanges();
+
+    const { trip_name, total_budget, currency, start_date, end_date, notes } = this.editBudgetForm.value;
+
+    this.budgetService.updateBudget(this.editingBudget.id, {
+      trip_name: trip_name || undefined,
+      total_budget: Number(total_budget),
+      currency: currency || undefined,
+      start_date: start_date || undefined,
+      end_date: end_date || undefined,
+      notes: notes || undefined,
+    }).subscribe({
+      next: () => {
+        this.savingBudgetEdit = false;
+        // If editing from detail view, refresh the selected budget
+        if (this.selectedBudget?.id === this.editingBudget!.id) {
+          this.budgetService.getBudgetById(this.editingBudget!.id).subscribe((updated) => {
+            this.selectedBudget = updated;
+            this.editingBudget = null;
+            this.cdr.detectChanges();
+          });
+        } else {
+          this.editingBudget = null;
+        }
+        this.cdr.detectChanges();
+        this.snack.open('Budget updated!', 'OK', { duration: 2500 });
+        this.loadBudgets();
+      },
+      error: (err) => {
+        this.savingBudgetEdit = false;
+        this.cdr.detectChanges();
+        this.snack.open(err?.error?.message || 'Failed to update budget.', 'Close', { duration: 3000 });
+      },
+    });
+  }
+
+  // ── Delete Budget ─────────────────────────────────────────────────────────
+
+  deleteBudget(budget: BudgetSummary, event?: Event): void {
+    event?.stopPropagation();
+    this.budgetService.deleteBudget(budget.id).subscribe({
+      next: () => {
+        this.snack.open('Budget deleted.', 'OK', { duration: 2000 });
+        if (this.selectedBudget?.id === budget.id) this.backToList();
+        else this.loadBudgets();
+      },
+      error: () => this.snack.open('Failed to delete budget.', 'Close', { duration: 3000 }),
+    });
+  }
+
+  // ── Expenses ──────────────────────────────────────────────────────────────
+
+  loadExpenses(budgetId: number): void {
+    this.loadingExpenses = true;
+    this.budgetService.getExpenses(budgetId).subscribe({
+      next: (res) => {
+        this.expenses = res?.expenses ?? [];
+        this.categoryTotals = this.budgetService.getCategoryTotals(this.expenses);
+        this.loadingExpenses = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingExpenses = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
 
   toggleExpenseForm(): void {
     this.showExpenseForm = !this.showExpenseForm;
-    this.showBudgetForm = false;
+    this.editingExpense = null;
     if (!this.showExpenseForm) {
-      this.expenseForm.reset({
-        date: new Date().toISOString().slice(0, 10),
-        category: '',
-      });
+      this.expenseForm.reset({ expense_date: new Date().toISOString().slice(0, 10) });
     }
+  }
+
+  startEditExpense(expense: Expense): void {
+    this.editingExpense = expense;
+    this.showExpenseForm = true;
+    this.expenseForm.patchValue({
+      category: expense.category,
+      amount: expense.amount,
+      description: expense.description || '',
+      expense_date: expense.expense_date?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+    });
   }
 
   submitExpense(): void {
-    if (this.expenseForm.invalid) {
-      this.snack.open('Please fill in all required fields.', 'Close', { duration: 3000 });
+    if (this.expenseForm.invalid || !this.selectedBudget) return;
+    this.savingExpense = true;
+    this.cdr.detectChanges();
+    const { category, amount, description, expense_date } = this.expenseForm.value;
+    const budgetId = this.selectedBudget.id;
+    const payload = {
+      category, amount: Number(amount),
+      description: description || undefined,
+      expense_date: expense_date || undefined,
+    };
+
+    if (this.editingExpense) {
+      this.budgetService.updateExpense(budgetId, this.editingExpense.id, payload).subscribe({
+        next: () => {
+          this.savingExpense = false;
+          this.showExpenseForm = false;
+          this.editingExpense = null;
+          this.expenseForm.reset({ expense_date: new Date().toISOString().slice(0, 10) });
+          this.cdr.detectChanges();
+          this.snack.open('Expense updated!', 'OK', { duration: 2500 });
+          this.budgetService.getBudgetById(budgetId).subscribe((updated) => {
+            this.selectedBudget = updated;
+            this.cdr.detectChanges();
+          });
+          this.loadExpenses(budgetId);
+        },
+        error: (err) => {
+          this.savingExpense = false;
+          this.cdr.detectChanges();
+          this.snack.open(err?.error?.message || 'Failed to update expense.', 'Close', { duration: 3000 });
+        },
+      });
       return;
     }
 
-    this.loadingExpense = true;
-    const { amount, category, description, date } = this.expenseForm.value;
-
-    const expense: Omit<Expense, 'id'> = {
-      trip_id: this.tripId,
-      amount: Number(amount),
-      category,
-      description: description ?? '',
-      date: date ?? new Date().toISOString().slice(0, 10),
-    };
-
-    this.budgetService.addExpense(expense).subscribe({
+    this.budgetService.addExpense(budgetId, payload).subscribe({
       next: () => {
+        this.savingExpense = false;
+        this.showExpenseForm = false;
+        this.expenseForm.reset({ expense_date: new Date().toISOString().slice(0, 10) });
+        this.cdr.detectChanges();
         this.snack.open('Expense added!', 'OK', { duration: 2500 });
-        this.expenseForm.reset({ date: new Date().toISOString().slice(0, 10), category: '' });
-        this.showExpenseForm = false;
-        this.loadingExpense = false;
+        this.budgetService.getBudgetById(budgetId).subscribe((updated) => {
+          this.selectedBudget = updated;
+          this.cdr.detectChanges();
+        });
+        this.loadExpenses(budgetId);
       },
-      error: () => {
-        // Optimistic local update
-        if (this.summary) {
-          const newExpense: Expense = { ...expense, id: Date.now() };
-          const updatedExpenses = [newExpense, ...(this.summary.expenses ?? [])];
-          const newTotal = this.summary.total_expenses + expense.amount;
-          const updated: BudgetSummary = {
-            ...this.summary,
-            expenses: updatedExpenses,
-            total_expenses: newTotal,
-            remaining_budget: this.summary.total_budget - newTotal,
-          };
-          this.budgetService.updateLocalSummary(updated);
-        }
-        this.snack.open('Expense added locally (backend offline).', 'OK', { duration: 3000 });
-        this.expenseForm.reset({ date: new Date().toISOString().slice(0, 10), category: '' });
-        this.showExpenseForm = false;
-        this.loadingExpense = false;
+      error: (err) => {
+        this.savingExpense = false;
+        this.cdr.detectChanges();
+        this.snack.open(err?.error?.message || 'Failed to add expense.', 'Close', { duration: 3000 });
       },
     });
   }
-
-  // ─── Delete expense ───────────────────────────────────────────────────────────
 
   deleteExpense(expense: Expense): void {
-    if (expense.id === undefined) return;
-
-    this.budgetService.deleteExpense(expense.id, this.tripId).subscribe({
+    if (!this.selectedBudget) return;
+    const budgetId = this.selectedBudget.id;
+    this.budgetService.deleteExpense(budgetId, expense.id).subscribe({
       next: () => {
         this.snack.open('Expense removed.', 'OK', { duration: 2000 });
+        this.budgetService.getBudgetById(budgetId).subscribe((updated) => {
+          this.selectedBudget = updated;
+          this.cdr.detectChanges();
+        });
+        this.loadExpenses(budgetId);
       },
-      error: () => {
-        // Optimistic local delete
-        if (this.summary) {
-          const remaining = (this.summary.expenses ?? []).filter((e) => e.id !== expense.id);
-          const newTotal = remaining.reduce((sum, e) => sum + e.amount, 0);
-          const updated: BudgetSummary = {
-            ...this.summary,
-            expenses: remaining,
-            total_expenses: newTotal,
-            remaining_budget: this.summary.total_budget - newTotal,
-          };
-          this.budgetService.updateLocalSummary(updated);
-        }
-        this.snack.open('Expense removed locally.', 'OK', { duration: 2000 });
-      },
+      error: () => this.snack.open('Failed to delete expense.', 'Close', { duration: 3000 }),
     });
   }
 
-  // ─── Template helpers ─────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   getSpentPercentage(): number {
-    if (!this.summary) return 0;
-    return this.budgetService.getSpentPercentage(this.summary);
+    if (!this.selectedBudget) return 0;
+    return this.budgetService.getSpentPercentage(this.selectedBudget);
   }
 
   getProgressColor(): string {
@@ -309,38 +452,38 @@ export class BudgetComponent implements OnInit, OnDestroy {
     return 'primary';
   }
 
-  formatCurrency(amount: number): string {
-    const currency = this.summary?.currency ?? 'USD';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  formatCurrency(amount: number, currency?: string): string {
+    const c = currency || this.selectedBudget?.currency || 'USD';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(amount);
+  }
+
+  getTripStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      planning: 'Planning', ongoing: 'Ongoing',
+      completed: 'Completed', cancelled: 'Cancelled',
+    };
+    return labels[status] ?? status;
   }
 
   getCategoryIcon(category: string): string {
     const icons: Record<string, string> = {
-      'Accommodation': 'hotel',
-      'Food & Dining': 'restaurant',
-      'Transport': 'directions_car',
-      'Activities': 'local_activity',
-      'Shopping': 'shopping_bag',
-      'Health': 'medical_services',
-      'Other': 'more_horiz',
+      'Accommodation': 'hotel', 'Food & Dining': 'restaurant',
+      'Transport': 'directions_car', 'Activities': 'local_activity',
+      'Shopping': 'shopping_bag', 'Health': 'medical_services', 'Other': 'more_horiz',
     };
     return icons[category] ?? 'receipt';
   }
 
   getCategoryColor(category: string): string {
     const colors: Record<string, string> = {
-      'Accommodation': '#667eea',
-      'Food & Dining': '#f6a623',
-      'Transport': '#50c878',
-      'Activities': '#ff6b9d',
-      'Shopping': '#a855f7',
-      'Health': '#ef4444',
-      'Other': '#64748b',
+      'Accommodation': '#667eea', 'Food & Dining': '#f6a623',
+      'Transport': '#50c878', 'Activities': '#ff6b9d',
+      'Shopping': '#a855f7', 'Health': '#ef4444', 'Other': '#64748b',
     };
     return colors[category] ?? '#64748b';
   }
 
-  trackByExpenseId(_: number, expense: Expense): number | string {
-    return expense.id ?? expense.description;
-  }
+  trackByExpenseId(_: number, expense: Expense): number { return expense.id; }
+  trackByBudgetId(_: number, budget: BudgetSummary): number { return budget.id; }
+  trackByTripId(_: number, trip: Trip): number { return trip.id; }
 }

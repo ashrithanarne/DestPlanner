@@ -4,18 +4,24 @@ import { provideHttpClient } from '@angular/common/http';
 
 import { BudgetService, BudgetSummary, Expense } from './budget';
 
-const MOCK_SUMMARY: BudgetSummary = {
-  trip_id: 'trip-1',
+const MOCK_BUDGET: BudgetSummary = {
+  id: 1,
+  user_id: 1,
+  trip_name: 'Paris Trip',
   total_budget: 1000,
-  total_expenses: 400,
+  spent_amount: 400,
   remaining_budget: 600,
+  percentage_used: 40,
   currency: 'USD',
-  expenses: [
-    { id: 1, trip_id: 'trip-1', amount: 200, category: 'Accommodation', description: 'Hotel', date: '2025-01-01' },
-    { id: 2, trip_id: 'trip-1', amount: 150, category: 'Food & Dining', description: 'Dinner', date: '2025-01-02' },
-    { id: 3, trip_id: 'trip-1', amount: 50,  category: 'Accommodation', description: 'Hostel', date: '2025-01-03' },
-  ],
+  created_at: '2025-01-01',
+  updated_at: '2025-01-01',
 };
+
+const MOCK_EXPENSES: Expense[] = [
+  { id: 1, budget_id: 1, category: 'Accommodation', amount: 200, description: 'Hotel', expense_date: '2025-01-01', created_at: '2025-01-01' },
+  { id: 2, budget_id: 1, category: 'Food & Dining', amount: 150, description: 'Dinner', expense_date: '2025-01-02', created_at: '2025-01-02' },
+  { id: 3, budget_id: 1, category: 'Accommodation', amount: 50, description: 'Hostel', expense_date: '2025-01-03', created_at: '2025-01-03' },
+];
 
 describe('BudgetService', () => {
   let service: BudgetService;
@@ -29,131 +35,130 @@ describe('BudgetService', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    httpMock.verify();
-  });
+  afterEach(() => httpMock.verify());
 
   // ── should be created ───────────────────────────────────────────────────
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
-  // ── setBudget ───────────────────────────────────────────────────────────
-  it('setBudget: should POST to /expenses/budget and update summary$', () => {
+  // ── createBudget ────────────────────────────────────────────────────────
+  it('createBudget: should POST to /budgets', () => {
+    service.createBudget({ trip_name: 'Paris Trip', total_budget: 1000, currency: 'USD' }).subscribe();
+    const req = httpMock.expectOne((r) => r.url.includes('/budgets') && r.method === 'POST');
+    expect(req.request.body).toEqual({ trip_name: 'Paris Trip', total_budget: 1000, currency: 'USD' });
+    req.flush({ message: 'Budget created', budget_id: 1 });
+  });
+
+  // ── getBudgets ──────────────────────────────────────────────────────────
+  it('getBudgets: should GET /budgets and update budgets$', () => {
+    let emitted: BudgetSummary[] = [];
+    service.budgets$.subscribe((b) => (emitted = b));
+
+    service.getBudgets().subscribe();
+    const req = httpMock.expectOne((r) => r.url.includes('/budgets') && r.method === 'GET');
+    req.flush({ budgets: [MOCK_BUDGET] });
+
+    expect(emitted.length).toBe(1);
+    expect(emitted[0].trip_name).toBe('Paris Trip');
+  });
+
+  // ── getBudgetById ───────────────────────────────────────────────────────
+  it('getBudgetById: should GET /budgets/:id and update selectedBudget$', () => {
     let emitted: BudgetSummary | null = null;
-    service.summary$.subscribe((s) => (emitted = s));
+    service.selectedBudget$.subscribe((b) => (emitted = b));
 
-    service.setBudget({ trip_id: 'trip-1', total_budget: 1000, currency: 'USD' }).subscribe();
+    service.getBudgetById(1).subscribe();
+    const req = httpMock.expectOne((r) => r.url.includes('/budgets/1'));
+    expect(req.request.method).toBe('GET');
+    req.flush(MOCK_BUDGET);
 
-    const req = httpMock.expectOne((r) => r.url.includes('/expenses/budget'));
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ trip_id: 'trip-1', total_budget: 1000, currency: 'USD' });
-    req.flush(MOCK_SUMMARY);
+    expect(emitted).toEqual(MOCK_BUDGET);
+  });
 
-    expect(emitted).toEqual(MOCK_SUMMARY);
+  // ── updateBudget ────────────────────────────────────────────────────────
+  it('updateBudget: should PUT to /budgets/:id', () => {
+    service.updateBudget(1, { trip_name: 'Updated Trip' }).subscribe();
+    const req = httpMock.expectOne((r) => r.url.includes('/budgets/1') && r.method === 'PUT');
+    expect(req.request.body).toEqual({ trip_name: 'Updated Trip' });
+    req.flush({ message: 'Budget updated' });
+  });
+
+  // ── deleteBudget ────────────────────────────────────────────────────────
+  it('deleteBudget: should DELETE /budgets/:id', () => {
+    service.deleteBudget(1).subscribe();
+    const req = httpMock.expectOne((r) => r.url.includes('/budgets/1') && r.method === 'DELETE');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ message: 'Budget deleted' });
   });
 
   // ── addExpense ──────────────────────────────────────────────────────────
-  it('addExpense: should POST to /expenses and then trigger a GET for the summary', () => {
-    const newExpense: Omit<Expense, 'id'> = {
-      trip_id: 'trip-1',
-      amount: 80,
-      category: 'Transport',
-      description: 'Taxi',
-      date: '2025-01-04',
-    };
-
-    service.addExpense(newExpense).subscribe();
-
-    // First: POST /expenses
-    const postReq = httpMock.expectOne((r) => r.url.includes('/expenses') && r.method === 'POST');
-    expect(postReq.request.body).toEqual(expect.objectContaining(newExpense));
-    postReq.flush({ id: 10, ...newExpense });
-
-    // Second: automatic GET /budget/trip-1 triggered after add
-    const getReq = httpMock.expectOne((r) => r.url.includes('/budget/trip-1'));
-    expect(getReq.request.method).toBe('GET');
-    getReq.flush(MOCK_SUMMARY);
+  it('addExpense: should POST to /budgets/:id/expenses', () => {
+    service.addExpense(1, { category: 'Transport', amount: 80 }).subscribe();
+    const req = httpMock.expectOne((r) => r.url.includes('/budgets/1/expenses') && r.method === 'POST');
+    expect(req.request.body).toEqual({ category: 'Transport', amount: 80 });
+    req.flush({ message: 'Expense added', expense_id: 10 });
   });
 
   // ── getExpenses ─────────────────────────────────────────────────────────
-  it('getExpenses: should GET /expenses with tripId query param', () => {
+  it('getExpenses: should GET /budgets/:id/expenses', () => {
     let result: Expense[] = [];
-    service.getExpenses('trip-1').subscribe((expenses) => { result = expenses; });
-
-    const req = httpMock.expectOne((r) =>
-      r.url.includes('/expenses') && r.params.get('tripId') === 'trip-1'
-    );
-    expect(req.request.method).toBe('GET');
-    req.flush(MOCK_SUMMARY.expenses);
-
+    service.getExpenses(1).subscribe((res) => { result = res.expenses; });
+    const req = httpMock.expectOne((r) => r.url.includes('/budgets/1/expenses') && r.method === 'GET');
+    req.flush({ expenses: MOCK_EXPENSES });
     expect(result.length).toBe(3);
   });
 
-  // ── getBudgetSummary ────────────────────────────────────────────────────
-  it('getBudgetSummary: should GET /budget/:tripId and update summary$', () => {
-    let emitted: BudgetSummary | null = null;
-    service.summary$.subscribe((s) => (emitted = s));
-
-    service.getBudgetSummary('trip-1').subscribe();
-
-    const req = httpMock.expectOne((r) => r.url.includes('/budget/trip-1'));
-    expect(req.request.method).toBe('GET');
-    req.flush(MOCK_SUMMARY);
-
-    expect(emitted).toEqual(MOCK_SUMMARY);
+  // ── updateExpense ───────────────────────────────────────────────────────
+  it('updateExpense: should PUT to /budgets/:id/expenses/:expenseId', () => {
+    service.updateExpense(1, 2, { category: 'Food & Dining', amount: 100 }).subscribe();
+    const req = httpMock.expectOne((r) => r.url.includes('/budgets/1/expenses/2') && r.method === 'PUT');
+    expect(req.request.body).toEqual({ category: 'Food & Dining', amount: 100 });
+    req.flush({ message: 'Expense updated' });
   });
 
   // ── deleteExpense ───────────────────────────────────────────────────────
-  it('deleteExpense: should DELETE /expenses/:id and refresh summary', () => {
-    service.deleteExpense(1, 'trip-1').subscribe();
-
-    const delReq = httpMock.expectOne((r) => r.url.includes('/expenses/1'));
-    expect(delReq.request.method).toBe('DELETE');
-    delReq.flush(null);
-
-    // Should follow up with GET /budget/trip-1
-    const getReq = httpMock.expectOne((r) => r.url.includes('/budget/trip-1'));
-    expect(getReq.request.method).toBe('GET');
-    getReq.flush(MOCK_SUMMARY);
+  it('deleteExpense: should DELETE /budgets/:id/expenses/:expenseId', () => {
+    service.deleteExpense(1, 2).subscribe();
+    const req = httpMock.expectOne((r) => r.url.includes('/budgets/1/expenses/2') && r.method === 'DELETE');
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ message: 'Expense deleted' });
   });
 
   // ── getCategoryTotals ───────────────────────────────────────────────────
   it('getCategoryTotals: should sum amounts per category and sort descending', () => {
-    const totals = service.getCategoryTotals(MOCK_SUMMARY.expenses);
-    // Accommodation: 200 + 50 = 250, Food & Dining: 150
+    const totals = service.getCategoryTotals(MOCK_EXPENSES);
     expect(totals[0]).toEqual({ category: 'Accommodation', total: 250 });
     expect(totals[1]).toEqual({ category: 'Food & Dining', total: 150 });
   });
 
-  // ── getCategoryTotals — empty list ──────────────────────────────────────
+  // ── getCategoryTotals — empty ───────────────────────────────────────────
   it('getCategoryTotals: should return empty array for no expenses', () => {
     expect(service.getCategoryTotals([])).toEqual([]);
   });
 
   // ── getSpentPercentage ──────────────────────────────────────────────────
   it('getSpentPercentage: should return correct percentage', () => {
-    expect(service.getSpentPercentage(MOCK_SUMMARY)).toBe(40); // 400/1000
+    expect(service.getSpentPercentage(MOCK_BUDGET)).toBe(40);
   });
 
   // ── getSpentPercentage — over budget ────────────────────────────────────
   it('getSpentPercentage: should cap at 100 when overspent', () => {
-    const over: BudgetSummary = { ...MOCK_SUMMARY, total_expenses: 2000 };
+    const over: BudgetSummary = { ...MOCK_BUDGET, spent_amount: 2000 };
     expect(service.getSpentPercentage(over)).toBe(100);
   });
 
   // ── getSpentPercentage — zero budget ────────────────────────────────────
   it('getSpentPercentage: should return 0 when total_budget is 0', () => {
-    const zeroBudget: BudgetSummary = { ...MOCK_SUMMARY, total_budget: 0 };
+    const zeroBudget: BudgetSummary = { ...MOCK_BUDGET, total_budget: 0 };
     expect(service.getSpentPercentage(zeroBudget)).toBe(0);
   });
 
-  // ── updateLocalSummary ──────────────────────────────────────────────────
-  it('updateLocalSummary: should push value directly to summary$', () => {
+  // ── setSelectedBudget ───────────────────────────────────────────────────
+  it('setSelectedBudget: should update selectedBudget$', () => {
     let emitted: BudgetSummary | null = null;
-    service.summary$.subscribe((s) => (emitted = s));
-
-    service.updateLocalSummary(MOCK_SUMMARY);
-    expect(emitted).toEqual(MOCK_SUMMARY);
+    service.selectedBudget$.subscribe((b) => (emitted = b));
+    service.setSelectedBudget(MOCK_BUDGET);
+    expect(emitted).toEqual(MOCK_BUDGET);
   });
 });
