@@ -504,3 +504,19 @@
   border-color: #667eea !important;
   font-weight: 600 !important;
 }
+.btn-packing {
+  color: #11998e !important;
+  border-color: #11998e !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+}
+ 
+.btn-packing:hover {
+  background: #e6fff9 !important;
+}
+ 
+/* Shrink the footer to fit three buttons on one row */
+.trip-card-footer {
+  flex-wrap: wrap;
+  gap: 6px !important;
+}

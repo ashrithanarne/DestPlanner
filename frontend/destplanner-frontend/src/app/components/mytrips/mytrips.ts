@@ -265,6 +265,12 @@ export class MyTripsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/budget'], { queryParams: { trip_id: trip.id } });
   }
 
+  /** Navigate to the packing list page for this trip */
+  openPackingList(trip: Trip, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/trips', trip.id, 'packing-list']);
+  }
+
   getStatusConfig(status: string): { label: string; icon: string; color: string } {
     const map: Record<string, { label: string; icon: string; color: string }> = {
       planning:  { label: 'Planning',  icon: 'edit_calendar',  color: '#667eea' },
