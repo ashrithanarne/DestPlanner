@@ -66,12 +66,7 @@
                   <span class="loading-option">No trips found — create a trip first</span>
                 </mat-option>
                 <mat-option *ngFor="let trip of trips; trackBy: trackByTripId" [value]="trip.id">
-                  <div class="trip-option">
-                    <mat-icon class="trip-option-icon">luggage</mat-icon>
-                    <span class="trip-option-name">{{ trip.trip_name }}</span>
-                    <span class="trip-option-dest" *ngIf="trip.destination"> — {{ trip.destination }}</span>
-                    <span class="trip-option-status">{{ getTripStatusLabel(trip.status) }}</span>
-                  </div>
+                  {{ trip.trip_name }}{{ trip.destination ? ' — ' + trip.destination : '' }}
                 </mat-option>
               </mat-select>
               <mat-error>Please select a trip</mat-error>

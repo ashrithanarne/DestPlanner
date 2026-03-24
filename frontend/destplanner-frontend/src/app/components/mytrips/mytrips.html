@@ -228,7 +228,7 @@
             <p class="trip-notes" *ngIf="trip.notes">{{ trip.notes }}</p>
 
             <!-- Packing Progress -->
-            <div class="packing-section" *ngIf="trip.packing_progress !== undefined && trip.packing_progress !== null">
+            <div class="packing-section" *ngIf="trip.packing_progress !== null">
               <div class="packing-header">
                 <span class="packing-label"><mat-icon>inventory_2</mat-icon> Packing</span>
                 <span class="packing-pct">{{ trip.packing_progress | number:'1.0-0' }}%</span>
@@ -244,6 +244,21 @@
 
           <!-- Card Footer -->
           <mat-card-actions class="trip-card-footer">
+
+            <!-- Packing List button -->
+            <button mat-stroked-button class="btn-packing"
+              (click)="openPackingList(trip, $event)"
+              matTooltip="Manage packing list"
+              data-cy="packing-list-btn">
+              <mat-icon>inventory_2</mat-icon>
+              <span *ngIf="trip.packing_progress !== null">
+                {{ trip.packing_progress | number:'1.0-0' }}% packed
+              </span>
+              <span *ngIf="trip.packing_progress === null">
+                Packing List
+              </span>
+            </button>
+
             <!-- Has a linked budget: show spend summary -->
             <ng-container *ngIf="budgetsByTrip[trip.id] as budget">
               <button mat-stroked-button class="btn-budget btn-budget-linked"

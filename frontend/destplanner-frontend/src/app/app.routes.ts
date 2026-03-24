@@ -10,8 +10,25 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'login', component: LoginComponent },
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
-  { path: 'my-trips', loadComponent: () => import('./components/mytrips/mytrips').then(m => m.MyTripsComponent), canActivate: [authGuard] },
-  { path: 'budget', loadComponent: () => import('./components/budget/budget').then(m => m.BudgetComponent), canActivate: [authGuard] },
-  { path: 'budget/:tripId', loadComponent: () => import('./components/budget/budget').then(m => m.BudgetComponent), canActivate: [authGuard] },
+  {
+    path: 'my-trips',
+    loadComponent: () => import('./components/mytrips/mytrips').then(m => m.MyTripsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'budget',
+    loadComponent: () => import('./components/budget/budget').then(m => m.BudgetComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'budget/:tripId',
+    loadComponent: () => import('./components/budget/budget').then(m => m.BudgetComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'trips/:tripId/packing-list',
+    loadComponent: () => import('./components/packing-list/packing-list').then(m => m.PackingListComponent),
+    canActivate: [authGuard]
+  },
   { path: '**', redirectTo: '' },
 ];
