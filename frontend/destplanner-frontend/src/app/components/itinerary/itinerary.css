@@ -1,0 +1,202 @@
+.itinerary-page {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.back-btn {
+  margin-right: 1rem;
+}
+
+.title-container h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.title-container p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.add-btn {
+  border-radius: 24px;
+  padding: 0 1.5rem;
+}
+
+.loading-state, .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  height: 4rem;
+  width: 4rem;
+  margin-bottom: 1rem;
+  color: #d1d5db;
+}
+
+.form-card {
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.itinerary-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.itinerary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.itinerary-item-card {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  background: white;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.itinerary-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.drag-handle {
+  color: #9ca3af;
+  cursor: grab;
+  padding-right: 1rem;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.item-time {
+  padding-right: 1.5rem;
+  border-right: 2px solid #e5e7eb;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.time-text {
+  font-weight: 600;
+  color: #4f46e5;
+  font-size: 1.1rem;
+}
+
+.item-details {
+  flex-grow: 1;
+  padding-left: 1.5rem;
+}
+
+.activity-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.location-row {
+  display: flex;
+  align-items: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.location-row mat-icon {
+  font-size: 1rem;
+  height: 1rem;
+  width: 1rem;
+  margin-right: 0.25rem;
+}
+
+.activity-notes {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+  background-color: #f9fafb;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border-left: 3px solid #6366f1;
+}
+
+.item-actions {
+  display: flex;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.itinerary-item-card:hover .item-actions {
+  opacity: 1;
+}
+
+/* CDK Drag Drop Styles */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.itinerary-list.cdk-drop-list-dragging .itinerary-item-card:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
