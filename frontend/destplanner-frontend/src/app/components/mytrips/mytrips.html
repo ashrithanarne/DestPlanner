@@ -228,7 +228,7 @@
             <p class="trip-notes" *ngIf="trip.notes">{{ trip.notes }}</p>
 
             <!-- Packing Progress -->
-            <div class="packing-section" *ngIf="trip.packing_progress !== undefined && trip.packing_progress !== null">
+            <div class="packing-section" *ngIf="trip.packing_progress !== null">
               <div class="packing-header">
                 <span class="packing-label"><mat-icon>inventory_2</mat-icon> Packing</span>
                 <span class="packing-pct">{{ trip.packing_progress | number:'1.0-0' }}%</span>
@@ -242,28 +242,44 @@
 
           <!-- Card Footer -->
           <mat-card-actions class="trip-card-footer">
+
+            <!-- Packing List button -->
+            <button mat-stroked-button class="btn-packing"
+              (click)="openPackingList(trip, $event)"
+              matTooltip="Manage packing list"
+              data-cy="packing-list-btn">
+              <mat-icon>inventory_2</mat-icon>
+              <span *ngIf="trip.packing_progress !== null">
+                {{ trip.packing_progress | number:'1.0-0' }}% packed
+              </span>
+              <span *ngIf="trip.packing_progress === null">
+                Packing List
+              </span>
+            </button>
+
+            <!-- Has a linked budget: show spend summary -->
+            <ng-container *ngIf="budgetsByTrip[trip.id] as budget">
+              <button mat-stroked-button class="btn-budget btn-budget-linked"
+                (click)="openBudget(trip, $event)"
+                matTooltip="View budget">
+                <mat-icon>account_balance_wallet</mat-icon>
+                {{ budget.currency }} {{ budget.total_budget | number:'1.0-0' }}
+              </button>
+              <div class="budget-mini-bar">
+                <mat-progress-bar
+                  [value]="budget.percentage_used"
+                  [color]="budget.percentage_used >= 90 ? 'warn' : budget.percentage_used >= 70 ? 'accent' : 'primary'"
+                  class="mini-bar">
+                </mat-progress-bar>
+                <span class="mini-bar-label">{{ budget.percentage_used | number:'1.0-0' }}% used</span>
+              </div>
+            </ng-container>
             <!-- Itinerary button -->
             <button mat-stroked-button color="primary" class="btn-itinerary" (click)="openItinerary(trip, $event)"
               matTooltip="Manage daily itinerary" style="margin-right: 8px;">
               <mat-icon>format_list_numbered</mat-icon>
               Itinerary
             </button>
-              <!-- Has a linked budget: show spend summary -->
-              <ng-container *ngIf="budgetsByTrip[trip.id] as budget">
-                <button mat-stroked-button class="btn-budget btn-budget-linked" (click)="openBudget(trip, $event)"
-                  matTooltip="View budget">
-                  <mat-icon>account_balance_wallet</mat-icon>
-                  {{ budget.currency }} {{ budget.total_budget | number:'1.0-0' }}
-                </button>
-                <div class="budget-mini-bar">
-                  <mat-progress-bar [value]="budget.percentage_used"
-                    [color]="budget.percentage_used >= 90 ? 'warn' : budget.percentage_used >= 70 ? 'accent' : 'primary'"
-                    class="mini-bar">
-                  </mat-progress-bar>
-                  <span class="mini-bar-label">{{ budget.percentage_used | number:'1.0-0' }}% used</span>
-                </div>
-              </ng-container>
-
               <!-- No budget yet: show create prompt -->
               <ng-container *ngIf="!budgetsByTrip[trip.id]">
                 <button mat-stroked-button class="btn-budget btn-budget-empty" (click)="openBudget(trip, $event)"

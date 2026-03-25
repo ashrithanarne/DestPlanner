@@ -265,6 +265,12 @@ export class MyTripsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/budget'], { queryParams: { trip_id: trip.id } });
   }
 
+  /** Navigate to the packing list page for this trip */
+  openPackingList(trip: Trip, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/trips', trip.id, 'packing-list']);
+  }
+
   /** Navigate to the itinerary page for this trip */
   openItinerary(trip: Trip, event: Event): void {
     event.stopPropagation();

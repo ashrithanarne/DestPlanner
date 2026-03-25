@@ -26,6 +26,16 @@ export const routes: Routes = [
     loadComponent: () => import('./components/budget/budget').then(m => m.BudgetComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'trips/:tripId/packing-list',
+    loadComponent: () => import('./components/packing-list/packing-list').then(m => m.PackingListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'expenses',
+    loadComponent: () => import('./components/expense-split/expense-split').then(m => m.ExpenseSplitComponent),
+    canActivate: [authGuard]
+  },
 
   {
     path: 'trips/:tripId/itinerary',

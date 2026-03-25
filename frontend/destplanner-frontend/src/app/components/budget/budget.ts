@@ -112,15 +112,54 @@ export class BudgetComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       window.scrollTo(0, 0);
-      this.loadBudgets();
-      this.loadTrips(() => {
+      // Load both budgets and trips, then handle ?trip_id once BOTH resolve.
+      // This lets us check for an existing budget before deciding to show
+      // the create form vs. opening the existing budget detail.
+      let budgetsLoaded = false;
+      let tripsLoaded = false;
+
+      const handleTripIdParam = () => {
+        if (!budgetsLoaded || !tripsLoaded) return;
         const tripIdParam = this.route.snapshot.queryParamMap.get('trip_id');
-        if (tripIdParam) {
-          const tripId = Number(tripIdParam);
+        if (!tripIdParam) return;
+        const tripId = Number(tripIdParam);
+        const existing = this.budgets.find(b => b.trip_id === tripId);
+        if (existing) {
+          // Budget already exists — open it directly
+          this.selectBudget(existing);
+        } else {
+          // No budget yet — pre-fill the create form
           this.showCreateForm = true;
           this.createForm.patchValue({ trip_id: tripId });
-          this.cdr.detectChanges();
         }
+        this.cdr.detectChanges();
+      };
+
+      this.loadingBudgets = true;
+      this.budgetService.getBudgets().subscribe({
+        next: (res) => {
+          this.budgets = res?.budgets ?? [];
+          this.loadingBudgets = false;
+          budgetsLoaded = true;
+          this.cdr.detectChanges();
+          handleTripIdParam();
+        },
+        error: (err) => {
+          this.loadingBudgets = false;
+          budgetsLoaded = true;
+          this.cdr.detectChanges();
+          if (err.status === 401) {
+            this.snack.open('Session expired. Please log in again.', 'Close', { duration: 3000 });
+            this.router.navigate(['/login'], { queryParams: { returnUrl: '/budget' } });
+          } else {
+            this.snack.open('Failed to load budgets.', 'Close', { duration: 3000 });
+          }
+        },
+      });
+
+      this.loadTrips(() => {
+        tripsLoaded = true;
+        handleTripIdParam();
       });
     }
   }

@@ -1,0 +1,384 @@
+<div class="split-page">
+
+  <!-- ── Page Header ────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-title-group">
+        <button mat-icon-button class="back-btn" *ngIf="selectedGroup" (click)="backToGroups()">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <mat-icon class="header-icon">group</mat-icon>
+        <div>
+          <h1 class="page-title">{{ selectedGroup ? selectedGroup.group_name : 'Expense Splitting' }}</h1>
+          <p class="page-subtitle">
+            {{ selectedGroup ? (selectedGroup.members.length + ' members') : 'Split expenses fairly among trip collaborators' }}
+          </p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-raised-button class="btn-primary-action"
+          *ngIf="!selectedGroup" (click)="toggleCreateGroupForm()">
+          <mat-icon>add</mat-icon> New Group
+        </button>
+        <button mat-raised-button class="btn-primary-action"
+          *ngIf="selectedGroup" (click)="toggleManageMembersPanel()">
+          <mat-icon>{{ showManageMembersPanel ? 'close' : 'person_add' }}</mat-icon>
+          {{ showManageMembersPanel ? 'Close' : 'Members' }}
+        </button>
+        <button mat-raised-button class="btn-primary-action"
+          *ngIf="selectedGroup" (click)="toggleAddExpenseForm()">
+          <mat-icon>add</mat-icon> Add Expense
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="split-container">
+
+    <!-- ── Create Group Form ──────────────────────────────────── -->
+    <mat-card class="form-card" *ngIf="showCreateGroupForm">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>group_add</mat-icon>
+        <mat-card-title>Create New Group</mat-card-title>
+        <mat-card-subtitle>Invite collaborators to split expenses</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="createGroupForm" (ngSubmit)="submitCreateGroup()" class="split-form">
+          <mat-form-field appearance="outline" class="field-wide">
+            <mat-label>Group Name</mat-label>
+            <input matInput formControlName="group_name" placeholder="e.g. Paris Trip Squad">
+            <mat-icon matSuffix>group</mat-icon>
+            <mat-error>Group name is required</mat-error>
+          </mat-form-field>
+          <div class="form-actions">
+            <button mat-button type="button" (click)="toggleCreateGroupForm()">Cancel</button>
+            <button mat-raised-button class="btn-save" type="submit" [disabled]="savingGroup">
+              <mat-icon>{{ savingGroup ? 'hourglass_empty' : 'check' }}</mat-icon>
+              {{ savingGroup ? 'Creating...' : 'Create Group' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- ── Groups List ────────────────────────────────────────── -->
+    <ng-container *ngIf="!selectedGroup">
+      <div class="loading-state" *ngIf="loadingGroups">
+        <mat-icon class="spin-icon">sync</mat-icon>
+        <p>Loading groups...</p>
+      </div>
+
+      <div class="empty-state" *ngIf="!loadingGroups && groups.length === 0 && !showCreateGroupForm">
+        <mat-icon class="empty-icon">group</mat-icon>
+        <h3>No groups yet</h3>
+        <p>Create a group to start splitting expenses with travel companions.</p>
+        <button mat-raised-button class="btn-save" (click)="toggleCreateGroupForm()">
+          <mat-icon>add</mat-icon> Create Group
+        </button>
+      </div>
+
+      <div class="groups-grid" *ngIf="!loadingGroups && groups.length > 0">
+        <mat-card class="group-card" *ngFor="let group of groups; trackBy: trackByGroupId"
+          (click)="selectGroup(group)">
+          <div class="group-card-header">
+            <div class="group-avatar">
+              <mat-icon>group</mat-icon>
+            </div>
+            <div class="group-info">
+              <h3 class="group-name">{{ group.group_name }}</h3>
+              <p class="group-meta">{{ group.members.length }} member{{ group.members.length !== 1 ? 's' : '' }}</p>
+            </div>
+            <mat-icon class="group-arrow">chevron_right</mat-icon>
+          </div>
+          <div class="member-chips">
+            <span class="member-chip" *ngFor="let m of group.members.slice(0, 4)">
+              {{ m.first_name }}
+            </span>
+            <span class="member-chip more-chip" *ngIf="group.members.length > 4">
+              +{{ group.members.length - 4 }}
+            </span>
+          </div>
+        </mat-card>
+      </div>
+    </ng-container>
+
+    <!-- ── Group Detail ───────────────────────────────────────── -->
+    <ng-container *ngIf="selectedGroup">
+
+
+      <!-- ── Manage Members Panel ──────────────────────────────── -->
+      <mat-card class="form-card members-panel" *ngIf="showManageMembersPanel && selectedGroup">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>people</mat-icon>
+          <mat-card-title>Manage Members</mat-card-title>
+          <mat-card-subtitle>{{ selectedGroup.members.length }} member{{ selectedGroup.members.length !== 1 ? 's' : '' }} in this group</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+
+          <!-- Current members list -->
+          <div class="current-members-list">
+            <div class="current-member-row" *ngFor="let m of selectedGroup.members">
+              <div class="member-avatar-small"><mat-icon>account_circle</mat-icon></div>
+              <div class="member-details">
+                <span class="member-fullname">{{ m.first_name }} {{ m.last_name }}</span>
+              </div>
+              <span class="creator-badge" *ngIf="m.user_id === selectedGroup.created_by">Owner</span>
+              <button mat-icon-button class="btn-remove-member"
+                *ngIf="m.user_id !== selectedGroup.created_by"
+                [disabled]="removingMemberId === m.user_id"
+                (click)="removeMember(m)"
+                matTooltip="Remove member">
+                <mat-icon>{{ removingMemberId === m.user_id ? 'hourglass_empty' : 'person_remove' }}</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <mat-divider class="members-divider"></mat-divider>
+
+          <!-- Search & add -->
+          <p class="add-member-label"><mat-icon>search</mat-icon> Add a new member</p>
+          <div class="member-search-row">
+            <mat-form-field appearance="outline" class="field-wide">
+              <mat-label>Search by name or email</mat-label>
+              <input matInput
+                [(ngModel)]="memberSearchQuery"
+                (input)="searchMembers()"
+                placeholder="e.g. jane@example.com">
+              <mat-icon matSuffix>{{ searchingMembers ? 'hourglass_empty' : 'search' }}</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <!-- Search results -->
+          <div class="search-results" *ngIf="memberSearchResults.length > 0">
+            <div class="search-result-row" *ngFor="let user of memberSearchResults">
+              <div class="member-avatar-small"><mat-icon>account_circle</mat-icon></div>
+              <div class="member-details">
+                <span class="member-fullname">{{ user.first_name }} {{ user.last_name }}</span>
+              </div>
+              <button mat-stroked-button class="btn-add-member"
+                *ngIf="!isAlreadyMember(user.user_id)"
+                [disabled]="addingMemberId === user.user_id"
+                (click)="addMember(user)">
+                <mat-icon>{{ addingMemberId === user.user_id ? 'hourglass_empty' : 'person_add' }}</mat-icon>
+                {{ addingMemberId === user.user_id ? 'Adding...' : 'Add' }}
+              </button>
+              <span class="already-member-badge" *ngIf="isAlreadyMember(user.user_id)">Already a member</span>
+            </div>
+          </div>
+
+          <p class="no-results" *ngIf="memberSearchQuery.length >= 2 && !searchingMembers && memberSearchResults.length === 0">
+            No users found for "{{ memberSearchQuery }}"
+          </p>
+
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Balances Summary Banner -->
+      <div class="balances-banner" *ngIf="balances.length > 0">
+        <div class="balance-header">
+          <mat-icon>account_balance</mat-icon>
+          <span>Settlements Needed</span>
+        </div>
+        <div class="balance-list">
+          <div class="balance-item" *ngFor="let b of balances; trackBy: trackByBalanceIdx">
+            <span class="balance-from">{{ b.from_name }}</span>
+            <mat-icon class="balance-arrow">arrow_forward</mat-icon>
+            <span class="balance-to">{{ b.to_name }}</span>
+            <span class="balance-amount">{{ formatCurrency(b.amount) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settled-banner" *ngIf="!loadingBalances && balances.length === 0 && expenses.length > 0">
+        <mat-icon>check_circle</mat-icon>
+        <span>All settled up! No outstanding balances.</span>
+      </div>
+
+      <!-- Add Expense Form -->
+      <mat-card class="form-card add-expense-card" *ngIf="showAddExpenseForm">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>receipt_long</mat-icon>
+          <mat-card-title>Add Group Expense</mat-card-title>
+          <mat-card-subtitle>Choose how to split this expense</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="expenseForm" (ngSubmit)="submitAddExpense()" class="split-form">
+
+            <!-- Amount & Category -->
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Amount</mat-label>
+                <span matTextPrefix>$&nbsp;</span>
+                <input matInput type="number" formControlName="amount" min="0.01" step="0.01">
+                <mat-error>Enter a valid amount</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Category</mat-label>
+                <mat-select formControlName="category">
+                  <mat-option *ngFor="let cat of categories" [value]="cat">
+                    <mat-icon>{{ getCategoryIcon(cat) }}</mat-icon> {{ cat }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="field-wide">
+                <mat-label>Description (optional)</mat-label>
+                <input matInput formControlName="description" placeholder="e.g. Dinner at Le Jules Verne">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Date</mat-label>
+                <input matInput type="date" formControlName="expense_date">
+              </mat-form-field>
+            </div>
+
+            <!-- Split Mode Selector -->
+            <div class="split-mode-section">
+              <p class="split-mode-label"><mat-icon>call_split</mat-icon> Split Method</p>
+              <div class="split-mode-tabs">
+                <button type="button" class="split-tab"
+                  [class.active]="splitMode === 'equal'"
+                  (click)="onSplitModeChange('equal'); expenseForm.get('split_mode')?.setValue('equal')">
+                  <mat-icon>people</mat-icon> Equal
+                </button>
+                <button type="button" class="split-tab"
+                  [class.active]="splitMode === 'custom'"
+                  (click)="onSplitModeChange('custom'); expenseForm.get('split_mode')?.setValue('custom')">
+                  <mat-icon>edit</mat-icon> Custom
+                </button>
+                <button type="button" class="split-tab"
+                  [class.active]="splitMode === 'percentage'"
+                  (click)="onSplitModeChange('percentage'); expenseForm.get('split_mode')?.setValue('percentage')">
+                  <mat-icon>percent</mat-icon> Percentage
+                </button>
+              </div>
+            </div>
+
+            <!-- Equal split preview -->
+            <div class="equal-preview" *ngIf="splitMode === 'equal' && expenseAmount > 0 && selectedGroup">
+              <mat-icon>info_outline</mat-icon>
+              <span>Each of the {{ selectedGroup.members.length }} members pays
+                <strong>{{ formatCurrency(expenseAmount / selectedGroup.members.length) }}</strong></span>
+            </div>
+
+            <!-- Custom / Percentage splits -->
+            <div class="splits-table" *ngIf="splitMode !== 'equal'" formArrayName="splits">
+              <div class="split-row-header">
+                <span>Member</span>
+                <span>{{ splitMode === 'percentage' ? 'Percentage (%)' : 'Amount ($)' }}</span>
+              </div>
+              <div class="split-row" *ngFor="let ctrl of splitsArray.controls; let i = index" [formGroupName]="i">
+                <span class="split-member-name">
+                  {{ ctrl.get('first_name')?.value }} {{ ctrl.get('last_name')?.value }}
+                </span>
+                <mat-form-field appearance="outline" class="split-amount-field">
+                  <input matInput type="number" formControlName="amount_owed" min="0" step="0.01"
+                    [placeholder]="splitMode === 'percentage' ? '0' : '0.00'">
+                </mat-form-field>
+              </div>
+              <div class="split-total-row">
+                <span>Total</span>
+                <span [class.split-ok]="splitMode === 'custom' && isSplitBalanced()"
+                      [class.split-err]="splitMode === 'custom' && !isSplitBalanced()">
+                  {{ splitMode === 'percentage' ? currentSplitTotal.toFixed(1) + '%' : formatCurrency(currentSplitTotal) }}
+                </span>
+              </div>
+              <p class="split-error-msg" *ngIf="splitError">{{ splitError }}</p>
+            </div>
+
+            <div class="form-actions">
+              <button mat-button type="button" (click)="toggleAddExpenseForm()">Cancel</button>
+              <button mat-raised-button class="btn-save" type="submit" [disabled]="savingExpense">
+                {{ savingExpense ? 'Adding...' : 'Add Expense' }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Stats row -->
+      <div class="stats-row" *ngIf="expenses.length > 0">
+        <mat-card class="stat-card">
+          <mat-icon>receipt_long</mat-icon>
+          <div>
+            <p class="stat-val">{{ expenses.length }}</p>
+            <p class="stat-lbl">Expenses</p>
+          </div>
+        </mat-card>
+        <mat-card class="stat-card">
+          <mat-icon>payments</mat-icon>
+          <div>
+            <p class="stat-val">{{ formatCurrency(getTotalExpenses()) }}</p>
+            <p class="stat-lbl">Total Spent</p>
+          </div>
+        </mat-card>
+        <mat-card class="stat-card">
+          <mat-icon>account_balance</mat-icon>
+          <div>
+            <p class="stat-val">{{ balances.length }}</p>
+            <p class="stat-lbl">Pending Settlements</p>
+          </div>
+        </mat-card>
+      </div>
+
+      <!-- Expense list -->
+      <div class="loading-state" *ngIf="loadingExpenses">
+        <mat-icon class="spin-icon">sync</mat-icon>
+        <p>Loading expenses...</p>
+      </div>
+
+      <div class="empty-state" *ngIf="!loadingExpenses && expenses.length === 0 && !showAddExpenseForm">
+        <mat-icon class="empty-icon">receipt_long</mat-icon>
+        <h3>No expenses yet</h3>
+        <p>Click <strong>Add Expense</strong> to start tracking shared costs.</p>
+      </div>
+
+      <mat-card class="expense-card" *ngFor="let expense of expenses; trackBy: trackByExpenseId">
+        <div class="expense-header">
+          <div class="expense-cat-icon" >
+            <mat-icon>{{ getCategoryIcon(expense.category) }}</mat-icon>
+          </div>
+          <div class="expense-info">
+            <p class="expense-desc">{{ expense.description || expense.category }}</p>
+            <p class="expense-meta">
+              <span class="cat-badge">{{ expense.category }}</span>
+              <span class="paid-by">Paid by <strong>{{ expense.paid_by_name }}</strong></span>
+              <span class="expense-date">{{ expense.expense_date | date:'mediumDate' }}</span>
+            </p>
+          </div>
+          <div class="expense-right">
+            <p class="expense-amount">{{ formatCurrency(expense.amount) }}</p>
+            <button mat-stroked-button class="btn-settle"
+              (click)="settleExpense(expense)"
+              [disabled]="settlingId === expense.id">
+              <mat-icon>check_circle_outline</mat-icon>
+              {{ settlingId === expense.id ? 'Settling...' : 'Settle My Share' }}
+            </button>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <!-- Splits detail -->
+        <div class="splits-detail">
+          <div class="split-detail-row" *ngFor="let split of expense.splits">
+            <div class="split-user">
+              <mat-icon class="split-status-icon"
+                [class.settled]="split.is_settled"
+                [class.unsettled]="!split.is_settled">
+                {{ split.is_settled ? 'check_circle' : 'radio_button_unchecked' }}
+              </mat-icon>
+              <span>{{ split.first_name }} {{ split.last_name }}</span>
+              <span class="settled-badge" *ngIf="split.is_settled">Settled</span>
+            </div>
+            <span class="split-amount" [class.settled-amount]="split.is_settled">
+              {{ formatCurrency(split.amount_owed) }}
+            </span>
+          </div>
+        </div>
+      </mat-card>
+
+    </ng-container>
+  </div>
+</div>

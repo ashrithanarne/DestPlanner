@@ -1,0 +1,220 @@
+<div class="packing-page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-title-group">
+        <button mat-icon-button class="back-btn" (click)="router.navigate(['/my-trips'])">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <mat-icon class="header-icon">inventory_2</mat-icon>
+        <div>
+          <h1 class="page-title">Packing List</h1>
+          <p class="page-subtitle" *ngIf="trip">{{ trip.trip_name }}<span *ngIf="trip.destination"> &mdash; {{ trip.destination }}</span></p>
+        </div>
+      </div>
+      <div class="header-actions" *ngIf="data">
+        <button mat-raised-button class="btn-add-item" (click)="showAddItemForm = !showAddItemForm">
+          <mat-icon>add</mat-icon> Add Item
+        </button>
+        <button mat-icon-button class="btn-delete-list" (click)="deleteList()" matTooltip="Delete packing list">
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="packing-container">
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-state">
+      <mat-icon class="spin-icon">sync</mat-icon>
+      <p>Loading packing list...</p>
+    </div>
+
+    <!-- No list yet -->
+    <ng-container *ngIf="!loading && !data">
+      <div class="empty-state" *ngIf="!showCreateForm">
+        <mat-icon class="empty-icon">inventory_2</mat-icon>
+        <h3>No packing list yet</h3>
+        <p>Create a packing list and we'll suggest items based on your destination climate and trip length.</p>
+        <button mat-raised-button class="btn-save" (click)="showCreateForm = true">
+          <mat-icon>add</mat-icon> Create Packing List
+        </button>
+      </div>
+
+      <!-- Create form -->
+      <mat-card class="form-card" *ngIf="showCreateForm">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>inventory_2</mat-icon>
+          <mat-card-title>Create Packing List</mat-card-title>
+          <mat-card-subtitle>We'll suggest items based on climate and duration</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="packing-form">
+
+            <mat-form-field appearance="outline" class="field-wide">
+              <mat-label>Climate at Destination</mat-label>
+              <mat-select [(ngModel)]="createClimate">
+                <mat-option *ngFor="let c of climates" [value]="c.value">{{ c.label }}</mat-option>
+              </mat-select>
+              <mat-icon matSuffix>thermostat</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="field-wide">
+              <mat-label>Trip Duration (days)</mat-label>
+              <input matInput type="number" [(ngModel)]="createDuration" min="1">
+              <mat-icon matSuffix>schedule</mat-icon>
+            </mat-form-field>
+
+            <div class="toggle-row">
+              <mat-icon>auto_awesome</mat-icon>
+              <span>Auto-populate suggested items</span>
+              <input type="checkbox" [(ngModel)]="createAutoPopulate" class="toggle-check">
+            </div>
+
+            <div class="form-actions">
+              <button mat-button type="button" (click)="showCreateForm = false">Cancel</button>
+              <button mat-raised-button class="btn-save" type="button" (click)="submitCreate()" [disabled]="saving">
+                <mat-icon>{{ saving ? 'hourglass_empty' : 'check' }}</mat-icon>
+                {{ saving ? 'Creating...' : 'Create List' }}
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </ng-container>
+
+    <!-- List exists -->
+    <ng-container *ngIf="!loading && data">
+
+      <!-- Progress bar -->
+      <mat-card class="progress-card">
+        <mat-card-content>
+          <div class="progress-stats">
+            <div class="stat">
+              <span class="stat-val">{{ data.checked_items }}/{{ data.total_items }}</span>
+              <span class="stat-lbl">Items Packed</span>
+            </div>
+            <div class="stat" *ngIf="data.climate">
+              <span class="stat-val">{{ data.climate | titlecase }}</span>
+              <span class="stat-lbl">Climate</span>
+            </div>
+            <div class="stat" *ngIf="data.duration_days">
+              <span class="stat-val">{{ data.duration_days }} days</span>
+              <span class="stat-lbl">Duration</span>
+            </div>
+            <span class="progress-pct">{{ data.percent_complete }}%</span>
+          </div>
+          <mat-progress-bar [value]="data.percent_complete" [color]="progressColor" class="main-bar"></mat-progress-bar>
+          <p class="all-packed" *ngIf="data.percent_complete === 100">
+            <mat-icon>celebration</mat-icon> All packed — you're ready!
+          </p>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Add item form -->
+      <mat-card class="form-card add-card" *ngIf="showAddItemForm">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>add_circle</mat-icon>
+          <mat-card-title>Add Custom Item</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="packing-form">
+            <mat-form-field appearance="outline" class="field-wide">
+              <mat-label>Item Name</mat-label>
+              <input matInput [(ngModel)]="newName" placeholder="e.g. Hiking boots">
+            </mat-form-field>
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Category</mat-label>
+                <mat-select [(ngModel)]="newCategory">
+                  <mat-option *ngFor="let c of categories" [value]="c">{{ c }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Quantity</mat-label>
+                <input matInput type="number" [(ngModel)]="newQty" min="1">
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="field-wide">
+              <mat-label>Notes (optional)</mat-label>
+              <input matInput [(ngModel)]="newNotes">
+            </mat-form-field>
+            <div class="form-actions">
+              <button mat-button type="button" (click)="showAddItemForm = false">Cancel</button>
+              <button mat-raised-button class="btn-save" type="button" (click)="submitAddItem()" [disabled]="saving">
+                <mat-icon>{{ saving ? 'hourglass_empty' : 'add' }}</mat-icon>
+                {{ saving ? 'Adding...' : 'Add Item' }}
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Category filter -->
+      <div class="filter-tabs" *ngIf="data.total_items > 0">
+        <button class="filter-tab" *ngFor="let cat of allCategories"
+          [class.active]="activeCategory === cat"
+          (click)="activeCategory = cat">
+          <mat-icon *ngIf="cat !== 'All'">{{ catIcon(cat) }}</mat-icon>
+          <mat-icon *ngIf="cat === 'All'">list</mat-icon>
+          {{ cat }}
+        </button>
+      </div>
+
+      <!-- Empty list -->
+      <div class="empty-items" *ngIf="data.total_items === 0">
+        <mat-icon>inventory_2</mat-icon>
+        <p>No items yet. Click <strong>Add Item</strong> to get started.</p>
+      </div>
+
+      <!-- Items by category -->
+      <mat-card class="category-card" *ngFor="let group of groupedItems">
+        <div class="category-header">
+          <mat-icon class="cat-icon">{{ catIcon(group.category) }}</mat-icon>
+          <span class="cat-name">{{ group.category }}</span>
+          <span class="cat-badge">{{ checkedIn(group.items) }} / {{ group.items.length }}</span>
+        </div>
+
+        <div class="items-list">
+          <ng-container *ngFor="let item of group.items">
+
+            <!-- Normal item row -->
+            <div class="item-row"
+              [class.item-checked]="item.is_checked"
+              [class.item-deleting]="deletingItemId === item.id">
+
+              <!-- Check toggle -->
+              <button type="button" class="check-btn" (click)="toggleCheck(item)">
+                <mat-icon class="check-icon checked-icon" *ngIf="item.is_checked">check_circle</mat-icon>
+                <mat-icon class="check-icon unchecked-icon" *ngIf="!item.is_checked">radio_button_unchecked</mat-icon>
+              </button>
+
+              <!-- Info -->
+              <div class="item-info">
+                <span class="item-name">{{ item.item_name }}</span>
+                <div class="item-meta">
+                  <span class="qty-badge" *ngIf="item.quantity > 1">&times;{{ item.quantity }}</span>
+                  <span class="suggested-badge" *ngIf="item.is_suggested">suggested</span>
+                  <span class="notes-text" *ngIf="item.notes">{{ item.notes }}</span>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="item-actions">
+                <button type="button" mat-icon-button class="btn-delete-item"
+                  (click)="deleteItem(item)"
+                  [disabled]="deletingItemId === item.id">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+
+            </div>
+          </ng-container>
+        </div>
+      </mat-card>
+
+    </ng-container>
+  </div>
+</div>

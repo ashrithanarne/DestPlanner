@@ -14,7 +14,8 @@ export interface Trip {
   notes?: string;
   status: string;
   duration_days?: number;
-  packing_progress?: number;
+  // null = no packing list created yet; number = list exists (0–100)
+  packing_progress: number | null;
   created_at: string;
   updated_at: string;
 }
