@@ -33,7 +33,7 @@ export class ItineraryComponent implements OnInit {
   showForm = false;
   itemForm: FormGroup;
   editingId: number | null = null;
-  loading = false;
+  loading = true;
 
   constructor(
     private route: ActivatedRoute,
