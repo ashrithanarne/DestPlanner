@@ -40,6 +40,10 @@
           <mat-icon>luggage</mat-icon>
           My Trips
         </button>
+        <button mat-button routerLink="/expenses" routerLinkActive="active-link">
+          <mat-icon>receipt_long</mat-icon>
+          Expense Split
+        </button>
         <button mat-button routerLink="/destinations" routerLinkActive="active-link">
           <mat-icon>explore</mat-icon>
           Destinations
@@ -111,6 +115,10 @@
     <button mat-button class="mobile-menu-item" routerLink="/my-trips" (click)="toggleMobileMenu()">
       <mat-icon>luggage</mat-icon>
       My Trips
+    </button>
+    <button mat-button class="mobile-menu-item" routerLink="/expenses" (click)="toggleMobileMenu()">
+      <mat-icon>receipt_long</mat-icon>
+      Expense Split
     </button>
     <button mat-button class="mobile-menu-item" routerLink="/destinations" (click)="toggleMobileMenu()">
       <mat-icon>explore</mat-icon>
