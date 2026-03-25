@@ -2,7 +2,7 @@ import {
   Component, OnInit, OnDestroy, ChangeDetectorRef, Inject, PLATFORM_ID,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
@@ -22,7 +22,7 @@ import { MatRadioModule } from '@angular/material/radio';
 
 import {
   GroupService, Group, GroupExpense, GroupMemberDetail,
-  Balance, CreateGroupExpensePayload, SplitInput, EXPENSE_CATEGORIES,
+  Balance, CreateGroupExpensePayload, SplitInput, EXPENSE_CATEGORIES, UserSearchResult,
 } from '../../services/group.service';
 
 type SplitMode = 'equal' | 'custom' | 'percentage';
@@ -31,7 +31,7 @@ type SplitMode = 'equal' | 'custom' | 'percentage';
   selector: 'app-expense-split',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
+    CommonModule, ReactiveFormsModule, FormsModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatProgressBarModule, MatSnackBarModule, MatDividerModule,
@@ -57,6 +57,14 @@ export class ExpenseSplitComponent implements OnInit, OnDestroy {
 
   showCreateGroupForm = false;
   showAddExpenseForm = false;
+  showManageMembersPanel = false;
+
+  // ── Member management ─────────────────────────────────────────────────────
+  memberSearchQuery = '';
+  memberSearchResults: UserSearchResult[] = [];
+  searchingMembers = false;
+  addingMemberId: number | null = null;
+  removingMemberId: number | null = null;
 
   splitMode: SplitMode = 'equal';
   splitTotal = 0;
@@ -346,6 +354,88 @@ export class ExpenseSplitComponent implements OnInit, OnDestroy {
         this.settlingId = null;
         this.cdr.detectChanges();
         this.snack.open(err?.error?.message || 'Failed to settle expense.', 'Close', { duration: 3000 });
+      },
+    });
+  }
+
+  // ── Member Management ─────────────────────────────────────────────────────
+
+  toggleManageMembersPanel(): void {
+    this.showManageMembersPanel = !this.showManageMembersPanel;
+    if (!this.showManageMembersPanel) {
+      this.memberSearchQuery = '';
+      this.memberSearchResults = [];
+    }
+  }
+
+  searchMembers(): void {
+    const q = this.memberSearchQuery.trim();
+    if (q.length < 2) {
+      this.memberSearchResults = [];
+      return;
+    }
+    this.searchingMembers = true;
+    this.groupService.searchUsers(q).subscribe({
+      next: res => {
+        this.memberSearchResults = res.users ?? [];
+        this.searchingMembers = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.searchingMembers = false;
+        this.snack.open('User search failed.', 'Close', { duration: 3000 });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  isAlreadyMember(userId: number): boolean {
+    return this.selectedGroup?.members.some(m => m.user_id === userId) ?? false;
+  }
+
+  addMember(user: UserSearchResult): void {
+    if (!this.selectedGroup) return;
+    this.addingMemberId = user.user_id;
+    this.groupService.addMember(this.selectedGroup.id, user.user_id).subscribe({
+      next: () => {
+        this.addingMemberId = null;
+        this.snack.open(`${user.first_name} added!`, 'OK', { duration: 2500 });
+        this.memberSearchResults = [];
+        this.memberSearchQuery = '';
+        this.reloadGroup();
+      },
+      error: err => {
+        this.addingMemberId = null;
+        this.snack.open(err?.error?.message || 'Failed to add member.', 'Close', { duration: 3000 });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  removeMember(member: GroupMemberDetail): void {
+    if (!this.selectedGroup) return;
+    this.removingMemberId = member.user_id;
+    this.groupService.removeMember(this.selectedGroup.id, member.user_id).subscribe({
+      next: () => {
+        this.removingMemberId = null;
+        this.snack.open(`${member.first_name} removed.`, 'OK', { duration: 2500 });
+        this.reloadGroup();
+      },
+      error: err => {
+        this.removingMemberId = null;
+        this.snack.open(err?.error?.message || 'Failed to remove member.', 'Close', { duration: 3000 });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private reloadGroup(): void {
+    if (!this.selectedGroup) return;
+    this.groupService.getGroupById(this.selectedGroup.id).subscribe({
+      next: res => {
+        this.selectedGroup = { ...res.group, members: res.group.members };
+        this.loadGroups();
+        this.cdr.detectChanges();
       },
     });
   }
