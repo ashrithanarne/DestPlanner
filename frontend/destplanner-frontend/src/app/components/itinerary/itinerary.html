@@ -1,0 +1,93 @@
+<div class="itinerary-page">
+  <div class="header">
+    <button mat-icon-button routerLink="/my-trips" class="back-btn">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="title-container">
+      <h1>Trip Itinerary</h1>
+      <p>Organize your day-by-day plan</p>
+    </div>
+    <button mat-raised-button color="primary" class="add-btn" (click)="openForm()">
+      <mat-icon>add</mat-icon> Add Activity
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading your itinerary...</p>
+  </div>
+
+  <!-- Form Modal / Inline Form -->
+  <mat-card class="form-card" *ngIf="showForm">
+    <mat-card-header>
+      <mat-card-title>{{ editingId ? 'Edit Activity' : 'New Activity' }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="itemForm" (ngSubmit)="saveItem()" class="itinerary-form">
+        <div class="form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Time (e.g., 09:00 AM)</mat-label>
+            <input matInput formControlName="time" placeholder="HH:MM">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="flex-grow">
+            <mat-label>Activity</mat-label>
+            <input matInput formControlName="activity" placeholder="What are you doing?">
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Location</mat-label>
+          <input matInput formControlName="location" placeholder="Where is it?">
+          <mat-icon matSuffix>place</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Notes</mat-label>
+          <textarea matInput formControlName="notes" rows="3" placeholder="Any extra details?"></textarea>
+        </mat-form-field>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="closeForm()">Cancel</button>
+          <button mat-raised-button color="primary" type="submit" [disabled]="itemForm.invalid">
+            Save Activity
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Drag and Drop List -->
+  <div class="itinerary-list" *ngIf="!loading && !showForm" cdkDropList (cdkDropListDropped)="drop($event)">
+    <div class="empty-state" *ngIf="itineraryItems.length === 0">
+      <mat-icon class="empty-icon">calendar_month</mat-icon>
+      <h3>No activities planned yet</h3>
+      <p>Click the "Add Activity" button to start building your itinerary!</p>
+    </div>
+
+    <mat-card class="itinerary-item-card" *ngFor="let item of itineraryItems" cdkDrag (click)="openForm(item)">
+      <div class="drag-handle" cdkDragHandle>
+        <mat-icon>drag_indicator</mat-icon>
+      </div>
+      
+      <div class="item-time">
+        <span class="time-text">{{ item.time }}</span>
+      </div>
+
+      <div class="item-details">
+        <h3 class="activity-title">{{ item.activity }}</h3>
+        <div class="location-row" *ngIf="item.location">
+          <mat-icon>place</mat-icon>
+          <span>{{ item.location }}</span>
+        </div>
+        <p class="activity-notes" *ngIf="item.notes">{{ item.notes }}</p>
+      </div>
+
+      <div class="item-actions">
+        <button mat-icon-button color="warn" (click)="deleteItem(item.id!, $event)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </mat-card>
+  </div>
+</div>

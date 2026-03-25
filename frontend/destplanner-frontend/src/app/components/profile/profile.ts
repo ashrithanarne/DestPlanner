@@ -14,6 +14,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { UserProfileService } from '../../services/user-profile.service';
 import { AuthService, User } from '../../services/auth';
+import { BookmarkService, BookmarkResponse } from '../../services/bookmark';
 
 @Component({
   selector: 'app-profile',
@@ -38,6 +39,8 @@ export class ProfileComponent implements OnInit {
   loading = true;
   saving = false;
   editMode = false;
+  bookmarks: BookmarkResponse[] = [];
+  loadingBookmarks = false;
 
   editForm: ReturnType<FormBuilder['group']>;
 
@@ -45,6 +48,7 @@ export class ProfileComponent implements OnInit {
     private fb: FormBuilder,
     private profileService: UserProfileService,
     private authService: AuthService,
+    private bookmarkService: BookmarkService,
     private snack: MatSnackBar,
     private router: Router,
     private cdr: ChangeDetectorRef,
@@ -69,6 +73,7 @@ export class ProfileComponent implements OnInit {
       next: (user) => {
         this.profile = user;
         this.loading = false;
+        this.loadBookmarks();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -139,5 +144,30 @@ export class ProfileComponent implements OnInit {
 
   formatDate(dateStr: string): string {
     return this.profileService.formatJoinDate(dateStr);
+  }
+
+  loadBookmarks(): void {
+    this.loadingBookmarks = true;
+    this.bookmarkService.getBookmarks().subscribe({
+      next: (data) => {
+        this.bookmarks = data;
+        this.loadingBookmarks = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingBookmarks = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  removeBookmark(id: number): void {
+    this.bookmarkService.removeBookmark(id).subscribe({
+      next: () => {
+        this.bookmarks = this.bookmarks.filter(b => b.id !== id);
+        this.snack.open('Bookmark removed', 'OK', { duration: 2000 });
+        this.cdr.detectChanges();
+      }
+    });
   }
 }
