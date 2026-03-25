@@ -10,6 +10,7 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'login', component: LoginComponent },
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+
   {
     path: 'my-trips',
     loadComponent: () => import('./components/mytrips/mytrips').then(m => m.MyTripsComponent),
@@ -35,5 +36,20 @@ export const routes: Routes = [
     loadComponent: () => import('./components/expense-split/expense-split').then(m => m.ExpenseSplitComponent),
     canActivate: [authGuard]
   },
+
+  {
+    path: 'trips/:tripId/itinerary',
+    loadComponent: () => import('./components/itinerary/itinerary').then(m => m.ItineraryComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'destinations',
+    loadComponent: () => import('./components/destinations/destinations').then(m => m.DestinationsComponent)
+  },
+  {
+    path: 'destinations/:id',
+    loadComponent: () => import('./components/destination-detail/destination-detail').then(m => m.DestinationDetailComponent)
+  },
+
   { path: '**', redirectTo: '' },
 ];

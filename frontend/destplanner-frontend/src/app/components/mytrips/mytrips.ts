@@ -271,6 +271,11 @@ export class MyTripsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/trips', trip.id, 'packing-list']);
   }
 
+  /** Navigate to the itinerary page for this trip */
+  openItinerary(trip: Trip, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/trips', trip.id, 'itinerary']);
+  }
   getStatusConfig(status: string): { label: string; icon: string; color: string } {
     const map: Record<string, { label: string; icon: string; color: string }> = {
       planning:  { label: 'Planning',  icon: 'edit_calendar',  color: '#667eea' },
