@@ -85,6 +85,15 @@ func main() {
 		api.DELETE("/destinations/:id", handlers.DeleteDestination)
 		api.PUT("/destinations/:id", handlers.UpdateDestination)
 
+		// Itinerary routes
+		api.POST("/itineraries", handlers.CreateItinerary)
+		api.GET("/itineraries/:id", handlers.GetItinerary)
+		api.POST("/itineraries/:id/destinations", handlers.AddDestination)
+		api.DELETE("/itineraries/:id/destinations/:dest_id", handlers.RemoveDestination)
+		api.POST("/itineraries/:id/collaborators", handlers.AddCollaborator)
+		api.DELETE("/itineraries/:id/collaborators/:user_id", handlers.RemoveCollaborator)
+		api.DELETE("/itineraries/:id", handlers.DeleteItinerary)
+
 		// Budget routes
 		api.POST("/budgets", handlers.CreateBudget)
 		api.GET("/budgets", handlers.GetBudgets)
