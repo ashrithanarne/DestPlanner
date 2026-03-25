@@ -21,6 +21,11 @@
           <mat-icon>add</mat-icon> New Group
         </button>
         <button mat-raised-button class="btn-primary-action"
+          *ngIf="selectedGroup" (click)="toggleManageMembersPanel()">
+          <mat-icon>{{ showManageMembersPanel ? 'close' : 'person_add' }}</mat-icon>
+          {{ showManageMembersPanel ? 'Close' : 'Members' }}
+        </button>
+        <button mat-raised-button class="btn-primary-action"
           *ngIf="selectedGroup" (click)="toggleAddExpenseForm()">
           <mat-icon>add</mat-icon> Add Expense
         </button>
@@ -99,6 +104,74 @@
 
     <!-- ── Group Detail ───────────────────────────────────────── -->
     <ng-container *ngIf="selectedGroup">
+
+
+      <!-- ── Manage Members Panel ──────────────────────────────── -->
+      <mat-card class="form-card members-panel" *ngIf="showManageMembersPanel && selectedGroup">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>people</mat-icon>
+          <mat-card-title>Manage Members</mat-card-title>
+          <mat-card-subtitle>{{ selectedGroup.members.length }} member{{ selectedGroup.members.length !== 1 ? 's' : '' }} in this group</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+
+          <!-- Current members list -->
+          <div class="current-members-list">
+            <div class="current-member-row" *ngFor="let m of selectedGroup.members">
+              <div class="member-avatar-small"><mat-icon>account_circle</mat-icon></div>
+              <div class="member-details">
+                <span class="member-fullname">{{ m.first_name }} {{ m.last_name }}</span>
+              </div>
+              <span class="creator-badge" *ngIf="m.user_id === selectedGroup.created_by">Owner</span>
+              <button mat-icon-button class="btn-remove-member"
+                *ngIf="m.user_id !== selectedGroup.created_by"
+                [disabled]="removingMemberId === m.user_id"
+                (click)="removeMember(m)"
+                matTooltip="Remove member">
+                <mat-icon>{{ removingMemberId === m.user_id ? 'hourglass_empty' : 'person_remove' }}</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <mat-divider class="members-divider"></mat-divider>
+
+          <!-- Search & add -->
+          <p class="add-member-label"><mat-icon>search</mat-icon> Add a new member</p>
+          <div class="member-search-row">
+            <mat-form-field appearance="outline" class="field-wide">
+              <mat-label>Search by name or email</mat-label>
+              <input matInput
+                [(ngModel)]="memberSearchQuery"
+                (input)="searchMembers()"
+                placeholder="e.g. jane@example.com">
+              <mat-icon matSuffix>{{ searchingMembers ? 'hourglass_empty' : 'search' }}</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <!-- Search results -->
+          <div class="search-results" *ngIf="memberSearchResults.length > 0">
+            <div class="search-result-row" *ngFor="let user of memberSearchResults">
+              <div class="member-avatar-small"><mat-icon>account_circle</mat-icon></div>
+              <div class="member-details">
+                <span class="member-fullname">{{ user.first_name }} {{ user.last_name }}</span>
+              </div>
+              <button mat-stroked-button class="btn-add-member"
+                *ngIf="!isAlreadyMember(user.user_id)"
+                [disabled]="addingMemberId === user.user_id"
+                (click)="addMember(user)">
+                <mat-icon>{{ addingMemberId === user.user_id ? 'hourglass_empty' : 'person_add' }}</mat-icon>
+                {{ addingMemberId === user.user_id ? 'Adding...' : 'Add' }}
+              </button>
+              <span class="already-member-badge" *ngIf="isAlreadyMember(user.user_id)">Already a member</span>
+            </div>
+          </div>
+
+          <p class="no-results" *ngIf="memberSearchQuery.length >= 2 && !searchingMembers && memberSearchResults.length === 0">
+            No users found for "{{ memberSearchQuery }}"
+          </p>
+
+        </mat-card-content>
+      </mat-card>
 
       <!-- Balances Summary Banner -->
       <div class="balances-banner" *ngIf="balances.length > 0">

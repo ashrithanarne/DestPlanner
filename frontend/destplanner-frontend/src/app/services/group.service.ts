@@ -76,6 +76,13 @@ export interface CreateGroupExpensePayload {
   splits?: SplitInput[];
 }
 
+export interface UserSearchResult {
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 export const EXPENSE_CATEGORIES = [
   'Food & Dining', 'Accommodation', 'Transport',
   'Activities', 'Shopping', 'Health', 'Other',
@@ -163,6 +170,13 @@ export class GroupService {
   settleExpense(groupId: number, expenseId: number): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(
       `${this.baseUrl}/groups/${groupId}/expenses/${expenseId}/settle`, {}
+    );
+  }
+
+  // GET /api/users/search?q=...
+  searchUsers(query: string): Observable<{ users: UserSearchResult[] }> {
+    return this.http.get<{ users: UserSearchResult[] }>(
+      `${this.baseUrl}/users/search`, { params: { q: query } }
     );
   }
 
