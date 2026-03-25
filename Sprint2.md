@@ -2168,3 +2168,718 @@ Marks the authenticated user's own split on a specific expense as settled. No re
 | **Total** | **80** | **✅ All Pass** |
 
 ---
+---
+---
+ 
+## Frontend Work Completed in Sprint 2
+ 
+### Framework
+- **Framework:** Angular (with Angular Material)
+- **Language:** TypeScript
+- **Test Runner:** Vitest (via `@analogjs/vitest-angular`) + Jasmine/Karma for some service tests
+- **E2E Testing:** Cypress
+ 
+---
+ 
+### Features Delivered
+ 
+#### 1. **Authentication Integration(Login & Register)**
+- Login component with reactive form, JWT token stored in `sessionStorage`
+- Register component with password strength checker
+- Auth guard (`auth.guard.ts`) to protect routes requiring login
+- Auth interceptor (`auth-interceptor.ts`) to attach JWT `Bearer` token to all outgoing requests
+ 
+#### 2. **Navigation**
+- Responsive navigation bar with mobile hamburger menu
+- Shows authenticated vs unauthenticated links dynamically via `AuthService.isLoggedIn$`
+- Logout button triggers `AuthService.logout()` and redirects to landing page
+ 
+#### 3. **Landing Page**
+- Hero section with call-to-action buttons
+- Features grid (6 features: Trip Management, Budget Tracking, Packing List, Expense Splitting, Discover Destinations, Profile)
+- Benefits section and how-it-works walkthrough
+- Navigation helpers: `navigateToRegister`, `navigateToLogin`, `scrollToFeatures`, `navigateToFeature`
+ 
+#### 4. **Profile**
+- View and edit user profile (first name, last name, email)
+- Displays join date (formatted) and user initials avatar
+- 401 error handling redirects to login with automatic logout
+ 
+#### 5. **My Trips**
+- List all trips with status filter (`all`, `planning`, `ongoing`, `completed`, `cancelled`)
+- Create trip modal form
+- Inline edit trip form with status dropdown
+- Delete trip with confirm dialog
+- Status badge with icon and color coding
+- Packing progress bar per trip
+- Navigate to budget from trip card
+- Duration label and date range display
+ 
+#### 6. **Budget Tracking**
+- List all user budgets
+- Create budget form (linked to a trip)
+- Select a budget to view detail with expense breakdown
+- Add, edit, and delete expenses
+- Spent percentage progress bar with color coding (primary/accent/warn)
+- Category icon and color mapping
+- Category totals chart data
+ 
+#### 7. **Packing List**
+- Route: `/packing-list/:tripId`
+- Create a packing list with climate selection and auto-populate toggle
+- Category tabs for filtering items
+- Check/uncheck items with optimistic UI updates and revert on error
+- Add custom items with category, quantity, and notes
+- Delete individual items or the entire packing list
+- Progress bar showing percent complete
+ 
+#### 8. **Group Expense Splitting**
+- List groups the user belongs to
+- Create group modal form
+- Select a group to view expenses and balances
+- Add expense with three split modes: **equal**, **custom**, and **percentage**
+- Custom split validation (must sum to total; percentage must sum to 100%)
+- Settle individual expense splits
+- Balance summary (who owes whom)
+- Category icon mapping for expense categories
+
+#### 9. Destinations
+- Browse and search destinations with filters (location, category, popularity)
+- Destination cards with image, name, description, and rating
+- API integration to fetch destination data dynamically
+- Click on a destination to navigate to detailed view page
+- Favorite/save destinations functionality (if implemented)
+- Pagination or infinite scroll for large datasets
+
+#### 10. Destination Detail
+- Route: /destinations/:id
+- Displays detailed information about selected destination
+- Includes images, description, location map, and highlights
+- Shows recommended activities and best time to visit
+- Option to add destination to a trip
+- Back navigation to destinations list
+- Error handling for invalid or missing destination ID
+#### 11. Itinerary
+- Route: /itinerary/:tripId
+- Day-wise itinerary planning for each trip
+- Add, edit, and delete itinerary items (activity, time, notes, location)
+- Drag-and-drop or ordered list for organizing activities (if implemented)
+- Displays trip duration with date-wise breakdown
+- Save and update itinerary via API
+- Visual timeline or structured layout for daily plans
+- Handles empty state (no itinerary created yet)
+
+#### 12. **Frontend-Backend Integration**
+- `environment.ts` / `environment.development.ts` point to `http://localhost:8080/api`
+- `AuthInterceptor` attaches JWT from `sessionStorage` to all API requests
+- All services (`AuthService`, `BudgetService`, `TripService`, `PackingListService`, `GroupService`, `UserProfileService`, `DestinationService`, `DestinationDetailService`,`ItineraryService`) call the live Go backend
+- 401 responses trigger automatic logout and redirect to `/login`
+ 
+---
+ 
+## Frontend Unit Tests
+ 
+### Test Framework
+- **Jasmine/Karma** for `AuthService` and `BudgetService` (HTTP mock via `HttpTestingController`)
+- **Vitest** (`@analogjs/vitest-angular`) for all component and remaining service tests
+- **Angular Testing Utilities:** `TestBed`, `ComponentFixture`, `NoopAnimationsModule`
+- **HTTP Mocking:** `provideHttpClientTesting()` + `HttpTestingController`
+- **Service Mocking:** `vi.fn()` / `vi.spyOn()` stubs
+ 
+### Unit Test Summary
+ 
+| File | Tests | Description |
+|------|-------|-------------|
+| `app.spec.ts` | 2 | App component creation and render |
+| `services/auth.spec.ts` | 12 | AuthService: register, login, logout, token mgmt |
+| `services/budget.spec.ts` | 16 | BudgetService: CRUD, category totals, percentage helpers |
+| `services/group.service.spec.ts` | 24 | GroupService: CRUD, expense splits, balances, settle |
+| `services/destination.spec.ts` | 10 | DestinationService: fetch destinations, filters, get by ID |
+| `services/user-profile.service.spec.ts` | 10 | UserProfileService: get/update profile, formatters |
+| `services/itinerary.spec.ts` | 8 | ItineraryService: CRUD itinerary items, trip-based fetch |
+| `services/bookmark.spec.ts` | 7 | BookmarkService: add, remove, list bookmarks |
+| `interceptors/auth-interceptor.spec.ts` | 1 | Auth interceptor creation |
+| `auth/login/login.spec.ts` | 11 | LoginComponent creation |
+| `auth/register/register.spec.ts` | 14 | RegisterComponent: form validation, submit, password strength |
+| `components/navigation/navigation.spec.ts` | 10 | NavigationComponent: auth state, toggle, logout |
+| `components/landing-page/landing-page.spec.ts` | 10 | LandingPageComponent: features, benefits, nav methods |
+| `components/profile/profile.spec.ts` | 17 | ProfileComponent: load, edit mode, save, logout |
+| `components/mytrips/mytrips.spec.ts` | 32 | MyTripsComponent: CRUD, filter, status, date helpers |
+| `components/budget/budget.spec.ts` | 26 | BudgetComponent: CRUD, expense mgmt, formatters |
+| `components/packing-list/packing-list.spec.ts` | 61 | PackingListComponent: create, items, toggle, grouping |
+| `components/expense-split/expense-split.spec.ts` | 76 | ExpenseSplitComponent: groups, expenses, splits, settle |
+| `components/destinations/destinations.spec.ts` | 11 | DestinationsComponent: list, filter, navigation |
+| `components/destination-detail/destination-detail.spec.ts` | 7 | DestinationDetailComponent: load by ID, display data |
+| `components/itinerary/itinerary.spec.ts` | 15 | ItineraryComponent: CRUD, day-wise organization |
+
+| **Total** | **380** | **All Passing ✅** |
+ 
+### Running Frontend Unit Tests
+ 
+```bash
+cd frontend/destplanner-frontend
+
+# Run all unit tests (Angular CLI)
+ng test
+ 
+---
+ 
+### Detailed Unit Test Listings
+ 
+#### `app.spec.ts` — App Component (2 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should create the app` | AppComponent instantiates successfully |
+| `should render title` | nativeElement is truthy after detectChanges |
+ 
+---
+ 
+#### `services/auth.spec.ts` — AuthService (12 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should be created` | Service instantiates |
+| `register: should POST to /auth/register` | Sends POST with correct body |
+| `login: should POST to /auth/login and store token` | Stores token in sessionStorage |
+| `login: should update isLoggedIn$ to true on success` | BehaviorSubject emits true |
+| `login: should update currentUser$ with user data` | BehaviorSubject emits user |
+| `logout: should clear sessionStorage and update isLoggedIn$` | Clears token, emits false |
+| `logout: should set currentUser$ to null` | Emits null user |
+| `getToken: should return token from sessionStorage` | Returns stored token |
+| `getToken: should return null when no token` | Returns null |
+| `isLoggedIn: should return true when token exists` | Returns true |
+| `isLoggedIn: should return false when no token` | Returns false |
+| `getCurrentUser: should return null when not logged in` | Returns null |
+ 
+---
+ 
+#### `services/budget.spec.ts` — BudgetService (16 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should be created` | Service instantiates |
+| `createBudget: should POST to /budgets` | Sends correct POST body |
+| `getBudgets: should GET /budgets and update budgets$` | Updates observable |
+| `getBudgetById: should GET /budgets/:id and update selectedBudget$` | Updates observable |
+| `updateBudget: should PUT to /budgets/:id` | Sends PUT with correct body |
+| `deleteBudget: should DELETE /budgets/:id` | Sends DELETE request |
+| `addExpense: should POST to /budgets/:id/expenses` | Sends expense payload |
+| `getExpenses: should GET /budgets/:id/expenses` | Returns expenses array |
+| `updateExpense: should PUT to /budgets/:id/expenses/:expenseId` | Updates expense |
+| `deleteExpense: should DELETE /budgets/:id/expenses/:expenseId` | Deletes expense |
+| `getCategoryTotals: should sum amounts per category and sort descending` | Aggregates categories |
+| `getCategoryTotals: should return empty array for no expenses` | Empty input |
+| `getSpentPercentage: should return correct percentage` | Math is correct |
+| `getSpentPercentage: should cap at 100 when overspent` | Caps at 100 |
+| `getSpentPercentage: should return 0 when total_budget is 0` | Zero division guard |
+| `setSelectedBudget: should update selectedBudget$` | Updates observable |
+ 
+---
+ 
+#### `services/group.service.spec.ts` — GroupService (24 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should be created` | Service instantiates |
+| `getGroups: should GET /groups` | HTTP method verified |
+| `getGroups: should update groups$ with response` | Observable updated |
+| `getGroups: should set groups$ to empty array on empty response` | Empty list handled |
+| `getGroupById: should GET /groups/:id` | HTTP method verified |
+| `getGroupById: should update selectedGroup$` | Observable updated |
+| `createGroup: should POST to /groups with payload` | Correct request body |
+| `createGroup: should return group_id in response` | Response shape correct |
+| `addMember: should POST to /groups/:id/members with user_id` | Correct body |
+| `removeMember: should DELETE /groups/:id/members/:userId` | DELETE sent |
+| `getGroupExpenses: should GET /groups/:id/expenses` | Returns expenses |
+| `addGroupExpense: should POST to /groups/:id/expenses with payload` | Equal split |
+| `addGroupExpense: should send custom splits when provided` | Custom splits |
+| `addGroupExpense: should return expense_id in response` | Response shape |
+| `getGroupBalances: should GET /groups/:id/balances` | HTTP method verified |
+| `getGroupBalances: should update balances$` | Observable updated |
+| `getGroupBalances: should set balances$ to empty on no balances` | Empty list handled |
+| `settleExpense: should PUT to /groups/:id/expenses/:expenseId/settle` | PUT sent |
+| `settleExpense: should return success message` | Response shape |
+| `getMemberFullName: should return first + last name` | Formatting |
+| `formatAmount: should format as USD currency` | Currency symbol |
+| `formatAmount: should format with two decimal places` | Decimal precision |
+| `setSelectedGroup: should update selectedGroup$` | Observable updated |
+| `setSelectedGroup: should allow setting null` | Null allowed |
+ 
+---
+ 
+#### `services/user-profile.service.spec.ts` — UserProfileService (10 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should be created` | Service instantiates |
+| `getProfile: should GET /profile` | HTTP method verified |
+| `getProfile: should update profile$ with user data` | Observable updated |
+| `updateProfile: should PUT to /profile with payload` | Correct body sent |
+| `updateProfile: should update profile$ after update` | Observable updated |
+| `formatJoinDate: should format date string nicely` | Contains year and month |
+| `formatJoinDate: should return original string on invalid date` | Graceful fallback |
+| `getInitials: should return uppercase initials` | Returns "JD" |
+| `getInitials: should handle empty strings` | Returns "" |
+| `getInitials: should handle single name` | Returns "J" |
+ 
+---
+
+#### services/destination.service.spec.ts — DestinationService (10 tests)
+
+| Test | Description |
+|------|-------------|
+| `should be created` |	Service instantiates |
+| `getDestinations: should GET /auth/destinations with no filters` | Fetches all destinations without query params
+| `getDestinations: should return array of destinations` |	Emits array of destinations
+| `getDestinations: should include budget param when provided` |	Adds budget query param to GET request
+| `getDestinations: should include country param when provided` |Adds country query param to GET request
+| `getDestinations: should include both params when provided` |	Adds both budget and country params
+| `getDestinationById: should GET /auth/destinations/:id` |	Fetches single destination by ID
+| `getDestinationById: should return the destination` |	Emits destination object with name and country
+| `suggestDestinations: should GET /auth/destinations/suggest?q=` |	Calls suggest endpoint with query string
+| `suggestDestinations: should return suggestions array` |	Emits array of suggested destinations
+
+---
+
+#### services/itinerary.service.spec.ts — ItineraryService (8 tests)
+
+| Test | Description |
+|------|-------------|
+| `should be created` |	Service instantiates |
+| `createItinerary: should POST to /itineraries` |	Sends POST request with itinerary data
+| `createItinerary: should return itinerary on success` | Emits created itinerary object
+| `getItinerary: should GET /itineraries/:id` |	Calls GET API for specific itinerary
+| `getItinerary: should return itinerary with items` |	Emits itinerary including its items
+| `updateItinerary: should PUT to /itineraries/:id` |	Sends PUT request to update itinerary
+| `updateItinerary: should send correct payload` |	Ensures correct request body is sent
+| `deleteItineraryItem: should DELETE /itineraries/:id/items/:itemId` |	Deletes specific item from itinerary
+
+---
+
+#### services/bookmark.service.spec.ts — BookmarkService (7 tests)
+
+| Test | Description |
+|------|-------------|
+| `should be created` |	Service instantiates |
+| `addBookmark: should POST to /bookmarks with destination_id` |	Sends POST request with destination_id
+| `addBookmark: should return message on success` | Emits success message after adding bookmark
+| `getBookmarks: should GET /bookmarks` |	Calls GET API to fetch bookmarks
+| `getBookmarks: should return array of bookmarks` |	Emits array of bookmarks with destination info
+| `removeBookmark: should DELETE /bookmarks/:id` |	Deletes bookmark by ID
+| `removeBookmark: should return message on success` |	Emits success message after deletion
+
+---
+ 
+#### `auth/register/register.spec.ts` — RegisterComponent (14 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should create` | Component instantiates |
+| `registerForm: should be invalid when empty` | Validation active |
+| `registerForm: should be valid with all required fields` | Valid form |
+| `submit: should show snack and not call register when form is invalid` | Guards against bad submission |
+| `submit: should call register on valid form` | Calls service |
+| `submit: should navigate to /login on success` | Redirect on success |
+| `submit: should show success snack on register success` | Success message |
+| `submit: should show error snack on registration failure` | Error message |
+| `submit: should reset loading to false on error` | Loading state reset |
+| `checkStrength: should return empty string for empty password` | Empty input |
+| `checkStrength: should return "Weak" for short password` | Weak detection |
+| `checkStrength: should return "Strong" for valid strong password` | Strong detection |
+| `checkStrength: should return "Medium" for medium password` | Medium detection |
+| `navigateToLogin: should navigate to /login` | Route navigation |
+ 
+---
+
+#### auth/login/login.spec.ts — LoginComponent (11 tests)
+
+| Test |	Description |
+|------|--------------|
+| `should create` |	Component instantiates |
+| `should initialise loginForm with email, password and rememberMe controls` |	Form controls exist
+| `should be invalid when form is empty` |	Form invalid by default
+| `should mark email as invalid when not an email format` |	Validates email format
+| `should mark form as valid with correct email and password` |	Form valid with correct values
+| `should have loading as false initially` |	loading property initialized as false
+| `submit: should not call auth.login when form is invalid` |	Prevents submission if invalid
+| `submit: should call auth.login with email and password` |	Calls AuthService.login on valid submit
+| `submit: should set loading to false after success` |	Resets loading after success
+| `submit: should set loading to false after error` |	Resets loading after error
+| `navigateToRegister: should be a defined method` |	Checks that method exists
+ 
+#### `components/navigation/navigation.spec.ts` — NavigationComponent (10 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should create` | Component instantiates |
+| `ngOnInit: should set isAuthenticated to false when not logged in` | Auth state |
+| `ngOnInit: should set userName to empty when no user` | Empty user |
+| `toggleMobileMenu: should toggle isMobileMenuOpen` | Toggle behavior |
+| `logout: should call authService.logout` | Calls service |
+| `navigateToProfile: should exist as a method` | Method exists |
+| `navigateToMyTrips: should exist as a method` | Method exists |
+| `navigateToLogin: should exist as a method` | Method exists |
+| `navigateToRegister: should exist as a method` | Method exists |
+| `navigateToHome: should exist as a method` | Method exists |
+ 
+---
+ 
+#### `components/landing-page/landing-page.spec.ts` — LandingPageComponent (10 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should create` | Component instantiates |
+| `should have 6 features defined` | Feature count |
+| `should include Budget Tracking feature` | Specific feature present |
+| `should have 4 benefits defined` | Benefits count |
+| `navigateToRegister: should exist as a method` | Method exists |
+| `navigateToLogin: should exist as a method` | Method exists |
+| `scrollToFeatures: should exist as a method` | Method exists |
+| `scrollToHowItWorks: should exist as a method` | Method exists |
+| `navigateToFeature: should exist as a method` | Method exists |
+| `navigateToFeature: should not throw for non-budget features` | No throw |
+ 
+---
+ 
+#### `components/profile/profile.spec.ts` — ProfileComponent (17 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should create` | Component instantiates |
+| `ngOnInit: should load profile on init` | Service called |
+| `ngOnInit: should set profile after load` | Profile populated |
+| `ngOnInit: should set loading to false after load` | Loading state |
+| `loadProfile: should handle 401 error and navigate to login` | Auth redirect |
+| `loadProfile: should set loading false on non-401 error` | Error handling |
+| `enterEditMode: should set editMode to true and patch form` | Edit form populated |
+| `enterEditMode: should do nothing if no profile` | Null guard |
+| `cancelEdit: should set editMode to false and reset form` | Cancel behavior |
+| `saveProfile: should not call updateProfile if form is invalid` | Validation guard |
+| `saveProfile: should call updateProfile with form values` | Service called |
+| `saveProfile: should set editMode to false after success` | State reset |
+| `saveProfile: should set saving to false on error` | Error handling |
+| `logout: should call authService.logout and navigate to /` | Logout behavior |
+| `getInitials: should delegate to profileService` | Delegation |
+| `getInitials: should return ? if no profile` | Null guard |
+| `formatDate: should delegate to profileService` | Delegation |
+ 
+---
+ 
+#### `components/mytrips/mytrips.spec.ts` — MyTripsComponent (32 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should create` | Component instantiates |
+| `ngOnInit: should load trips on init` | Trips loaded |
+| `ngOnInit: should load budgets on init` | Budgets loaded |
+| `loadTrips: should populate trips array` | Trips array filled |
+| `loadTrips: should handle 401 error and redirect to login` | Auth redirect |
+| `applyFilter: should filter trips by status` | Status filter |
+| `applyFilter: should show all trips for "all" filter` | All filter |
+| `toggleCreateForm: should toggle showCreateForm` | Toggle behavior |
+| `submitCreate: should not call createTrip if form is invalid` | Validation guard |
+| `submitCreate: should call createTrip with form values` | Service called |
+| `submitCreate: should reset form and close after success` | Success state |
+| `startEdit: should set editingTrip and patch form` | Edit initialized |
+| `cancelEdit: should clear editingTrip` | Cancel behavior |
+| `submitEdit: should not call updateTrip if no editingTrip` | Null guard |
+| `submitEdit: should call updateTrip with correct payload` | Service called |
+| `submitEdit: should clear editingTrip after success` | Success state |
+| `deleteTrip: should call deleteTrip on service after confirm` | Confirmed delete |
+| `deleteTrip: should not call deleteTrip if confirm cancelled` | Cancelled delete |
+| `openBudget: should navigate to /budget with trip_id` | Navigation |
+| `getStatusConfig: should return correct config for planning` | Planning config |
+| `getStatusConfig: should return correct config for completed` | Completed config |
+| `getStatusConfig: should return fallback for unknown status` | Fallback |
+| `getStatusCounts: should return correct counts` | Count aggregation |
+| `formatDateRange: should return "Dates TBD" if no start date` | Null guard |
+| `formatDateRange: should return formatted date range` | Date formatting |
+| `getDurationLabel: should return empty string if no duration` | Null guard |
+| `getDurationLabel: should return "1 day" for single day` | Singular label |
+| `getDurationLabel: should return "N days" for multiple days` | Plural label |
+| `getPackingProgressColor: should return primary for >= 80` | Color threshold |
+| `getPackingProgressColor: should return accent for 40-79` | Color threshold |
+| `getPackingProgressColor: should return warn for < 40` | Color threshold |
+| `trackByTripId: should return trip id` | Track by |
+ 
+---
+ 
+#### `components/budget/budget.spec.ts` — BudgetComponent (26 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `should create` | Component instantiates |
+| `ngOnInit: should load budgets on init` | Service called |
+| `toggleCreateForm: should toggle showCreateForm` | Toggle behavior |
+| `toggleExpenseForm: should toggle showExpenseForm` | Toggle behavior |
+| `selectBudget: should set selectedBudget and load expenses` | Budget selection |
+| `backToList: should clear selectedBudget and expenses` | Back behavior |
+| `submitCreateBudget: should not call service if form is invalid` | Validation guard |
+| `submitCreateBudget: should call createBudget and reload on success` | Create success |
+| `deleteBudget: should call deleteBudget on service` | Delete called |
+| `submitExpense: should not call service if form is invalid` | Validation guard |
+| `submitExpense: should call addExpense on valid form` | Add expense |
+| `submitExpense: should call updateExpense when editing` | Edit mode |
+| `deleteExpense: should call deleteExpense on service` | Delete called |
+| `startEditExpense: should set editingExpense and populate form` | Edit initialized |
+| `getSpentPercentage: should return 0 when no selectedBudget` | Null guard |
+| `getSpentPercentage: should delegate to service when budget selected` | Delegation |
+| `getProgressColor: should return primary for < 70%` | Color threshold |
+| `getProgressColor: should return accent for 70-89%` | Color threshold |
+| `getProgressColor: should return warn for >= 90%` | Color threshold |
+| `formatCurrency: should format as USD` | Currency format |
+| `getCategoryIcon: should return correct icon` | Icon mapping |
+| `getCategoryIcon: should return fallback for unknown` | Fallback |
+| `getCategoryColor: should return correct color` | Color mapping |
+| `getCategoryColor: should return fallback for unknown` | Fallback |
+| `trackByExpenseId: should return expense id` | Track by |
+| `trackByBudgetId: should return budget id` | Track by |
+ 
+---
+ 
+#### `components/packing-list/packing-list.spec.ts` — PackingListComponent (61 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `ngOnInit: should load trip and packing list on init` | Init loads data |
+| `ngOnInit: should set tripId from route param` | Route param parsed |
+| `ngOnInit: should set createDuration from trip duration_days` | Duration set |
+| `ngOnInit: should redirect to /my-trips when tripId is missing` | Missing param guard |
+| `ngOnInit: should not load data on server platform` | SSR guard |
+| `load: should populate data on success` | Data populated |
+| `load: should set loading to false after success` | Loading state |
+| `load: should close create and add-item forms after success` | Forms closed |
+| `load: should set data to null on error` | Error state |
+| `load: should set loading to false on error` | Loading on error |
+| `load: should show snack on non-404 error` | Error snack |
+| `load: should NOT show snack on 404 error` | 404 silent |
+| `submitCreate: should show snack when no climate selected` | Validation snack |
+| `submitCreate: should NOT call service when climate is empty` | Guard |
+| `submitCreate: should call create with correct payload` | Correct payload |
+| `submitCreate: should show success snack and reload on success` | Success behavior |
+| `submitCreate: should reset saving to false on success` | State reset |
+| `submitCreate: should reload without error snack on 409 conflict` | 409 silent |
+| `submitCreate: should show error snack on non-409 failure` | Error snack |
+| `submitAddItem: should show snack when item name is empty` | Validation snack |
+| `submitAddItem: should NOT call service when name is blank` | Guard |
+| `submitAddItem: should call addItem with trimmed name and correct payload` | Payload |
+| `submitAddItem: should reset form fields and close form on success` | Reset behavior |
+| `submitAddItem: should show success snack and reload on success` | Success behavior |
+| `submitAddItem: should show error snack on failure` | Error snack |
+| `submitAddItem: should reset saving to false on error` | State reset |
+| `toggleCheck: should optimistically toggle is_checked to true` | Optimistic update |
+| `toggleCheck: should optimistically toggle is_checked to false` | Optimistic update |
+| `toggleCheck: should update checked_items count optimistically` | Count update |
+| `toggleCheck: should recalculate percent_complete optimistically` | Percent update |
+| `toggleCheck: should call updateItem with new is_checked value` | API call |
+| `toggleCheck: should revert is_checked on API error` | Error revert |
+| `toggleCheck: should revert checked_items count on API error` | Count revert |
+| `toggleCheck: should show snack on API error` | Error snack |
+| `deleteItem: should call deleteItem service when confirmed` | Confirmed delete |
+| `deleteItem: should NOT call service when user cancels confirm` | Cancel guard |
+| `deleteItem: should reset deletingItemId to null after success` | State reset |
+| `deleteItem: should show success snack and reload on success` | Success behavior |
+| `deleteItem: should show error snack on failure` | Error snack |
+| `deleteItem: should reset deletingItemId to null on error` | State reset |
+| `deleteList: should call deleteList service with tripId` | Service called |
+| `deleteList: should set data to null on success` | State cleared |
+| `deleteList: should show success snack on success` | Success snack |
+| `deleteList: should show error snack on failure` | Error snack |
+| `groupedItems: should return empty array when data is null` | Null guard |
+| `groupedItems: should group items by category` | Grouping |
+| `groupedItems: should return all groups when activeCategory is "All"` | All filter |
+| `groupedItems: should filter to one category when activeCategory is set` | Filter |
+| `groupedItems: should fall back to "Other" for items with no category` | Fallback |
+| `allCategories: should return empty array when data is null` | Null guard |
+| `allCategories: should start with "All" followed by unique categories` | Category list |
+| `allCategories: should deduplicate categories` | Deduplication |
+| `checkedIn: should count only checked items` | Count checked |
+| `checkedIn: should return 0 when no items are checked` | Zero count |
+| `checkedIn: should return 0 for empty array` | Empty array |
+| `catIcon: should return correct icon for all known categories` | Icon mapping |
+| `catIcon: should return "category" fallback for unknown category` | Fallback |
+| `progressColor: should return "warn" when percent < 40` | Color threshold |
+| `progressColor: should return "accent" when percent is 40–79` | Color threshold |
+| `progressColor: should return "primary" when percent is >= 80` | Color threshold |
+| `progressColor: should return "warn" when data is null` | Null guard |
+ 
+---
+ 
+#### `components/expense-split/expense-split.spec.ts` — ExpenseSplitComponent (76 tests)
+ 
+| Test | Description |
+|------|-------------|
+| `ngOnInit: should call loadGroups on browser platform` | Browser init |
+| `ngOnInit: should populate groups after init` | Groups loaded |
+| `ngOnInit: should NOT load groups on server platform` | SSR guard |
+| `loadGroups: should set groups on success` | Data populated |
+| `loadGroups: should set loadingGroups to false after success` | Loading state |
+| `loadGroups: should show snack and navigate on 401` | Auth redirect |
+| `loadGroups: should show generic snack on other errors` | Error snack |
+| `loadGroups: should set loadingGroups to false on error` | Loading on error |
+| `selectGroup: should set selectedGroup` | Selection set |
+| `selectGroup: should call loadExpenses and loadBalances` | Data loaded |
+| `selectGroup: should hide add expense form` | Form hidden |
+| `backToGroups: should clear selectedGroup` | Group cleared |
+| `backToGroups: should clear expenses and balances` | Data cleared |
+| `backToGroups: should reload groups` | Groups reloaded |
+| `toggleCreateGroupForm: should show form when hidden` | Show form |
+| `toggleCreateGroupForm: should hide and reset when shown` | Hide and reset |
+| `submitCreateGroup: should call createGroup with group_name` | Service called |
+| `submitCreateGroup: should show snack and reload on success` | Success behavior |
+| `submitCreateGroup: should show validation snack when form is invalid` | Validation snack |
+| `submitCreateGroup: should NOT call service when form is invalid` | Guard |
+| `submitCreateGroup: should show error snack on API failure` | Error snack |
+| `submitCreateGroup: should reset savingGroup on error` | State reset |
+| `loadExpenses: should populate expenses on success` | Data populated |
+| `loadExpenses: should set loadingExpenses to false on success` | Loading state |
+| `loadExpenses: should show snack on error` | Error snack |
+| `loadExpenses: should do nothing when no selectedGroup` | Null guard |
+| `loadBalances: should populate balances on success` | Data populated |
+| `loadBalances: should set loadingBalances to false on success` | Loading state |
+| `loadBalances: should do nothing when no selectedGroup` | Null guard |
+| `toggleAddExpenseForm: should show form` | Show form |
+| `toggleAddExpenseForm: should hide and reset form` | Hide and reset |
+| `onSplitModeChange: should set splitMode to equal` | Mode set |
+| `onSplitModeChange: should build splits array for custom mode` | Custom array |
+| `onSplitModeChange: should build splits array for percentage mode` | Percentage array |
+| `onSplitModeChange: should clear splits array when switching to equal` | Array cleared |
+| `onSplitModeChange: should clear splitError` | Error cleared |
+| `validateSplits: should return true for equal mode` | Equal valid |
+| `validateSplits: should return false when custom amounts do not match total` | Custom invalid |
+| `validateSplits: should return true when custom amounts match total` | Custom valid |
+| `validateSplits: should return false when percentages do not add to 100` | Percentage invalid |
+| `validateSplits: should return true when percentages sum to 100` | Percentage valid |
+| `submitAddExpense: should call addGroupExpense with correct payload (equal split)` | Equal split payload |
+| `submitAddExpense: should NOT send splits for equal mode` | No splits sent |
+| `submitAddExpense: should send custom splits for custom mode` | Custom splits sent |
+| `submitAddExpense: should convert percentages to amounts for percentage mode` | Percentage conversion |
+| `submitAddExpense: should show success snack and reload on success` | Success behavior |
+| `submitAddExpense: should show validation snack when form is invalid` | Validation snack |
+| `submitAddExpense: should show split error snack when splits are invalid` | Split error |
+| `submitAddExpense: should show error snack on API failure` | Error snack |
+| `submitAddExpense: should reset savingExpense on error` | State reset |
+| `settleExpense: should call settleExpense service` | Service called |
+| `settleExpense: should show success snack and reload` | Success behavior |
+| `settleExpense: should reset settlingId after success` | State reset |
+| `settleExpense: should show error snack on failure` | Error snack |
+| `settleExpense: should reset settlingId on error` | State reset |
+| `settleExpense: should do nothing when no selectedGroup` | Null guard |
+| `resetExpenseForm: should reset form to defaults` | Form reset |
+| `resetExpenseForm: should clear the splits FormArray` | Array cleared |
+| `isMySettled: should return true when my split is settled` | Settled check |
+| `isMySettled: should return false when my split is not settled` | Unsettled check |
+| `isMySettled: should return false when user has no split` | Missing user |
+| `getTotalExpenses: should sum all expense amounts` | Sum calculation |
+| `getTotalExpenses: should return 0 when no expenses` | Empty array |
+| `getMemberName: should call groupService.getMemberFullName` | Delegation |
+| `formatCurrency: should call groupService.formatAmount` | Delegation |
+| `getCategoryIcon: should return correct icons for known categories` | Icon mapping |
+| `getCategoryIcon: should return receipt fallback for unknown category` | Fallback |
+| `isSplitBalanced: should return true when split total equals expense amount` | Balanced check |
+| `isSplitBalanced: should return false when split total does not match` | Imbalanced check |
+| `currentSplitTotal: should sum amount_owed from all splits controls` | Total calculation |
+| `currentSplitTotal: should return 0 when no splits` | Empty |
+| `expenseAmount: should return parsed number from form` | Parsing |
+| `expenseAmount: should return 0 when amount is empty` | Empty input |
+| `trackByGroupId: should return group id` | Track by |
+| `trackByExpenseId: should return expense id` | Track by |
+| `trackByBalanceIdx: should return index` | Track by |
+ 
+---
+
+#### components/destinations/destinations.spec.ts — DestinationsComponent (11 tests)
+
+| Test |	Description |
+| `should create` |	Component instantiates
+| `ngOnInit: should call loadDestinations` |	Calls loadDestinations on init
+| `ngOnInit: should set isLoggedIn from authService` |	Sets isLoggedIn correctly
+| `loadDestinations: should populate destinations array` | Loads destinations into array
+| `loadDestinations: should set loading to false on success` |	Resets loading flag after successful fetch
+| `loadDestinations: should set loading to false on error` |	Resets loading flag after error
+| `loadDestinations: should load bookmarks when logged in` |	Marks destinations as bookmarked for logged-in users
+| `toggleBookmark: should not call addBookmark when not logged in` |	Prevents adding bookmarks if not logged in
+| `toggleBookmark: should call addBookmark when not bookmarked and logged in` |	Adds bookmark if user logged in and not bookmarked
+| `toggleBookmark: should call removeBookmark when already bookmarked` |	Removes bookmark if already bookmarked
+| `viewDetails: should be a defined method` |	Checks that viewDetails method exists
+
+---
+ 
+ #### components/destination-detail/destination-detail.spec.ts — DestinationDetailComponent (7 tests)
+
+| Test |	Description |
+|------|--------------|
+| `should create` |	Component instantiates
+| `loadDestination: should set loading to false on error`	| Resets loading after fetch error
+| `loadDestination: should check bookmarks when logged in`	 | Marks destination as bookmarked for logged-in users
+| `toggleBookmark: should not call service when not logged in`	| Prevents bookmark addition if not logged in
+| `toggleBookmark: should addBookmark when not bookmarked and logged in`	| Adds bookmark when logged in and not already bookmarked
+| `toggleBookmark: should removeBookmark when already bookmarked` |	Removes bookmark if already bookmarked
+| `goBack: should be a defined method`	| Checks that goBack method exists
+
+---
+
+#### components/itinerary/itinerary.spec.ts — ItineraryComponent (15 tests)
+
+| Test |	Description |
+|------|--------------|
+| `should create`	| Component instantiates
+| `loadItinerary: should use fallback items on error` |	Uses fallback itinerary and resets loading on fetch error
+| `openForm: should set showForm to true` | Opens the form modal
+| `openForm: should reset editingId when no item passed` |	Resets editingId if no item
+| `openForm: should set editingId when item passed` | Sets editingId and populates form when editing
+| `closeForm: should set showForm to false` |	Closes the form modal
+| `closeForm: should reset editingId`	| Resets editingId on close
+| `itemForm: should be invalid when empty`	| Form validation fails if empty
+| `itemForm: should be valid when time and activity filled`	| Form valid when required fields filled
+| `saveItem: should add new item to itineraryItems`	| Adds a new item to the list
+| `saveItem: should not save if form is invalid`	| Prevents save if form invalid
+| `saveItem: should update existing item when editingId is set`	| Updates an existing itinerary item
+| `saveItem: should call updateItinerary on save`	| Calls service to update itinerary
+| `deleteItem: should remove item from itineraryItems` |	Removes item from the list
+| `deleteItem: should call deleteItineraryItem on service` | Calls service to delete item
+
+---
+
+
+## Cypress E2E Test
+ 
+### Test File
+`frontend/destplanner-frontend/cypress/e2e/landing-page.cy.ts`
+ 
+### Running the Cypress Test
+ 
+```bash
+cd frontend/destplanner-frontend
+ 
+# Open Cypress interactive runner
+npx cypress open
+ 
+# Run headlessly
+npx cypress run
+```
+ 
+### Cypress Test Listing
+ 
+| Test | Description |
+|------|-------------|
+| `should load the landing page` | Visits `/`, asserts "DestPlanner" text is visible |
+| `should navigate to login page` | Visits `/login`, checks email and password inputs exist |
+| `should navigate to register page` | Visits `/register`, checks form inputs exist |
+| `should allow typing in login form fields` | Types into email and password fields, verifies values |
+| `should show Login link in nav when not authenticated` | Landing page shows "Login" in nav |
+| `should show Budget Tracking feature on landing page` | Budget Tracking feature card is visible |
+ 
+---
+ 
+## Frontend Test Design Principles
+ 
+1. **Isolation:** Components tested with mock services via `vi.fn()` — no real HTTP calls
+2. **AAA Pattern:** Arrange (setup/spy), Act (call method / detect changes), Assert (expect)
+3. **Optimistic UI Testing:** `toggleCheck` tests verify both immediate UI update and API revert on failure
+4. **Error Handling Coverage:** Every service call has at least one test for the error path (401, 404, 500)
+5. **SSR Guard Testing:** Components with `isPlatformBrowser` guards tested for both `browser` and `server` platforms
+6. **Null Guards:** All components tested with null/undefined data to verify defensive coding
+ 
+ 
