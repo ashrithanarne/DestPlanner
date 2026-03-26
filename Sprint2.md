@@ -2600,6 +2600,7 @@ ng test
 
 #### `app.spec.ts` — App Component (2 tests)
 
+
 | Test | Description |
 |------|-------------|
 | `should create the app` | AppComponent instantiates successfully |
@@ -2650,6 +2651,7 @@ ng test
 ---
 
 #### `services/group.service.spec.ts` — GroupService (24 tests)
+
 
 | Test | Description |
 |------|-------------|
@@ -2780,6 +2782,7 @@ ng test
 | `checkStrength: should return "Medium" for medium password` | Medium detection |
 | `navigateToLogin: should navigate to /login` | Route navigation |
 
+
 ---
 
 #### `components/navigation/navigation.spec.ts` — NavigationComponent (10 tests)
@@ -2881,6 +2884,7 @@ ng test
 
 #### `components/budget/budget.spec.ts` — BudgetComponent (26 tests)
 
+
 | Test | Description |
 |------|-------------|
 | `should create` | Component instantiates |
@@ -2909,7 +2913,6 @@ ng test
 | `getCategoryColor: should return fallback for unknown` | Fallback |
 | `trackByExpenseId: should return expense id` | Track by |
 | `trackByBudgetId: should return budget id` | Track by |
-
 ---
 
 #### `components/packing-list/packing-list.spec.ts` — PackingListComponent (61 tests)
@@ -3134,6 +3137,7 @@ npx cypress run
 ```
 
 ### Cypress Test Listing
+
 
 | Test | Description |
 |------|-------------|

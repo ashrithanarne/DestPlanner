@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -33,7 +33,8 @@ export class DestinationDetailComponent implements OnInit {
     private destService: DestinationService,
     private bookmarkService: BookmarkService,
     private authService: AuthService,
-    private snack: MatSnackBar
+    private snack: MatSnackBar,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -57,16 +58,22 @@ export class DestinationDetailComponent implements OnInit {
               const bookmarkedNames = new Set(bookmarks.map(b => b.destination));
               this.destination!.is_bookmarked = bookmarkedNames.has(this.destination!.name);
               this.loading = false;
+              this.cdr.detectChanges();
             },
-            error: () => this.loading = false
+            error: () => {
+              this.loading = false;
+              this.cdr.detectChanges();
+            }
           });
         } else {
           this.loading = false;
+          this.cdr.detectChanges();
         }
       },
       error: () => {
         this.snack.open('Failed to load destination details', 'Close', { duration: 3000 });
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
