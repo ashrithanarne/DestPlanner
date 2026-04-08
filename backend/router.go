@@ -135,6 +135,13 @@ func main() {
 		api.GET("/groups/:id/expenses", handlers.GetGroupExpenses)
 		api.GET("/groups/:id/balances", handlers.GetGroupBalances)
 		api.PUT("/groups/:id/expenses/:expenseId/settle", handlers.SettleExpense)
+
+		// Timeline routes
+		api.GET("/trips/:id/timeline", handlers.GetTimeline)
+		api.POST("/trips/:id/timeline/items", handlers.CreateTimelineItem)
+		api.PUT("/trips/:id/timeline/items/:itemId", handlers.UpdateTimelineItem)
+		api.DELETE("/trips/:id/timeline/items/:itemId", handlers.DeleteTimelineItem)
+		api.PUT("/trips/:id/timeline/items/:itemId/reorder", handlers.ReorderTimelineItem)
 	}
 
 	// Start server
