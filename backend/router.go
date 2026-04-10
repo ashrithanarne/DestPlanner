@@ -85,6 +85,9 @@ func main() {
 		api.DELETE("/destinations/:id", handlers.DeleteDestination)
 		api.PUT("/destinations/:id", handlers.UpdateDestination)
 
+		// Compare destinations
+		api.GET("/destinations/compare", handlers.CompareDestinations)
+
 		// Review routes
 		api.POST("/destinations/:id/reviews", handlers.CreateReview)
 		api.GET("/destinations/:id/reviews", handlers.GetReviews)
