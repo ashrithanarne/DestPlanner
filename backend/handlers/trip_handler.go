@@ -115,6 +115,19 @@ func CreateTrip(c *gin.Context) {
 	}
 
 	tripID, _ := result.LastInsertId()
+	tripIDInt := int(tripID)
+
+	// Fire in-app notification for trip creation
+	prefs := getNotifPrefs(claims.UserID)
+	if prefs.TripReminders {
+		CreateNotification(models.CreateNotificationRequest{
+			UserID:  claims.UserID,
+			Type:    models.NotificationTripUpdated,
+			Title:   "Trip created",
+			Message: "Your trip \"" + req.TripName + "\" has been created successfully.",
+			TripID:  &tripIDInt,
+		})
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Trip created successfully",
@@ -410,6 +423,21 @@ func UpdateTrip(c *gin.Context) {
 			Message: "Trip not found",
 		})
 		return
+	}
+
+	// Fire notification to the trip owner about the update
+	prefs := getNotifPrefs(claims.UserID)
+	if prefs.TripReminders {
+		var tripName string
+		database.DB.QueryRow("SELECT trip_name FROM trips WHERE id = ?", tripID).Scan(&tripName)
+		tripIDCopy := tripID
+		CreateNotification(models.CreateNotificationRequest{
+			UserID:  claims.UserID,
+			Type:    models.NotificationTripUpdated,
+			Title:   "Trip updated",
+			Message: "Your trip \"" + tripName + "\" has been updated.",
+			TripID:  &tripIDCopy,
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{

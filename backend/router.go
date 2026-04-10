@@ -137,6 +137,16 @@ func main() {
 		api.PUT("/trips/:id", handlers.UpdateTrip)
 		api.DELETE("/trips/:id", handlers.DeleteTrip)
 
+		// Notification routes
+		api.GET("/notifications", handlers.GetNotifications)
+		api.GET("/notifications/unread-count", handlers.GetUnreadCount)
+		api.PUT("/notifications/read-all", handlers.MarkAllNotificationsRead)
+		api.PUT("/notifications/:id/read", handlers.MarkNotificationRead)
+		api.DELETE("/notifications/:id", handlers.DeleteNotification)
+		api.GET("/notifications/preferences", handlers.GetNotificationPreferences)
+		api.PUT("/notifications/preferences", handlers.UpdateNotificationPreferences)
+		api.POST("/notifications/reminders/check", handlers.CheckTripReminders)
+
 		// Group routes
 		api.POST("/groups", handlers.CreateGroup)
 		api.GET("/groups", handlers.GetGroups)

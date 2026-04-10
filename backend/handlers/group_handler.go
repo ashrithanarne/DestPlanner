@@ -341,6 +341,19 @@ func AddMember(c *gin.Context) {
 		return
 	}
 
+	// Notify the added user that they were added to the group
+	var groupName string
+	database.DB.QueryRow("SELECT group_name FROM groups WHERE id = ?", groupID).Scan(&groupName)
+	prefs := getNotifPrefs(req.UserID)
+	if prefs.CollaboratorUpdates {
+		CreateNotification(models.CreateNotificationRequest{
+			UserID:  req.UserID,
+			Type:    models.NotificationCollaboratorAdded,
+			Title:   "Added to group",
+			Message: "You have been added to the group \"" + groupName + "\".",
+		})
+	}
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Member added successfully"})
 }
 
@@ -501,6 +514,25 @@ func AddGroupExpense(c *gin.Context) {
 				"INSERT INTO expense_splits (expense_id, user_id, amount_owed) VALUES (?, ?, ?)",
 				expenseID, uid, splitAmount,
 			)
+		}
+	}
+
+	// Notify all group members about the new expense
+	allMembers, _ := groupMemberIDs(groupID)
+	var groupNameForNotif string
+	database.DB.QueryRow("SELECT group_name FROM groups WHERE id = ?", groupID).Scan(&groupNameForNotif)
+	for _, memberID := range allMembers {
+		if memberID == claims.UserID {
+			continue // don't notify the payer themselves
+		}
+		memberPrefs := getNotifPrefs(memberID)
+		if memberPrefs.ExpenseUpdates {
+			CreateNotification(models.CreateNotificationRequest{
+				UserID:  memberID,
+				Type:    models.NotificationExpenseAdded,
+				Title:   "New group expense",
+				Message: fmt.Sprintf("A new expense of %.2f was added to group \"%s\".", req.Amount, groupNameForNotif),
+			})
 		}
 	}
 

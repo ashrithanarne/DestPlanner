@@ -348,6 +348,43 @@ func InitDB(dataSourceName string) error {
 		return err
 	}
 
+	// Create notifications table (Sprint 3)
+	createNotificationsTable := `
+	CREATE TABLE IF NOT EXISTS notifications (
+		id         INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id    INTEGER NOT NULL,
+		type       TEXT    NOT NULL,
+		title      TEXT    NOT NULL,
+		message    TEXT    NOT NULL,
+		trip_id    INTEGER,
+		is_read    INTEGER NOT NULL DEFAULT 0,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+		FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE SET NULL
+	);
+	`
+	_, err = DB.Exec(createNotificationsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create notification_preferences table (Sprint 3)
+	createNotifPrefsTable := `
+	CREATE TABLE IF NOT EXISTS notification_preferences (
+		user_id              INTEGER PRIMARY KEY,
+		email_enabled        INTEGER NOT NULL DEFAULT 0,
+		trip_reminders       INTEGER NOT NULL DEFAULT 1,
+		itinerary_changes    INTEGER NOT NULL DEFAULT 1,
+		expense_updates      INTEGER NOT NULL DEFAULT 1,
+		collaborator_updates INTEGER NOT NULL DEFAULT 1,
+		FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+	);
+	`
+	_, err = DB.Exec(createNotifPrefsTable)
+	if err != nil {
+		return err
+	}
+
 	log.Println("Database initialized successfully")
 	return nil
 }
