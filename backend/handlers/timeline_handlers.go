@@ -213,6 +213,9 @@ func CreateTimelineItem(c *gin.Context) {
 	}
 
 	itemID, _ := result.LastInsertId()
+	// Notify all itinerary collaborators about the new item
+	go notifyItineraryChange(tripID, claims.UserID, req.Title+" added to itinerary")
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Timeline item created successfully",
 		"item_id": itemID,
@@ -439,4 +442,52 @@ func ReorderTimelineItem(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Timeline item reordered successfully"})
+}
+
+// notifyItineraryChange fires an itinerary_changed notification to all group
+// members whose group is linked to tripID, excluding the actor who made the change.
+// Called in a goroutine so it never blocks the HTTP response.
+func notifyItineraryChange(tripID, actorUserID int, changeMsg string) {
+	if database.DB == nil {
+		return
+	}
+
+	// Find all users who are members of any group linked to this trip,
+	// excluding the person who made the change.
+	rows, err := database.DB.Query(`
+		SELECT DISTINCT gm.user_id
+		FROM group_members gm
+		JOIN groups g ON g.id = gm.group_id
+		WHERE g.trip_id = ? AND gm.user_id != ?
+	`, tripID, actorUserID)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	// Also get the trip name for the message
+	var tripName string
+	database.DB.QueryRow("SELECT trip_name FROM trips WHERE id = ?", tripID).Scan(&tripName)
+	if tripName == "" {
+		tripName = "your trip"
+	}
+
+	tripIDCopy := tripID
+	for rows.Next() {
+		var userID int
+		if err := rows.Scan(&userID); err != nil {
+			continue
+		}
+		prefs := getNotifPrefs(userID)
+		if !prefs.ItineraryChanges {
+			continue
+		}
+		CreateNotification(models.CreateNotificationRequest{
+			UserID:  userID,
+			Type:    models.NotificationItineraryChanged,
+			Title:   "Itinerary updated",
+			Message: "A collaborator updated the itinerary for \"" + tripName + "\": " + changeMsg,
+			TripID:  &tripIDCopy,
+		})
+	}
 }
