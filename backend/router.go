@@ -85,6 +85,21 @@ func main() {
 		api.DELETE("/destinations/:id", handlers.DeleteDestination)
 		api.PUT("/destinations/:id", handlers.UpdateDestination)
 
+		// Compare destinations
+		api.GET("/destinations/compare", handlers.CompareDestinations)
+
+		// Review routes
+		api.POST("/destinations/:id/reviews", handlers.CreateReview)
+		api.GET("/destinations/:id/reviews", handlers.GetReviews)
+		api.PUT("/destinations/:id/reviews/:reviewId", handlers.UpdateReview)
+		api.DELETE("/destinations/:id/reviews/:reviewId", handlers.DeleteReview)
+
+		// Activity routes
+		api.GET("/destinations/:id/activities", handlers.GetActivities)
+		api.POST("/destinations/:id/activities", handlers.CreateActivity)
+		api.PUT("/destinations/:id/activities/:activityId", handlers.UpdateActivity)
+		api.DELETE("/destinations/:id/activities/:activityId", handlers.DeleteActivity)
+
 		// Itinerary routes
 		api.POST("/itineraries", handlers.CreateItinerary)
 		api.GET("/itineraries/:id", handlers.GetItinerary)
@@ -125,6 +140,16 @@ func main() {
 		api.PUT("/trips/:id", handlers.UpdateTrip)
 		api.DELETE("/trips/:id", handlers.DeleteTrip)
 
+		// Notification routes
+		api.GET("/notifications", handlers.GetNotifications)
+		api.GET("/notifications/unread-count", handlers.GetUnreadCount)
+		api.PUT("/notifications/read-all", handlers.MarkAllNotificationsRead)
+		api.PUT("/notifications/:id/read", handlers.MarkNotificationRead)
+		api.DELETE("/notifications/:id", handlers.DeleteNotification)
+		api.GET("/notifications/preferences", handlers.GetNotificationPreferences)
+		api.PUT("/notifications/preferences", handlers.UpdateNotificationPreferences)
+		api.POST("/notifications/reminders/check", handlers.CheckTripReminders)
+
 		// Group routes
 		api.POST("/groups", handlers.CreateGroup)
 		api.GET("/groups", handlers.GetGroups)
@@ -135,6 +160,13 @@ func main() {
 		api.GET("/groups/:id/expenses", handlers.GetGroupExpenses)
 		api.GET("/groups/:id/balances", handlers.GetGroupBalances)
 		api.PUT("/groups/:id/expenses/:expenseId/settle", handlers.SettleExpense)
+
+		// Timeline routes
+		api.GET("/trips/:id/timeline", handlers.GetTimeline)
+		api.POST("/trips/:id/timeline/items", handlers.CreateTimelineItem)
+		api.PUT("/trips/:id/timeline/items/:itemId", handlers.UpdateTimelineItem)
+		api.DELETE("/trips/:id/timeline/items/:itemId", handlers.DeleteTimelineItem)
+		api.PUT("/trips/:id/timeline/items/:itemId/reorder", handlers.ReorderTimelineItem)
 	}
 
 	// Start server
