@@ -40,15 +40,27 @@ describe('DestinationDetailComponent', () => {
 
   const mockAuthService = {
     isLoggedIn: vi.fn(),
+    getCurrentUser: vi.fn(),
   };
+
 
   beforeEach(async () => {
     vi.clearAllMocks();
     mockDestService.getDestinationById.mockReturnValue(of({ ...MOCK_DEST }));
+    mockDestService.getReviews = vi.fn().mockReturnValue(of({
+      destination_id: 1,
+      average_rating: 0,
+      total_reviews: 0,
+      reviews: [],
+    }));
+    mockDestService.createReview = vi.fn().mockReturnValue(of({ message: 'created', review_id: 1 }));
+    mockDestService.updateReview = vi.fn().mockReturnValue(of({ message: 'updated' }));
+    mockDestService.deleteReview = vi.fn().mockReturnValue(of({ message: 'deleted' }));
     mockBookmarkService.getBookmarks.mockReturnValue(of([]));
     mockBookmarkService.addBookmark.mockReturnValue(of({ message: 'Added' }));
     mockBookmarkService.removeBookmark.mockReturnValue(of({ message: 'Removed' }));
     mockAuthService.isLoggedIn.mockReturnValue(false);
+    mockAuthService.getCurrentUser.mockReturnValue(null);
 
     await TestBed.configureTestingModule({
       imports: [DestinationDetailComponent],
