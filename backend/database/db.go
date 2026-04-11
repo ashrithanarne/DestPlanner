@@ -124,6 +124,43 @@ func InitDB(dataSourceName string) error {
 		return err
 	}
 
+	// Create reviews table
+	createReviewsTable := `
+CREATE TABLE IF NOT EXISTS reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    destination_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    rating INTEGER NOT NULL,
+    comment TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(destination_id) REFERENCES destinations(id),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
+`
+	_, err = DB.Exec(createReviewsTable)
+	if err != nil {
+		return err
+	}
+
+	// Create activities table
+	createActivitiesTable := `
+CREATE TABLE IF NOT EXISTS activities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    destination_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    category TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(destination_id) REFERENCES destinations(id)
+);
+`
+	_, err = DB.Exec(createActivitiesTable)
+	if err != nil {
+		return err
+	}
+
 	// Create token blacklist table
 	createBlacklistTable := `
 	CREATE TABLE IF NOT EXISTS token_blacklist (
