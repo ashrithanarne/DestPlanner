@@ -1416,7 +1416,7 @@ ok      backend/handlers
 
 ---
 
-## Issues Completed in Sprint 3
+## Issues Completed in Sprint 3(Backend)
 
 - Destination reviews and ratings (#34)
 - View popular activities and attractions for a destination (#21)
@@ -1452,3 +1452,277 @@ ok      backend/handlers
 | `notification_test.go` | 37 | ✅ All Pass |
 | `compare_test.go` | 9 | ✅ All Pass |
 | **Total** | **95** | **✅ All Pass** |
+
+### Frontend
+
+#### 1. **Trip Timeline View (`TimelineComponent`)**
+- Standalone Angular component for building and viewing a day-by-day trip itinerary
+- Timeline view and flat list view — toggle between modes with a single button
+- Add form pre-fills the selected day's date and resets `activity_type` to `activity` on open
+- Edit form patches all item fields into the reactive form (title, location, activity_type, date, start_time, end_time, notes)
+- Create, update, and delete timeline items via `TimelineService`
+- Drag-and-drop reorder using Angular CDK — calls `reorderItem` with `new_position` (1-based index)
+- Platform guard — `getTimeline` is skipped on SSR server platform
+- Route guard — navigates to `/my-trips` when `tripId` is missing or zero
+- 404 guard — navigates to `/my-trips` if the trip no longer exists on the API
+- Five activity types with human-readable label mapping: `travel` → Travel, `accommodation` → Hotel, `activity` → Activity, `dining` → Dining, `other` → Other
+- `trackByDay` and `trackByItem` functions optimise `ngFor` re-renders
+- Snackbar feedback on all create / update / delete / reorder operations (success and error)
+
+#### 2. **In-App Notifications (`NotificationsComponent`)**
+- Standalone Angular component providing a full in-app notification centre
+- Loads notifications and user preferences on init (browser platform only)
+- Subscribes to `notifications$` and `unreadCount$` observables from `NotificationService`
+- Unread-only filter toggle — re-calls `getNotifications` with updated flag on each toggle
+- Mark single notification as read — no-ops silently if already read
+- Bulk mark-all-read with success and error snackbar feedback
+- Delete individual notification — tracks `deletingId` state, clears on success and error
+- Preferences panel — loads preferences on init and patches into reactive form
+- Save preferences — closes panel on success, keeps panel open on failure
+- `getTypeIcon` mapping: 5 notification types mapped to Material icons with `notifications` fallback
+- `getTypeColor` mapping: `warn` / `accent` / `primary` per notification type with `primary` fallback
+- `formatDate` helper formats ISO timestamps to locale-aware short display strings (e.g. Apr 15, 10:00 AM)
+- `trackById` optimises `ngFor` re-renders for the notification list
+
+#### 3. **`TimelineService`**
+- Angular injectable service wrapping all timeline API calls
+- `getTimeline(tripId)` — GET timeline grouped by day, updates `timeline$` BehaviorSubject
+- `createItem(tripId, payload)` — POST new timeline item
+- `updateItem(tripId, itemId, payload)` — PUT partial update
+- `deleteItem(tripId, itemId)` — DELETE item
+- `reorderItem(tripId, itemId, payload)` — PUT reorder with `date` and `new_position`
+- `getActivityColor(type)` — returns hex colour per activity type
+- `getActivityIcon(type)` — returns Material icon name per activity type
+- `setTimeline(data)` — directly set `timeline$` (used in tests and SSR)
+
+#### 4. **`NotificationService`**
+- Angular injectable service wrapping all notifications API calls
+- `getNotifications(unreadOnly?)` — GET notifications list, updates `notifications$` and `unreadCount$`
+- `getUnreadCount()` — GET lightweight badge count, updates `unreadCount$`
+- `markRead(id)` — PUT mark single notification read, updates local state
+- `markAllRead()` — PUT mark all read, sets all local `is_read = true` and `unreadCount$ = 0`
+- `deleteNotification(id)` — DELETE, removes from local `notifications$` array
+- `getPreferences()` — GET user preferences, updates `preferences$`
+- `updatePreferences(partial)` — PUT partial update, updates `preferences$` with returned value
+- Internal polling support via `startPolling` / `stopPolling`
+
+#### 5. **Destination Reviews & Ratings (`DestinationDetailComponent`)**
+- Destination detail page displays reviews and average rating fetched from the backend
+- Bookmark toggle integrated — adds or removes a destination bookmark for logged-in users
+- Auth guard — prompts unauthenticated users to log in before bookmarking
+- Loads bookmark state on init by cross-referencing the bookmarks list against the current destination name
+- Error snackbar shown if the destination fails to load
+- Navigates to `/destinations` if no destination ID is found in the route
+
+#### 6. **View Popular Activities & Attractions (`DestinationsComponent`)**
+- Destinations list page loads all destinations on init via `DestinationService`
+- Bookmark state resolved per destination when user is logged in — cross-references bookmark names against destination list
+- `toggleBookmark` adds or removes a bookmark and updates local `is_bookmarked` state without re-fetching the full list
+- `viewDetails` navigates to `/destinations/:id` for the detail and reviews page
+- Loading flag managed correctly on both success and error paths
+- Error snackbar shown if destinations fail to load
+
+## Unit Tests
+
+#### Timeline Service Tests (`timeline.service.spec.ts`)
+
+**Total Tests: 27**
+
+| Test | Description | Status |
+|------|-------------|--------|
+| `should be created` | Service instantiates via TestBed | ✅ Pass |
+| `getTimeline: should GET /trips/:id/timeline` | Correct URL and method | ✅ Pass |
+| `getTimeline: should update timeline$` | BehaviorSubject updated on response | ✅ Pass |
+| `getTimeline: should return days array from response` | Response mapped correctly | ✅ Pass |
+| `getTimeline: should use correct tripId in URL` | Dynamic tripId in URL | ✅ Pass |
+| `createItem: should POST to /trips/:id/timeline/items` | Correct URL, method, and body | ✅ Pass |
+| `createItem: should return item_id in response` | Response item_id mapped | ✅ Pass |
+| `createItem: should send optional fields when provided` | Optional fields included in body | ✅ Pass |
+| `updateItem: should PUT /trips/:id/timeline/items/:itemId` | Correct URL, method, and body | ✅ Pass |
+| `updateItem: should allow partial payload with only location` | Partial update body accepted | ✅ Pass |
+| `updateItem: should use correct itemId in URL` | Dynamic itemId in URL | ✅ Pass |
+| `deleteItem: should DELETE /trips/:id/timeline/items/:itemId` | Correct URL and DELETE method | ✅ Pass |
+| `deleteItem: should use correct tripId and itemId` | Both IDs correct in URL | ✅ Pass |
+| `reorderItem: should PUT /trips/:id/timeline/items/:itemId/reorder` | Correct URL, method, and body | ✅ Pass |
+| `reorderItem: should send new_position in body` | new_position field sent correctly | ✅ Pass |
+| `setTimeline: should update timeline$ directly` | BehaviorSubject set without HTTP | ✅ Pass |
+| `setTimeline: should allow setting null` | Null clears the BehaviorSubject | ✅ Pass |
+| `getActivityColor: should return blue for travel` | `#3b82f6` returned | ✅ Pass |
+| `getActivityColor: should return purple for accommodation` | `#8b5cf6` returned | ✅ Pass |
+| `getActivityColor: should return green for activity` | `#10b981` returned | ✅ Pass |
+| `getActivityColor: should return amber for dining` | `#f59e0b` returned | ✅ Pass |
+| `getActivityColor: should return gray for other` | `#6b7280` returned | ✅ Pass |
+| `getActivityIcon: should return flight for travel` | Icon name correct | ✅ Pass |
+| `getActivityIcon: should return hotel for accommodation` | Icon name correct | ✅ Pass |
+| `getActivityIcon: should return hiking for activity` | Icon name correct | ✅ Pass |
+| `getActivityIcon: should return restaurant for dining` | Icon name correct | ✅ Pass |
+| `getActivityIcon: should return event for other` | Icon name correct | ✅ Pass |
+
+---
+
+#### Notification Service Tests (`notification.service.spec.ts`)
+
+**Total Tests: 20**
+
+| Test | Description | Status |
+|------|-------------|--------|
+| `should be created` | Service instantiates via TestBed | ✅ Pass |
+| `getNotifications: should GET /notifications` | Correct URL and method | ✅ Pass |
+| `getNotifications: should update notifications$ and unreadCount$` | Both BehaviorSubjects updated | ✅ Pass |
+| `getNotifications: should GET with unread_only=true when flag set` | Query param appended correctly | ✅ Pass |
+| `getNotifications: should set empty array when notifications is null` | Null response handled gracefully | ✅ Pass |
+| `getUnreadCount: should GET /notifications/unread-count` | Correct URL and method | ✅ Pass |
+| `getUnreadCount: should update unreadCount$` | Badge count BehaviorSubject updated | ✅ Pass |
+| `markRead: should PUT /notifications/:id/read` | Correct URL and PUT method | ✅ Pass |
+| `markRead: should update is_read locally` | Local state updated without re-fetch | ✅ Pass |
+| `markRead: should decrement unreadCount$ after marking read` | Badge count decremented | ✅ Pass |
+| `markAllRead: should PUT /notifications/read-all` | Correct URL and PUT method | ✅ Pass |
+| `markAllRead: should set all notifications to is_read=true locally` | All local items marked read, count zeroed | ✅ Pass |
+| `deleteNotification: should DELETE /notifications/:id` | Correct URL and DELETE method | ✅ Pass |
+| `deleteNotification: should remove notification from local list` | Item removed from BehaviorSubject | ✅ Pass |
+| `getPreferences: should GET /notifications/preferences` | Correct URL and method | ✅ Pass |
+| `getPreferences: should update preferences$` | Preferences BehaviorSubject updated | ✅ Pass |
+| `updatePreferences: should PUT /notifications/preferences` | Correct URL, method, and body | ✅ Pass |
+| `updatePreferences: should update preferences$ with returned value` | BehaviorSubject updated from response | ✅ Pass |
+
+---
+
+#### Timeline Component Tests (`timeline.component.spec.ts`)
+
+**Total Tests: 56**
+
+| Test | Description | Status |
+|------|-------------|--------|
+| `should create` | Component instantiates via TestBed | ✅ Pass |
+| `ngOnInit: should parse tripId from route params` | tripId parsed from ActivatedRoute | ✅ Pass |
+| `ngOnInit: should call getTimeline on init (browser)` | getTimeline called on browser platform | ✅ Pass |
+| `ngOnInit: should NOT call getTimeline on server platform` | SSR guard prevents API call | ✅ Pass |
+| `ngOnInit: should navigate to /my-trips when tripId is 0` | Invalid tripId triggers navigation | ✅ Pass |
+| `ngOnInit: should initialise itemForm with default activity_type` | Form defaults to `activity` | ✅ Pass |
+| `ngOnInit: should start with viewMode timeline` | Default view mode is `timeline` | ✅ Pass |
+| `loadTimeline: should set loading to false after success` | Loading flag cleared on success | ✅ Pass |
+| `loadTimeline: should navigate to /my-trips on 404 error` | 404 triggers navigation | ✅ Pass |
+| `loadTimeline: should show snack on non-404 error` | 500 error shows failure snackbar | ✅ Pass |
+| `loadTimeline: should set loading to false even on error` | Loading flag cleared on error | ✅ Pass |
+| `openAddForm: should set showAddForm to true` | Add form panel opens | ✅ Pass |
+| `openAddForm: should clear editingItem` | Edit state cleared on open | ✅ Pass |
+| `openAddForm: should patch date into form when day is provided` | Pre-fills date from selected day | ✅ Pass |
+| `openAddForm: should NOT set date when no day provided` | Date empty without day context | ✅ Pass |
+| `openAddForm: should reset activity_type to activity` | activity_type reset to default | ✅ Pass |
+| `openEditForm: should set editingItem` | editingItem reference set | ✅ Pass |
+| `openEditForm: should patch form with item title` | Title populated from item | ✅ Pass |
+| `openEditForm: should patch form with item location` | Location populated from item | ✅ Pass |
+| `openEditForm: should patch form with item activity_type` | activity_type populated from item | ✅ Pass |
+| `openEditForm: should patch form with item date` | Date populated from item | ✅ Pass |
+| `openEditForm: should set showAddForm to true` | Form panel opens for editing | ✅ Pass |
+| `closeForm: should set showAddForm to false` | Form panel closes | ✅ Pass |
+| `closeForm: should clear editingItem` | editingItem nulled on close | ✅ Pass |
+| `closeForm: should reset form activity_type to activity` | Form reset to defaults | ✅ Pass |
+| `saveItem: should NOT call createItem when form is invalid` | Validation guard prevents API call | ✅ Pass |
+| `saveItem: should call createItem with tripId and form value` | createItem called with correct args | ✅ Pass |
+| `saveItem: should close form after successful create` | Form closes on create success | ✅ Pass |
+| `saveItem: should reload timeline after successful create` | Timeline refreshed after create | ✅ Pass |
+| `saveItem: should show "Item added" snack on create success` | Success snackbar shown | ✅ Pass |
+| `saveItem: should show error snack on create failure` | Error snackbar shown on failure | ✅ Pass |
+| `saveItem: should reset saving to false on create error` | saving flag cleared on error | ✅ Pass |
+| `saveItem: should call updateItem when editingItem is set` | updateItem called with correct args | ✅ Pass |
+| `saveItem: should show "Item updated" snack on update success` | Success snackbar shown | ✅ Pass |
+| `saveItem: should show error snack on update failure` | Error snackbar shown on failure | ✅ Pass |
+| `saveItem: should close form after successful update` | Form closes on update success | ✅ Pass |
+| `deleteItem: should NOT call service when user cancels confirm` | Confirm cancel aborts delete | ✅ Pass |
+| `deleteItem: should call deleteItem service when confirmed` | deleteItem called on confirmation | ✅ Pass |
+| `deleteItem: should show "Item deleted" snack on success` | Success snackbar shown | ✅ Pass |
+| `deleteItem: should reload timeline after successful delete` | Timeline refreshed after delete | ✅ Pass |
+| `deleteItem: should reset deletingItemId to null after success` | Deleting state cleared | ✅ Pass |
+| `deleteItem: should show error snack on failure` | Error snackbar shown on failure | ✅ Pass |
+| `deleteItem: should reset deletingItemId to null on error` | Deleting state cleared on error | ✅ Pass |
+| `dropItem: should call reorderItem when indices differ` | reorderItem called with new_position | ✅ Pass |
+| `dropItem: should NOT call reorderItem when dropped at same position` | No-op when same index | ✅ Pass |
+| `dropItem: should reload timeline after successful reorder` | Timeline refreshed after reorder | ✅ Pass |
+| `dropItem: should show error snack on reorder failure` | Error snackbar shown on failure | ✅ Pass |
+| `toggleViewMode: should switch from timeline to list` | View toggles to list mode | ✅ Pass |
+| `toggleViewMode: should switch from list to timeline` | View toggles back to timeline | ✅ Pass |
+| `getTypeLabel: should return Travel for travel` | Label mapping correct | ✅ Pass |
+| `getTypeLabel: should return Hotel for accommodation` | Label mapping correct | ✅ Pass |
+| `getTypeLabel: should return Activity for activity` | Label mapping correct | ✅ Pass |
+| `getTypeLabel: should return Dining for dining` | Label mapping correct | ✅ Pass |
+| `getTypeLabel: should return Other for other` | Label mapping correct | ✅ Pass |
+| `trackByDay: should return day.date` | Track-by returns date string | ✅ Pass |
+| `trackByItem: should return item.id` | Track-by returns item id | ✅ Pass |
+
+---
+
+#### Notifications Component Tests (`notifications.component.spec.ts`)
+
+**Total Tests: 44**
+
+| Test | Description | Status |
+|------|-------------|--------|
+| `should create` | Component instantiates via TestBed | ✅ Pass |
+| `ngOnInit: should call getNotifications on init (browser)` | getNotifications called with false | ✅ Pass |
+| `ngOnInit: should call getPreferences on init (browser)` | getPreferences called on init | ✅ Pass |
+| `ngOnInit: should NOT load on server platform` | SSR guard prevents API calls | ✅ Pass |
+| `ngOnInit: should initialise prefsForm with default values` | email_enabled false, trip_reminders true | ✅ Pass |
+| `ngOnInit: should patch prefsForm with loaded preferences` | API prefs patched into form | ✅ Pass |
+| `loadNotifications: should set loading to false after success` | Loading cleared on success | ✅ Pass |
+| `loadNotifications: should show snack on non-401 server error` | 500 error shows snackbar | ✅ Pass |
+| `loadNotifications: should NOT show snack on 401 error` | 401 fails silently | ✅ Pass |
+| `loadNotifications: should set loading to false even on error` | Loading cleared on error | ✅ Pass |
+| `toggleUnreadFilter: should flip showUnreadOnly false → true` | Filter state toggles | ✅ Pass |
+| `toggleUnreadFilter: should flip showUnreadOnly back to false` | Filter state toggles back | ✅ Pass |
+| `toggleUnreadFilter: should re-call getNotifications with true` | getNotifications called with new flag | ✅ Pass |
+| `toggleUnreadFilter: should re-call getNotifications with false` | getNotifications called with false on second toggle | ✅ Pass |
+| `markRead: should NOT call service for already-read notification` | No-op for read notifications | ✅ Pass |
+| `markRead: should call markRead with notification id for unread` | markRead called with correct id | ✅ Pass |
+| `markRead: should show error snack when service errors` | Error snackbar shown on failure | ✅ Pass |
+| `markAllRead: should call markAllRead on service` | markAllRead called | ✅ Pass |
+| `markAllRead: should show success snack on success` | Success snackbar shown | ✅ Pass |
+| `markAllRead: should show error snack on failure` | Error snackbar shown on failure | ✅ Pass |
+| `deleteNotification: should call deleteNotification with correct id` | deleteNotification called with id | ✅ Pass |
+| `deleteNotification: should reset deletingId to null after success` | deletingId cleared | ✅ Pass |
+| `deleteNotification: should show success snack on success` | Success snackbar shown | ✅ Pass |
+| `deleteNotification: should show error snack on failure` | Error snackbar shown on failure | ✅ Pass |
+| `deleteNotification: should reset deletingId to null on error` | deletingId cleared on error | ✅ Pass |
+| `savePreferences: should call updatePreferences with form value` | updatePreferences called with form data | ✅ Pass |
+| `savePreferences: should close preferences panel on success` | Panel closes on success | ✅ Pass |
+| `savePreferences: should show success snack on success` | Success snackbar shown | ✅ Pass |
+| `savePreferences: should show error snack on failure` | Error snackbar shown on failure | ✅ Pass |
+| `savePreferences: should NOT close panel on failure` | Panel stays open on failure | ✅ Pass |
+| `getTypeIcon: should return schedule for trip_reminder_7day` | Icon mapping correct | ✅ Pass |
+| `getTypeIcon: should return alarm for trip_reminder_1day` | Icon mapping correct | ✅ Pass |
+| `getTypeIcon: should return edit for trip_updated` | Icon mapping correct | ✅ Pass |
+| `getTypeIcon: should return event_note for itinerary_changed` | Icon mapping correct | ✅ Pass |
+| `getTypeIcon: should return person_add for collaborator_added` | Icon mapping correct | ✅ Pass |
+| `getTypeIcon: should return notifications fallback for unknown` | Fallback icon correct | ✅ Pass |
+| `getTypeColor: should return warn for trip_reminder_1day` | Colour mapping correct | ✅ Pass |
+| `getTypeColor: should return accent for trip_reminder_7day` | Colour mapping correct | ✅ Pass |
+| `getTypeColor: should return primary for trip_updated` | Colour mapping correct | ✅ Pass |
+| `getTypeColor: should return primary as fallback for unknown` | Fallback colour correct | ✅ Pass |
+| `formatDate: should return a non-empty formatted string` | Date formatted successfully | ✅ Pass |
+| `formatDate: should include the day of the month` | Day of month present in output | ✅ Pass |
+| `trackById: should return the notification id` | Track-by returns id | ✅ Pass |
+| `trackById: should work with different ids` | Track-by handles various ids | ✅ Pass |
+
+### Running Frontend Unit Tests
+```bash
+cd frontend/destplanner-frontend
+
+# Run all unit tests
+ng test
+```
+
+### Frontend Unit Tests Summary
+| File | Tests | Status |
+|------|-------|--------|
+| `timeline.service.spec.ts` | 27 | ✅ All Pass |
+| `notification.service.spec.ts` | 20 | ✅ All Pass |
+| `timeline.component.spec.ts` | 56 | ✅ All Pass |
+| `notifications.component.spec.ts` | 44 | ✅ All Pass |
+| **Total** | **147** | **✅ All Pass** |
+
+## Issues Completed in Sprint 3(Frontend)
+- Trip timeline view — frontend component and service (#35)
+- Notifications for trip updates — frontend component and service (#36)
+- Destination reviews and ratings (#34)
+- View popular activities and attractions for a destination (#21)
+
