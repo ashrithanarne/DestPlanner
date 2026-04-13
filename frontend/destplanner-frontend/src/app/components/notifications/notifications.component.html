@@ -1,0 +1,213 @@
+<div class="notifications-page">
+
+  <!-- ── PAGE HEADER ─────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <mat-icon class="header-icon">notifications</mat-icon>
+      <div>
+        <h1 class="page-title">Notifications</h1>
+        <p class="page-subtitle">
+          <span *ngIf="unreadCount > 0" class="unread-badge">{{ unreadCount }} unread</span>
+          <span *ngIf="unreadCount === 0" class="all-read">
+            <mat-icon>check_circle</mat-icon> All caught up!
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button
+        mat-stroked-button
+        (click)="toggleUnreadFilter()"
+        [color]="showUnreadOnly ? 'primary' : ''"
+      >
+        <mat-icon>filter_list</mat-icon>
+        {{ showUnreadOnly ? 'Show All' : 'Unread Only' }}
+      </button>
+
+      <button
+        mat-stroked-button
+        (click)="markAllRead()"
+        [disabled]="unreadCount === 0"
+      >
+        <mat-icon>done_all</mat-icon>
+        Mark All Read
+      </button>
+
+      <button
+        mat-icon-button
+        (click)="showPreferences = !showPreferences"
+        matTooltip="Notification Preferences"
+        [color]="showPreferences ? 'primary' : ''"
+      >
+        <mat-icon>settings</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── PREFERENCES PANEL ───────────────────────────────────────── -->
+  <mat-card class="prefs-card" *ngIf="showPreferences" [@slideDown]>
+    <mat-card-header>
+      <div mat-card-avatar class="prefs-avatar">
+        <mat-icon>tune</mat-icon>
+      </div>
+      <mat-card-title>Notification Preferences</mat-card-title>
+      <mat-card-subtitle>Choose what you want to be notified about</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="prefsForm" class="prefs-form">
+
+        <div class="pref-row">
+          <div class="pref-info">
+            <div class="pref-icon-wrap email-icon">
+              <mat-icon>email</mat-icon>
+            </div>
+            <div class="pref-text">
+              <strong>Email Notifications</strong>
+              <p>Receive notifications via email</p>
+            </div>
+          </div>
+          <mat-slide-toggle formControlName="email_enabled" color="primary"></mat-slide-toggle>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="pref-row">
+          <div class="pref-info">
+            <div class="pref-icon-wrap reminder-icon">
+              <mat-icon>schedule</mat-icon>
+            </div>
+            <div class="pref-text">
+              <strong>Trip Reminders</strong>
+              <p>7-day and 1-day alerts before departure</p>
+            </div>
+          </div>
+          <mat-slide-toggle formControlName="trip_reminders" color="primary"></mat-slide-toggle>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="pref-row">
+          <div class="pref-info">
+            <div class="pref-icon-wrap itinerary-icon">
+              <mat-icon>event_note</mat-icon>
+            </div>
+            <div class="pref-text">
+              <strong>Itinerary Changes</strong>
+              <p>When collaborators edit your itinerary</p>
+            </div>
+          </div>
+          <mat-slide-toggle formControlName="itinerary_changes" color="primary"></mat-slide-toggle>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="pref-row">
+          <div class="pref-info">
+            <div class="pref-icon-wrap expense-icon">
+              <mat-icon>receipt</mat-icon>
+            </div>
+            <div class="pref-text">
+              <strong>Expense Updates</strong>
+              <p>New group expenses and settled payments</p>
+            </div>
+          </div>
+          <mat-slide-toggle formControlName="expense_updates" color="primary"></mat-slide-toggle>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="pref-row">
+          <div class="pref-info">
+            <div class="pref-icon-wrap collab-icon">
+              <mat-icon>person_add</mat-icon>
+            </div>
+            <div class="pref-text">
+              <strong>Collaborator Updates</strong>
+              <p>When someone joins your trip group</p>
+            </div>
+          </div>
+          <mat-slide-toggle formControlName="collaborator_updates" color="primary"></mat-slide-toggle>
+        </div>
+
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-button (click)="showPreferences = false">Cancel</button>
+      <button mat-raised-button color="primary" (click)="savePreferences()">
+        <mat-icon>save</mat-icon>
+        Save Preferences
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- ── LOADING ──────────────────────────────────────────────────── -->
+  <div class="loading-container" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Loading notifications…</p>
+  </div>
+
+  <!-- ── EMPTY STATE ──────────────────────────────────────────────── -->
+  <div class="empty-state" *ngIf="!loading && notifications.length === 0">
+    <div class="empty-icon-wrap">
+      <mat-icon>notifications_none</mat-icon>
+    </div>
+    <h3>{{ showUnreadOnly ? 'No unread notifications' : 'No notifications yet' }}</h3>
+    <p>{{ showUnreadOnly ? 'You\'ve read everything!' : 'Trip updates, reminders, and collaborator activity will appear here.' }}</p>
+    <button mat-stroked-button *ngIf="showUnreadOnly" (click)="toggleUnreadFilter()">
+      Show all notifications
+    </button>
+  </div>
+
+  <!-- ── NOTIFICATION LIST ────────────────────────────────────────── -->
+  <div class="notifications-list" *ngIf="!loading && notifications.length > 0">
+    <mat-card
+      class="notif-card"
+      *ngFor="let notif of notifications; trackBy: trackById"
+      [class.unread]="!notif.is_read"
+      (click)="markRead(notif)"
+      role="listitem"
+    >
+      <div class="notif-content">
+
+        <!-- Icon -->
+        <div class="notif-icon-wrap" [ngClass]="'color-' + getTypeColor(notif.type)">
+          <mat-icon>{{ getTypeIcon(notif.type) }}</mat-icon>
+        </div>
+
+        <!-- Body -->
+        <div class="notif-body">
+          <div class="notif-top-row">
+            <span class="notif-title">{{ notif.title }}</span>
+            <span class="notif-time">{{ formatDate(notif.created_at) }}</span>
+          </div>
+          <p class="notif-message">{{ notif.message }}</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="notif-actions">
+          <span
+            class="unread-indicator"
+            *ngIf="!notif.is_read"
+            matTooltip="Mark as read"
+          ></span>
+          <button
+            mat-icon-button
+            class="delete-btn"
+            (click)="$event.stopPropagation(); deleteNotification(notif.id)"
+            [disabled]="deletingId === notif.id"
+            matTooltip="Delete notification"
+            aria-label="Delete notification"
+          >
+            <mat-spinner *ngIf="deletingId === notif.id" diameter="16"></mat-spinner>
+            <mat-icon *ngIf="deletingId !== notif.id">close</mat-icon>
+          </button>
+        </div>
+
+      </div>
+    </mat-card>
+  </div>
+
+</div>
