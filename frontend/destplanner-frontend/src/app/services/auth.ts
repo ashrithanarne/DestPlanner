@@ -93,7 +93,31 @@ export class AuthService {
 
   private hasToken(): boolean {
     if (typeof sessionStorage === 'undefined') return false;
-    return !!sessionStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
+    if (!token) return false;
+
+    if (this.isTokenExpired(token)) {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      return false;
+    }
+
+    return true;
+  }
+
+  private isTokenExpired(token: string): boolean {
+    try {
+      const parts = token.split('.');
+      if (parts.length < 2 || typeof atob === 'undefined') return false;
+
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64)) as { exp?: number };
+      if (!payload.exp) return false;
+
+      return Date.now() >= payload.exp * 1000;
+    } catch {
+      return false;
+    }
   }
 
   private getStoredUser(): User | null {
