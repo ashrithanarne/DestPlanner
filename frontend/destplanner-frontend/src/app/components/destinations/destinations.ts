@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,7 +10,6 @@ import { DestinationService, Destination } from '../../services/destination';
 import { BookmarkService } from '../../services/bookmark';
 import { AuthService } from '../../services/auth';
 import { Router } from '@angular/router';
-import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-destinations',
@@ -37,7 +36,7 @@ export class DestinationsComponent implements OnInit {
     private bookmarkService: BookmarkService,
     private authService: AuthService,
     private snack: MatSnackBar,
-    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone,
     private router: Router
   ) {}
 
@@ -50,32 +49,39 @@ export class DestinationsComponent implements OnInit {
     this.loading = true;
     this.destService.getDestinations().subscribe({
       next: (data) => {
-        this.destinations = data || [];
-        
-        if (this.isLoggedIn) {
-          this.bookmarkService.getBookmarks().subscribe({
-            next: (bookmarks) => {
-              const bookmarkedNames = new Set((bookmarks || []).map(b => b.destination));
-              this.destinations.forEach(d => {
-                d.is_bookmarked = bookmarkedNames.has(d.name);
-              });
-              this.loading = false;
-              this.cdr.detectChanges();
-            },
-            error: () => {
-              this.loading = false;
-              this.cdr.detectChanges();
-            }
-          });
-        } else {
-          this.loading = false;
-          this.cdr.detectChanges();
-        }
+        this.ngZone.run(() => {
+          this.destinations = data || [];
+
+          if (this.isLoggedIn) {
+            this.bookmarkService.getBookmarks().subscribe({
+              next: (bookmarks) => {
+                this.ngZone.run(() => {
+                  const bookmarkedNames = new Set((bookmarks || []).map(b => b.destination));
+                  this.destinations.forEach(d => {
+                    d.is_bookmarked = bookmarkedNames.has(d.name);
+                  });
+                  this.loading = false;
+                });
+              },
+              error: (err: { status?: number }) => {
+                this.ngZone.run(() => {
+                  if (err.status === 401) {
+                    this.isLoggedIn = false;
+                  }
+                  this.loading = false;
+                });
+              }
+            });
+          } else {
+            this.loading = false;
+          }
+        });
       },
       error: () => {
-        this.snack.open('Failed to load destinations', 'Close', { duration: 3000 });
-        this.loading = false;
-        this.cdr.detectChanges();
+        this.ngZone.run(() => {
+          this.snack.open('Failed to load destinations', 'Close', { duration: 3000 });
+          this.loading = false;
+        });
       }
     });
   }

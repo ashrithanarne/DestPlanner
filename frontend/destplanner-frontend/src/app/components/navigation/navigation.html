@@ -49,6 +49,22 @@
           Destinations
         </button>
 
+        <!-- Notification Bell (Sprint 3) -->
+        <button
+          mat-icon-button
+          routerLink="/notifications"
+          routerLinkActive="active-link"
+          class="nav-bell-btn"
+          matTooltip="Notifications"
+        >
+          <mat-icon
+            [matBadge]="unreadCount > 0 ? unreadCount : null"
+            matBadgeColor="warn"
+            [matBadgeHidden]="unreadCount === 0"
+            matBadgeSize="small"
+          >notifications</mat-icon>
+        </button>
+
         <!-- User Menu -->
         <mat-icon class="user-avatar-icon">account_circle</mat-icon>
         <button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
@@ -124,6 +140,19 @@
       <mat-icon>explore</mat-icon>
       Destinations
     </button>
+
+    <!-- Notification Bell — mobile (Sprint 3) -->
+    <button mat-button class="mobile-menu-item" routerLink="/notifications" (click)="toggleMobileMenu()">
+      <mat-icon
+        [matBadge]="unreadCount > 0 ? unreadCount : null"
+        matBadgeColor="warn"
+        [matBadgeHidden]="unreadCount === 0"
+        matBadgeSize="small"
+      >notifications</mat-icon>
+      Notifications
+      <span class="mobile-notif-count" *ngIf="unreadCount > 0">({{ unreadCount }})</span>
+    </button>
+
     <button mat-button class="mobile-menu-item" (click)="navigateToProfile(); toggleMobileMenu()">
       <mat-icon>person</mat-icon>
       Profile

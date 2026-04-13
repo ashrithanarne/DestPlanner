@@ -58,6 +58,14 @@
 - Notifications auto-fired from trip handler (create/update), group handler (member added, expense added), and timeline handler (item created)
 - Added `notifications` and `notification_preferences` database tables
 
+#### 5. **Compare Destinations Feature**
+- Users can compare 2 to 3 destinations side by side
+- Returns name, country, budget, and description for each destination
+- Validates minimum of 2 and maximum of 3 destination IDs
+- Rejects duplicate IDs in the same comparison
+- Rejects invalid (non-integer) IDs
+- Returns 404 if any destination ID does not exist
+
 ---
 
 ## Backend API Documentation
@@ -998,6 +1006,105 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+## Compare Destinations Endpoint
+
+### 9. Compare Destinations
+
+**GET** `/api/destinations/compare`
+
+Compare 2 to 3 destinations side by side.
+
+**Query Parameters:**
+- `ids` (string, required) - Comma-separated destination IDs e.g. `?ids=1,2,3`
+
+**Request Headers:**
+Authorization: Bearer <jwt_token>
+
+**Example Request:**
+GET /api/destinations/compare?ids=1,2,3
+
+**Response (200 OK):**
+```json
+{
+  "total_destinations": 3,
+  "destinations": [
+    {
+      "id": 1,
+      "name": "Paris",
+      "country": "France",
+      "budget": 2000.0,
+      "description": "City of Light"
+    },
+    {
+      "id": 2,
+      "name": "Tokyo",
+      "country": "Japan",
+      "budget": 3000.0,
+      "description": "Land of the Rising Sun"
+    },
+    {
+      "id": 3,
+      "name": "Bali",
+      "country": "Indonesia",
+      "budget": 1500.0,
+      "description": "Island of the Gods"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+
+*400 Bad Request - Missing ids:*
+```json
+{
+  "error": "validation_error",
+  "message": "ids query parameter is required e.g. ?ids=1,2,3"
+}
+```
+
+*400 Bad Request - Less than 2 IDs:*
+```json
+{
+  "error": "validation_error",
+  "message": "At least 2 destination IDs are required for comparison"
+}
+```
+
+*400 Bad Request - More than 3 IDs:*
+```json
+{
+  "error": "validation_error",
+  "message": "You can compare a maximum of 3 destinations at a time"
+}
+```
+
+*400 Bad Request - Invalid ID format:*
+```json
+{
+  "error": "validation_error",
+  "message": "All IDs must be valid integers"
+}
+```
+
+*400 Bad Request - Duplicate IDs:*
+```json
+{
+  "error": "validation_error",
+  "message": "Duplicate destination IDs are not allowed"
+}
+```
+
+*404 Not Found - ID doesn't exist:*
+```json
+{
+  "error": "not_found",
+  "message": "Destination with ID 999 not found"
+}
+```
+
+---
+
 ## Complete API Endpoint Summary (Sprint 3 Additions)
 
 ### Protected Endpoints (Require Authentication)
@@ -1038,6 +1145,11 @@ Authorization: Bearer <jwt_token>
 | GET | `/api/notifications/preferences` | Get notification preferences |
 | PUT | `/api/notifications/preferences` | Update notification preferences |
 | POST | `/api/notifications/reminders/check` | Trigger trip reminder check (cron) |
+
+#### Compare Destinations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/destinations/compare?ids=1,2,3` | Compare 2 to 3 destinations side by side |
 
 ---
 
@@ -1230,6 +1342,22 @@ Authorization: Bearer <jwt_token>
 | `TestCheckTripReminders_RespectsPreferenceOff` | No notification created when `trip_reminders = 0` | ✅ Pass |
 | `TestNotifPrefs_ExpenseUpdateDisabled_NoNotifCreated` | Disabled preference gates notification creation | ✅ Pass |
 | `TestNotifPrefs_AllTypesStored` | All five preference fields correctly stored and retrieved | ✅ Pass |
+
+#### Compare Destinations Tests (`compare_test.go`)
+
+**Total Tests: 9**
+
+| Test | Description | Status |
+|------|-------------|--------|
+| Compare 2 Destinations - Success | Returns 200 with correct names | ✅ Pass |
+| Compare 3 Destinations - Success | Returns 200 with all 3 destinations | ✅ Pass |
+| Missing ids param | No query param returns 400 | ✅ Pass |
+| Only 1 ID provided | Below minimum returns 400 | ✅ Pass |
+| More than 3 IDs | Above maximum returns 400 | ✅ Pass |
+| Invalid ID format | Non-integer ID returns 400 | ✅ Pass |
+| Duplicate IDs | Same ID twice returns 400 | ✅ Pass |
+| One ID does not exist | ID 999 returns 404 | ✅ Pass |
+| Verify response fields | Correct country and budget returned | ✅ Pass |
  
 ---
 
@@ -1246,6 +1374,7 @@ go test ./handlers/ -run TestGetTimeline -v
 go test ./handlers/ -run TestCreateTimelineItem -v
 go test ./handlers/ -run TestGetNotifications -v
 go test ./handlers/ -run TestNotifPrefs -v
+go test ./handlers/ -run TestCompareDestinations -v
 
 # Run with coverage
 go test ./handlers/... -cover
@@ -1293,6 +1422,7 @@ ok      backend/handlers
 - View popular activities and attractions for a destination (#21)
 - Trip timeline view (#35)
 - Notifications for trip updates (#36)
+- Compare multiple destinations (#17)
 
 ---
 
@@ -1303,13 +1433,15 @@ ok      backend/handlers
 2. Destination activities with full CRUD and category support
 3. Trip timeline view with DB-backed itinerary items, chronological grouping by day, and drag-and-drop reorder support
 4. In-app notification system with per-user preferences, unread badge count, and auto-fired notifications from trip, group, and timeline events
+5. Compare 2 to 3 destinations side by side with full validation
 
 ### API Endpoints Added
 - 4 review management endpoints
 - 4 activity management endpoints
 - 5 timeline management endpoints
 - 8 notification endpoints
-- **Total: 21 new endpoints**
+- 1 compare destinations endpoint
+- **Total: 22 new endpoints**
 
 ### Backend Unit Tests Summary
 | File | Tests | Status |
@@ -1318,4 +1450,5 @@ ok      backend/handlers
 | `activity_test.go` | 13 | ✅ All Pass |
 | `timeline_test.go` | 22 | ✅ All Pass |
 | `notification_test.go` | 37 | ✅ All Pass |
-| **Total** | **86** | **✅ All Pass** |
+| `compare_test.go` | 9 | ✅ All Pass |
+| **Total** | **95** | **✅ All Pass** |

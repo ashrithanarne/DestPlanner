@@ -9,8 +9,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AuthService } from '../../services/auth';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-navigation',
@@ -23,7 +26,9 @@ import { AuthService } from '../../services/auth';
     MatDividerModule,
     MatIconModule,
     MatMenuModule,
-    MatSidenavModule
+    MatSidenavModule,
+    MatBadgeModule,
+    MatTooltipModule,
   ],
   templateUrl: './navigation.html',
   styleUrl: './navigation.css'
@@ -33,18 +38,18 @@ export class NavigationComponent implements OnInit, OnDestroy {
   isAuthenticated = false;
   userName = '';
   isMobileMenuOpen = false;
+  unreadCount = 0;
 
   private subs = new Subscription();
 
   constructor(
     private router: Router,
     private authService: AuthService,
+    private notifService: NotificationService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
-    // Subscribe to auth state changes — works on both server and browser
-    // BehaviorSubject emits immediately so nav updates right after login
     this.subs.add(
       this.authService.isLoggedIn$.subscribe((loggedIn) => {
         this.isAuthenticated = loggedIn;
@@ -55,9 +60,17 @@ export class NavigationComponent implements OnInit, OnDestroy {
         this.userName = user ? `${user.first_name} ${user.last_name}` : '';
       })
     );
+
+    if (isPlatformBrowser(this.platformId)) {
+      this.notifService.startPolling(30000);
+      this.subs.add(
+        this.notifService.unreadCount$.subscribe(c => (this.unreadCount = c))
+      );
+    }
   }
 
   ngOnDestroy(): void {
+    this.notifService.stopPolling();
     this.subs.unsubscribe();
   }
 

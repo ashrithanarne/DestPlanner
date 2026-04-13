@@ -1,0 +1,354 @@
+<div class="timeline-page">
+
+  <!-- ── PAGE HEADER ─────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <button mat-icon-button (click)="router.navigate(['/my-trips'])" matTooltip="Back to My Trips">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1 class="page-title">{{ timeline?.trip_name || 'Trip Timeline' }}</h1>
+        <p class="page-subtitle">
+          {{ (timeline?.days?.length || 0) }} day(s) planned
+          <span *ngIf="timeline?.start_date"> · starts {{ timeline?.start_date | date: 'mediumDate' }}</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button mat-stroked-button (click)="toggleViewMode()">
+        <mat-icon>{{ viewMode === 'timeline' ? 'list' : 'view_timeline' }}</mat-icon>
+        {{ viewMode === 'timeline' ? 'List View' : 'Timeline View' }}
+      </button>
+      <button mat-raised-button color="primary" (click)="openAddForm()">
+        <mat-icon>add</mat-icon>
+        Add Item
+      </button>
+    </div>
+  </div>
+
+  <!-- ── LEGEND ───────────────────────────────────────────────────── -->
+  <div class="legend">
+    <span class="legend-item" *ngFor="let type of activityTypes">
+      <span class="legend-dot" [style.background]="getColor(type)"></span>
+      {{ getTypeLabel(type) }}
+    </span>
+  </div>
+
+  <!-- ── LOADING ──────────────────────────────────────────────────── -->
+  <div class="loading-container" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Loading your itinerary…</p>
+  </div>
+
+  <!-- ── EMPTY STATE ──────────────────────────────────────────────── -->
+  <div class="empty-state" *ngIf="!loading && (!timeline?.days || timeline?.days?.length === 0)">
+    <div class="empty-icon-wrap">
+      <mat-icon>event_note</mat-icon>
+    </div>
+    <h3>No activities planned yet</h3>
+    <p>Start building your itinerary by adding flights, hotels, activities, or dining reservations.</p>
+    <button mat-raised-button color="primary" (click)="openAddForm()">
+      <mat-icon>add</mat-icon>
+      Add First Activity
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TIMELINE VIEW
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="timeline-view" *ngIf="!loading && viewMode === 'timeline' && timeline?.days?.length">
+    <div
+      class="day-section"
+      *ngFor="let day of timeline?.days; trackBy: trackByDay"
+    >
+      <!-- Day header -->
+      <div class="day-header">
+        <div class="day-marker">
+          <div class="day-number">Day {{ day.day_number }}</div>
+          <div class="day-connector"></div>
+        </div>
+        <div class="day-title-row">
+          <span class="day-date">{{ day.date | date: 'EEEE, MMMM d, y' }}</span>
+          <span class="day-item-count">{{ day.items.length }} item{{ day.items.length !== 1 ? 's' : '' }}</span>
+          <button
+            mat-stroked-button
+            class="add-to-day-btn"
+            (click)="openAddForm(day)"
+            color="primary"
+          >
+            <mat-icon>add</mat-icon>
+            Add
+          </button>
+        </div>
+      </div>
+
+      <!-- Items track (drag-and-drop) -->
+      <div
+        class="items-track"
+        cdkDropList
+        [cdkDropListData]="day.items"
+        (cdkDropListDropped)="dropItem($event, day)"
+      >
+        <!-- Empty day placeholder -->
+        <div class="empty-day" *ngIf="day.items.length === 0">
+          <mat-icon>add_circle_outline</mat-icon>
+          <span>No activities yet — <a (click)="openAddForm(day)">add one</a></span>
+        </div>
+
+        <div
+          class="timeline-item"
+          *ngFor="let item of day.items; trackBy: trackByItem"
+          cdkDrag
+          [cdkDragData]="item"
+        >
+          <!-- Drag preview -->
+          <div *cdkDragPreview class="drag-preview">
+            <mat-icon [style.color]="getColor(item.activity_type)">{{ getIcon(item.activity_type) }}</mat-icon>
+            {{ item.title }}
+          </div>
+
+          <!-- Drag placeholder -->
+          <div *cdkDragPlaceholder class="drag-placeholder"></div>
+
+          <!-- Drag handle -->
+          <div class="drag-handle" cdkDragHandle matTooltip="Drag to reorder">
+            <mat-icon>drag_indicator</mat-icon>
+          </div>
+
+          <!-- Activity icon dot -->
+          <div
+            class="activity-dot"
+            [style.background]="getColor(item.activity_type)"
+          >
+            <mat-icon>{{ getIcon(item.activity_type) }}</mat-icon>
+          </div>
+
+          <!-- Item content -->
+          <div class="item-content">
+            <div class="item-top-row">
+              <span class="item-title">{{ item.title }}</span>
+              <span
+                class="activity-badge"
+                [style.background]="getColor(item.activity_type) + '22'"
+                [style.color]="getColor(item.activity_type)"
+              >
+                {{ getTypeLabel(item.activity_type) }}
+              </span>
+            </div>
+
+            <div class="item-meta" *ngIf="item.start_time || item.location || item.end_time">
+              <span class="meta-item" *ngIf="item.start_time">
+                <mat-icon>schedule</mat-icon>
+                {{ item.start_time }}{{ item.end_time ? ' – ' + item.end_time : '' }}
+              </span>
+              <span class="meta-item" *ngIf="item.location">
+                <mat-icon>place</mat-icon>
+                {{ item.location }}
+              </span>
+            </div>
+
+            <p class="item-description" *ngIf="item.description">
+              {{ item.description }}
+            </p>
+          </div>
+
+          <!-- Item actions -->
+          <div class="item-actions">
+            <button
+              mat-icon-button
+              (click)="openEditForm(item)"
+              matTooltip="Edit item"
+              class="action-btn"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              color="warn"
+              (click)="deleteItem(item)"
+              [disabled]="deletingItemId === item.id"
+              matTooltip="Delete item"
+              class="action-btn"
+            >
+              <mat-spinner *ngIf="deletingItemId === item.id" diameter="18"></mat-spinner>
+              <mat-icon *ngIf="deletingItemId !== item.id">delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       LIST VIEW
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="list-view" *ngIf="!loading && viewMode === 'list' && timeline?.days?.length">
+    <mat-card
+      class="list-day-card"
+      *ngFor="let day of timeline?.days; trackBy: trackByDay"
+    >
+      <mat-card-header>
+        <div mat-card-avatar class="list-day-badge">
+          {{ day.day_number }}
+        </div>
+        <mat-card-title>{{ day.date | date: 'EEEE, MMMM d' }}</mat-card-title>
+        <mat-card-subtitle>{{ day.items.length }} item{{ day.items.length !== 1 ? 's' : '' }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <mat-list>
+          <mat-list-item
+            *ngFor="let item of day.items; trackBy: trackByItem"
+            class="list-view-item"
+          >
+            <mat-icon
+              matListItemIcon
+              [style.color]="getColor(item.activity_type)"
+            >
+              {{ getIcon(item.activity_type) }}
+            </mat-icon>
+
+            <div matListItemTitle class="list-item-title">{{ item.title }}</div>
+
+            <div matListItemLine *ngIf="item.start_time || item.location">
+              <span *ngIf="item.start_time">
+                <mat-icon class="inline-icon">schedule</mat-icon>{{ item.start_time }}
+              </span>
+              <span *ngIf="item.location">
+                &nbsp;·&nbsp;<mat-icon class="inline-icon">place</mat-icon>{{ item.location }}
+              </span>
+            </div>
+
+            <div matListItemMeta class="list-item-actions">
+              <button mat-icon-button (click)="openEditForm(item)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteItem(item)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </mat-list-item>
+        </mat-list>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-button color="primary" (click)="openAddForm(day)">
+          <mat-icon>add</mat-icon>
+          Add to Day {{ day.day_number }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ADD / EDIT FORM MODAL
+  ════════════════════════════════════════════════════════════════ -->
+  <div
+    class="form-overlay"
+    *ngIf="showAddForm"
+    (click)="closeForm()"
+    aria-hidden="true"
+  ></div>
+
+  <mat-card class="item-form-panel" *ngIf="showAddForm" role="dialog" aria-modal="true">
+    <mat-card-header>
+      <div mat-card-avatar class="form-avatar" [style.background]="getColor(itemForm.get('activity_type')?.value || 'activity')">
+        <mat-icon>{{ getIcon(itemForm.get('activity_type')?.value || 'activity') }}</mat-icon>
+      </div>
+      <mat-card-title>{{ editingItem ? 'Edit Item' : 'Add Item' }}</mat-card-title>
+      <mat-card-subtitle>Fill in the details for this itinerary item</mat-card-subtitle>
+      <button mat-icon-button class="close-form-btn" (click)="closeForm()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="itemForm" class="item-form">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Title *</mat-label>
+          <input
+            matInput
+            formControlName="title"
+            placeholder="e.g. Eiffel Tower visit, Hotel check-in"
+            autocomplete="off"
+          >
+          <mat-error *ngIf="itemForm.get('title')?.hasError('required')">
+            Title is required
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Activity Type *</mat-label>
+          <mat-select formControlName="activity_type">
+            <mat-option *ngFor="let type of activityTypes" [value]="type">
+              <div class="type-option">
+                <mat-icon [style.color]="getColor(type)">{{ getIcon(type) }}</mat-icon>
+                {{ getTypeLabel(type) }}
+              </div>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Date *</mat-label>
+          <input matInput formControlName="date" type="date">
+          <mat-icon matSuffix>calendar_today</mat-icon>
+          <mat-error *ngIf="itemForm.get('date')?.hasError('required')">
+            Date is required
+          </mat-error>
+        </mat-form-field>
+
+        <div class="time-row">
+          <mat-form-field appearance="outline" class="half-field">
+            <mat-label>Start Time</mat-label>
+            <input matInput formControlName="start_time" type="time">
+            <mat-icon matSuffix>schedule</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="half-field">
+            <mat-label>End Time</mat-label>
+            <input matInput formControlName="end_time" type="time">
+            <mat-icon matSuffix>schedule</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Location</mat-label>
+          <input
+            matInput
+            formControlName="location"
+            placeholder="e.g. Paris, France"
+          >
+          <mat-icon matPrefix>place</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Notes / Description</mat-label>
+          <textarea
+            matInput
+            formControlName="description"
+            rows="3"
+            placeholder="Optional details, booking references, tips…"
+          ></textarea>
+        </mat-form-field>
+
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions align="end" class="form-actions">
+      <button mat-button (click)="closeForm()" [disabled]="saving">Cancel</button>
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="saveItem()"
+        [disabled]="saving || itemForm.invalid"
+      >
+        <mat-spinner diameter="18" *ngIf="saving"></mat-spinner>
+        <mat-icon *ngIf="!saving">{{ editingItem ? 'save' : 'add' }}</mat-icon>
+        {{ editingItem ? 'Update Item' : 'Add Item' }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+
+</div>

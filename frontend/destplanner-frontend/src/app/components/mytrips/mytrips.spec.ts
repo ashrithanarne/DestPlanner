@@ -80,7 +80,11 @@ describe('MyTripsComponent', () => {
         { provide: BudgetService, useValue: mockBudgetService },
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([]),
+        provideRouter([
+          { path: 'login', component: MyTripsComponent },
+          { path: 'budget', component: MyTripsComponent },
+          { path: 'timeline/:tripId', component: MyTripsComponent },
+        ]),
         provideAnimations(),
       ],
     }).compileComponents();
@@ -244,6 +248,24 @@ describe('MyTripsComponent', () => {
     component.openBudget(MOCK_TRIP, event);
     expect(spy).toHaveBeenCalledWith(['/budget'], { queryParams: { trip_id: 1 } });
   });
+
+  // ──  openTimeline ─────────────────────────────────────────────────
+
+  it('openTimeline: should navigate to /timeline/:id', () => {
+    const spy = vi.spyOn(router, 'navigate');
+    const event = new MouseEvent('click');
+    component.openTimeline(7, event);
+    expect(spy).toHaveBeenCalledWith(['/timeline', 7]);
+  });
+
+  it('openTimeline: should stop event propagation', () => {
+    const event = new MouseEvent('click');
+    const stopSpy = vi.spyOn(event, 'stopPropagation');
+    component.openTimeline(MOCK_TRIP.id, event);
+    expect(stopSpy).toHaveBeenCalled();
+  });
+
+  // ── Status helpers ─────────────────────────────────────────────────────────
 
   it('getStatusConfig: should return correct config for planning', () => {
     const config = component.getStatusConfig('planning');

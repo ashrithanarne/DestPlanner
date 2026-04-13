@@ -48,6 +48,114 @@
           <h3>About {{ destination.name }}</h3>
           <p class="description-text">{{ destination.description }}</p>
         </div>
+
+        <mat-divider style="margin: 2rem 0;"></mat-divider>
+
+        <section class="activities-section">
+          <h3>Popular Activities and Attractions</h3>
+
+          <div *ngIf="activitiesLoading" class="activities-loading">Loading activities...</div>
+
+          <div *ngIf="!activitiesLoading && activitiesError" class="activities-error">
+            {{ activitiesError }}
+          </div>
+
+          <div *ngIf="!activitiesLoading && !activitiesError && activities.length === 0" class="activities-empty">
+            No activities available for this destination yet.
+          </div>
+
+          <div *ngIf="!activitiesLoading && !activitiesError && activities.length > 0" class="activities-list">
+            <mat-card class="activity-card" *ngFor="let activity of activities">
+              <div class="activity-name">{{ activity.name }}</div>
+              <p class="activity-description">{{ activity.description || 'No description available.' }}</p>
+            </mat-card>
+          </div>
+        </section>
+
+        <mat-divider style="margin: 2rem 0;"></mat-divider>
+
+        <section class="reviews-section">
+          <div class="reviews-header">
+            <h3>Reviews and Ratings</h3>
+            <div class="summary" *ngIf="totalReviews > 0">
+              <span class="summary-score">{{ averageRating | number:'1.1-1' }}</span>
+              <span class="summary-label">/ 5 ({{ totalReviews }} reviews)</span>
+            </div>
+          </div>
+
+          <div *ngIf="!isLoggedIn" class="reviews-login-prompt">
+            <p>Please login to view and submit destination reviews.</p>
+            <button mat-stroked-button color="primary" routerLink="/login">Go to Login</button>
+          </div>
+
+          <div *ngIf="isLoggedIn" class="review-form-wrap">
+            <h4>{{ editingReviewId ? 'Edit your review' : 'Write a review' }}</h4>
+            <form [formGroup]="reviewForm" (ngSubmit)="submitReview()" class="review-form">
+              <div class="rating-row">
+                <span class="rating-label">Rating</span>
+                <div class="star-picker">
+                  <button
+                    type="button"
+                    mat-icon-button
+                    *ngFor="let star of stars"
+                    (click)="setRating(star)"
+                    [attr.aria-label]="'Set rating ' + star"
+                  >
+                    <mat-icon>{{ star <= reviewForm.controls.rating.value ? 'star' : 'star_border' }}</mat-icon>
+                  </button>
+                  <span class="rating-value">{{ reviewForm.controls.rating.value }}/5</span>
+                </div>
+              </div>
+
+              <textarea
+                formControlName="comment"
+                class="comment-input"
+                rows="4"
+                placeholder="Share your experience..."
+              ></textarea>
+
+              <div class="review-form-actions">
+                <button mat-raised-button color="primary" type="submit" [disabled]="submittingReview">
+                  {{ editingReviewId ? 'Update Review' : 'Submit Review' }}
+                </button>
+                <button
+                  *ngIf="editingReviewId"
+                  mat-stroked-button
+                  type="button"
+                  (click)="cancelEdit()"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div *ngIf="reviewsLoading" class="reviews-loading">Loading reviews...</div>
+          <div *ngIf="!reviewsLoading && reviewsError" class="reviews-error">{{ reviewsError }}</div>
+
+          <div *ngIf="!reviewsLoading && !reviewsError && reviews.length === 0" class="reviews-empty">
+            No reviews yet. Be the first to review this destination.
+          </div>
+
+          <div class="reviews-list" *ngIf="!reviewsLoading && !reviewsError && reviews.length > 0">
+            <mat-card class="review-card" *ngFor="let review of reviews">
+              <div class="review-top">
+                <div>
+                  <div class="reviewer-name">{{ review.reviewer_name }}</div>
+                  <div class="review-date">{{ review.created_at | date:'mediumDate' }}</div>
+                </div>
+                <div class="review-rating">{{ review.rating }}/5</div>
+              </div>
+
+              <p class="review-comment">{{ review.comment }}</p>
+
+              <div class="review-actions" *ngIf="canEditReview(review)">
+                <button mat-button type="button" (click)="startEdit(review)">Edit</button>
+                <button mat-button color="warn" type="button" (click)="deleteReview(review.id)">Delete</button>
+              </div>
+            </mat-card>
+          </div>
+        </section>
       </mat-card-content>
       
       <mat-card-actions class="card-actions">

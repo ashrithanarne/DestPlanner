@@ -243,6 +243,18 @@
           <!-- Card Footer -->
           <mat-card-actions class="trip-card-footer">
 
+            <!-- ── Timeline button (Sprint 3) ── -->
+            <button
+              mat-stroked-button
+              color="primary"
+              class="btn-timeline"
+              (click)="openTimeline(trip.id, $event)"
+              matTooltip="View visual trip timeline"
+              data-cy="timeline-btn">
+              <mat-icon>view_timeline</mat-icon>
+              Timeline
+            </button>
+
             <!-- Packing List button -->
             <button mat-stroked-button class="btn-packing"
               (click)="openPackingList(trip, $event)"
@@ -274,22 +286,25 @@
                 <span class="mini-bar-label">{{ budget.percentage_used | number:'1.0-0' }}% used</span>
               </div>
             </ng-container>
+
             <!-- Itinerary button -->
             <button mat-stroked-button color="primary" class="btn-itinerary" (click)="openItinerary(trip, $event)"
               matTooltip="Manage daily itinerary" style="margin-right: 8px;">
               <mat-icon>format_list_numbered</mat-icon>
               Itinerary
             </button>
-              <!-- No budget yet: show create prompt -->
-              <ng-container *ngIf="!budgetsByTrip[trip.id]">
-                <button mat-stroked-button class="btn-budget btn-budget-empty" (click)="openBudget(trip, $event)"
-                  matTooltip="Add a budget for this trip">
-                  <mat-icon>add_circle_outline</mat-icon>
-                  Add Budget
-                </button>
-              </ng-container>
 
-              <span class="trip-created">{{ trip.created_at | date:'mediumDate' }}</span>
+            <!-- No budget yet: show create prompt -->
+            <ng-container *ngIf="!budgetsByTrip[trip.id]">
+              <button mat-stroked-button class="btn-budget btn-budget-empty" (click)="openBudget(trip, $event)"
+                matTooltip="Add a budget for this trip">
+                <mat-icon>add_circle_outline</mat-icon>
+                Add Budget
+              </button>
+            </ng-container>
+
+            <span class="trip-created">{{ trip.created_at | date:'mediumDate' }}</span>
+
           </mat-card-actions>
 
         </mat-card>
