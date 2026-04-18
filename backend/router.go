@@ -109,6 +109,10 @@ func main() {
 		api.DELETE("/itineraries/:id/collaborators/:user_id", handlers.RemoveCollaborator)
 		api.DELETE("/itineraries/:id", handlers.DeleteItinerary)
 
+		// Travel and accommodation routes
+		api.GET("/destinations/:id/travel", handlers.GetTravelOptions)
+		api.GET("/destinations/:id/accommodations", handlers.GetAccommodationOptions)
+
 		// Budget routes
 		api.POST("/budgets", handlers.CreateBudget)
 		api.GET("/budgets", handlers.GetBudgets)
