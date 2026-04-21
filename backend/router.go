@@ -120,6 +120,11 @@ func main() {
 		api.PUT("/budgets/:id", handlers.UpdateBudget)
 		api.DELETE("/budgets/:id", handlers.DeleteBudget)
 
+		// Analytics routes
+		api.GET("/analytics/summary", handlers.GetAnalyticsSummary)
+		api.GET("/analytics/trips", handlers.GetAnalyticsTrips)
+		api.GET("/analytics/expenses", handlers.GetAnalyticsExpenses)
+
 		// Expense routes (under budget)
 		api.POST("/budgets/:id/expenses", handlers.AddExpense)
 		api.GET("/budgets/:id/expenses", handlers.GetExpenses)
