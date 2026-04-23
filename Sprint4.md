@@ -23,6 +23,13 @@
 - Uses simulated data as per issue specification — in production
   these would be replaced with real booking API calls
 
+  #### 2. **Analytics Dashboard Feature**
+- Users can view a summary of their total trips, total spent, total budgets and average spent per trip
+- Users can view a full list of their past and upcoming trips with destination, dates, status and total cost
+- Users can view expense breakdown by category ordered by highest spend
+- All endpoints return graceful empty state when user has no data
+- Uses existing trips, budgets and expenses tables — no new tables required
+
 ---
 
 ## Backend API Documentation
@@ -118,6 +125,24 @@ GET /api/destinations/1/travel
   "message": "Destination not found"
 }
 ```
+```
+
+**Error Responses:**
+
+*400 Bad Request - Invalid ID:*
+```json
+{
+  "error": "bad_request",
+  "message": "Invalid destination ID"
+}
+```
+
+*404 Not Found:*
+```json
+{
+  "error": "not_found",
+  "message": "Destination not found"
+}
 
 ---
 
@@ -182,24 +207,130 @@ GET /api/destinations/1/accommodations
     }
   ]
 }
-```
 
-**Error Responses:**
+---
 
-*400 Bad Request - Invalid ID:*
+## Analytics Endpoints
+
+### 3. Get Analytics Summary
+
+**GET** `/api/analytics/summary`
+
+Returns a high level summary of the user's trip and spending statistics.
+
+**Request Headers:**
+Authorization: Bearer <jwt_token>
+
+**Response (200 OK):**
 ```json
 {
-  "error": "bad_request",
-  "message": "Invalid destination ID"
+  "user_id": 1,
+  "summary": {
+    "total_trips": 2,
+    "total_spent": 2300.00,
+    "total_budgets": 2,
+    "average_spent_per_trip": 1150.00
+  }
 }
 ```
 
-*404 Not Found:*
+**Empty State Response (200 OK):**
 ```json
 {
-  "error": "not_found",
-  "message": "Destination not found"
+  "user_id": 1,
+  "summary": {
+    "total_trips": 0,
+    "total_spent": 0,
+    "total_budgets": 0,
+    "average_spent_per_trip": 0
+  }
 }
+```
+
+---
+
+### 4. Get Analytics Trips
+
+**GET** `/api/analytics/trips`
+
+Returns a list of all the user's trips with cost details.
+
+**Request Headers:**
+Authorization: Bearer <jwt_token>
+
+**Response (200 OK):**
+```json
+{
+  "user_id": 1,
+  "total_trips": 2,
+  "trips": [
+    {
+      "id": 1,
+      "trip_name": "Paris Trip",
+      "destination": "Paris",
+      "start_date": "2026-06-01",
+      "end_date": "2026-06-10",
+      "status": "completed",
+      "total_cost": 1500.00
+    },
+    {
+      "id": 2,
+      "trip_name": "Tokyo Trip",
+      "destination": "Tokyo",
+      "start_date": "2026-09-01",
+      "end_date": "2026-09-15",
+      "status": "planning",
+      "total_cost": 800.00
+    }
+  ]
+}
+```
+
+**Notes:**
+- Trips are ordered by `created_at` descending (most recent first)
+- `total_cost` is pulled from the linked budget's `spent_amount`
+- Returns empty trips array when user has no trips
+
+---
+
+### 5. Get Analytics Expenses
+
+**GET** `/api/analytics/expenses`
+
+Returns expense breakdown by category across all of the user's budgets.
+
+**Request Headers:**
+Authorization: Bearer <jwt_token>
+
+**Response (200 OK):**
+```json
+{
+  "user_id": 1,
+  "total_spent": 2300.00,
+  "categories": [
+    {
+      "category": "Accommodation",
+      "total_amount": 1300.00,
+      "count": 2
+    },
+    {
+      "category": "Food",
+      "total_amount": 700.00,
+      "count": 2
+    },
+    {
+      "category": "Transport",
+      "total_amount": 300.00,
+      "count": 1
+    }
+  ]
+}
+```
+
+**Notes:**
+- Categories are ordered by `total_amount` descending (highest spend first)
+- `count` is the number of individual expenses in that category
+- Returns empty categories array when user has no expenses
 ```
 
 ---
@@ -213,6 +344,19 @@ GET /api/destinations/1/accommodations
 |--------|----------|-------------|
 | GET | `/api/destinations/:id/travel` | Get travel options for a destination |
 | GET | `/api/destinations/:id/accommodations` | Get accommodation options for a destination |
+
+#### Travel and Accommodation
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/destinations/:id/travel` | Get travel options for a destination |
+| GET | `/api/destinations/:id/accommodations` | Get accommodation options for a destination |
+
+#### Analytics Dashboard
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/analytics/summary` | Get trip and spending summary |
+| GET | `/api/analytics/trips` | Get all trips with cost details |
+| GET | `/api/analytics/expenses` | Get expense breakdown by category |
 
 ---
 
@@ -246,6 +390,23 @@ GET /api/destinations/1/accommodations
 | Verify Travel Options Have All Required Fields | All 4 options have name, type, cost, link | ✅ Pass |
 | Verify Accommodation Options Have All Required Fields | All 4 options have name, type, cost, link | ✅ Pass |
 
+#### Analytics Handler Tests (`analytics_test.go`)
+
+**Total Tests: 10**
+
+| Test | Description | Status |
+|------|-------------|--------|
+| Get Summary - Success | Returns correct trip count, total spent and average | ✅ Pass |
+| Get Summary - Empty User | Returns zeros when user has no data | ✅ Pass |
+| Get Trips - Success | Returns list of 2 trips with correct fields | ✅ Pass |
+| Verify Trip Fields | Trip name, status and destination all present | ✅ Pass |
+| Get Trips - Empty User | Returns 0 total trips for unknown user | ✅ Pass |
+| Get Expenses - Success | Returns correct total spent and categories | ✅ Pass |
+| Verify Expense Categories | Category, total amount and count all present | ✅ Pass |
+| Verify Categories Ordered by Amount | Highest spend category comes first | ✅ Pass |
+| Verify Accommodation is Top Category | Accommodation has highest total spend | ✅ Pass |
+| Get Expenses - Empty User | Returns 0 total spent for unknown user | ✅ Pass |
+
 ### Running the Tests
 
 ```bash
@@ -267,6 +428,7 @@ ok      backend/handlers        0.392s
 ## Issues Completed in Sprint 4
 
 - View travel and accommodation options for a destination (#23)
+- Analytics dashboard (#36)
 
 ---
 
@@ -275,12 +437,18 @@ ok      backend/handlers        0.392s
 ### Features Delivered
 1. Travel options per destination with flights, trains and buses
 2. Accommodation options per destination with hotels, apartments and hostels
+3. Analytics summary showing total trips, total spent and averages
+4. Analytics trips list with destination, dates, status and cost
+5. Analytics expense breakdown by category ordered by highest spend
 
 ### API Endpoints Added
 - 2 travel and accommodation endpoints
+- 3 analytics dashboard endpoints
+- **Total: 5 new endpoints**
 
 ### Backend Unit Tests
 | File | Tests | Status |
 |------|-------|--------|
 | `travel_test.go` | 12 | ✅ All Pass |
-| **Total** | **12** | **✅ All Pass** |
+| `analytics_test.go` | 10 | ✅ All Pass |
+| **Total** | **22** | **✅ All Pass** |
