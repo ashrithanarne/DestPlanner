@@ -422,6 +422,25 @@ CREATE TABLE IF NOT EXISTS activities (
 		return err
 	}
 
+	// Create trip_invites table
+	createTripInvitesTable := `
+	CREATE TABLE IF NOT EXISTS trip_invites (
+		id         INTEGER PRIMARY KEY AUTOINCREMENT,
+		trip_id    INTEGER NOT NULL,
+		email      TEXT    NOT NULL,
+		token      TEXT    NOT NULL UNIQUE,
+		status     TEXT    NOT NULL DEFAULT 'pending',
+		expires_at DATETIME NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE CASCADE,
+		UNIQUE(trip_id, email, status)
+	);
+	`
+	_, err = DB.Exec(createTripInvitesTable)
+	if err != nil {
+		return err
+	}
+
 	log.Println("Database initialized successfully")
 	return nil
 }
