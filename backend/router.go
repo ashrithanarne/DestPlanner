@@ -176,6 +176,11 @@ func main() {
 		api.PUT("/trips/:id/timeline/items/:itemId", handlers.UpdateTimelineItem)
 		api.DELETE("/trips/:id/timeline/items/:itemId", handlers.DeleteTimelineItem)
 		api.PUT("/trips/:id/timeline/items/:itemId/reorder", handlers.ReorderTimelineItem)
+
+		// Trip invite routes
+		api.POST("/trips/:id/invite", handlers.SendTripInvites)
+		api.GET("/trips/:id/invites", handlers.GetTripInvites)
+		api.POST("/invites/:token/accept", handlers.AcceptInvite)
 	}
 
 	// Start server
