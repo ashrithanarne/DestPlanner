@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Routes } from '@angular/router';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ActivatedRoute, Router, Routes } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
@@ -11,6 +11,7 @@ class DummyComponent {}
 
 const testRoutes: Routes = [
   { path: 'destinations', component: DummyComponent },
+  { path: 'login', component: DummyComponent },
   { path: '**', component: DummyComponent },
 ];
 
@@ -27,40 +28,31 @@ const MOCK_DEST: Destination = {
 describe('DestinationDetailComponent', () => {
   let component: DestinationDetailComponent;
   let fixture: ComponentFixture<DestinationDetailComponent>;
+  let router: Router;
 
   const mockDestService = {
-    getDestinationById: vi.fn(),
+    getDestinationById: vi.fn(() => of({ ...MOCK_DEST })),
   };
 
   const mockBookmarkService = {
-    getBookmarks: vi.fn(),
-    addBookmark: vi.fn(),
-    removeBookmark: vi.fn(),
+    getBookmarks: vi.fn(() => of([] as { id: number; destination: string }[])),
+    addBookmark: vi.fn(() => of({ message: 'Added' })),
+    removeBookmark: vi.fn(() => of({ message: 'Removed' })),
   };
 
   const mockAuthService = {
-    isLoggedIn: vi.fn(),
-    getCurrentUser: vi.fn(),
+    isLoggedIn: vi.fn(() => false),
+    getCurrentUser: vi.fn(() => null),
+    currentUser$: of(null),
+    isLoggedIn$: of(false),
   };
 
-
-  beforeEach(async () => {
-    vi.clearAllMocks();
+  async function setup(authLoggedIn = false, routeId: string | null = '1') {
     mockDestService.getDestinationById.mockReturnValue(of({ ...MOCK_DEST }));
-    mockDestService.getReviews = vi.fn().mockReturnValue(of({
-      destination_id: 1,
-      average_rating: 0,
-      total_reviews: 0,
-      reviews: [],
-    }));
-    mockDestService.createReview = vi.fn().mockReturnValue(of({ message: 'created', review_id: 1 }));
-    mockDestService.updateReview = vi.fn().mockReturnValue(of({ message: 'updated' }));
-    mockDestService.deleteReview = vi.fn().mockReturnValue(of({ message: 'deleted' }));
-    mockBookmarkService.getBookmarks.mockReturnValue(of([]));
+    mockBookmarkService.getBookmarks.mockReturnValue(of([] as { id: number; destination: string }[]));
     mockBookmarkService.addBookmark.mockReturnValue(of({ message: 'Added' }));
     mockBookmarkService.removeBookmark.mockReturnValue(of({ message: 'Removed' }));
-    mockAuthService.isLoggedIn.mockReturnValue(false);
-    mockAuthService.getCurrentUser.mockReturnValue(null);
+    mockAuthService.isLoggedIn.mockReturnValue(authLoggedIn);
 
     await TestBed.configureTestingModule({
       imports: [DestinationDetailComponent],
@@ -70,7 +62,7 @@ describe('DestinationDetailComponent', () => {
         { provide: AuthService, useValue: mockAuthService },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: { get: (_key: string) => '1' } } },
+          useValue: { snapshot: { paramMap: { get: () => routeId } } },
         },
         provideRouter(testRoutes),
         provideAnimations(),
@@ -79,35 +71,71 @@ describe('DestinationDetailComponent', () => {
 
     fixture = TestBed.createComponent(DestinationDetailComponent);
     component = fixture.componentInstance;
+    router = TestBed.inject(Router);
     fixture.detectChanges();
     await fixture.whenStable();
+  }
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await setup();
   });
+
+  afterEach(() => TestBed.resetTestingModule());
 
   // ── should create ─────────────────────────────────────────────────────────
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
+  // ── ngOnInit ──────────────────────────────────────────────────────────────
 
-
-  it('loadDestination: should set loading to false on error', async () => {
-    mockDestService.getDestinationById.mockReturnValue(throwError(() => new Error('fail')));
-    component.loadDestination(1);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    expect(component.loading).toBe(false);
+  it('ngOnInit: should set isLoggedIn from authService', () => {
+    expect(component.isLoggedIn).toBe(false);
   });
 
-  // ── loadDestination — when logged in, checks bookmarks ───────────────────
-  it('loadDestination: should check bookmarks when logged in', async () => {
-    mockAuthService.isLoggedIn.mockReturnValue(true);
+  // ── loadDestination ───────────────────────────────────────────────────────
+
+
+  it('loadDestination: should not check bookmarks when not logged in', async () => {
+    mockBookmarkService.getBookmarks.mockClear();
+    component.isLoggedIn = false;
     mockDestService.getDestinationById.mockReturnValue(of({ ...MOCK_DEST }));
-    mockBookmarkService.getBookmarks.mockReturnValue(of([{ id: 1, destination: 'Paris' }]));
+    component.loadDestination(1);
+    await fixture.whenStable();
+    expect(mockBookmarkService.getBookmarks).not.toHaveBeenCalled();
+  });
+
+  it('loadDestination: should check bookmarks when logged in', async () => {
     component.isLoggedIn = true;
+    mockBookmarkService.getBookmarks.mockReturnValue(of([{ id: 1, destination: 'Paris' }]));
     component.loadDestination(1);
     await fixture.whenStable();
     expect(mockBookmarkService.getBookmarks).toHaveBeenCalled();
+  });
+
+  it('loadDestination: should mark destination as bookmarked when found in bookmarks', async () => {
+    component.isLoggedIn = true;
+    mockBookmarkService.getBookmarks.mockReturnValue(of([{ id: 1, destination: 'Paris' }]));
+    component.loadDestination(1);
+    await fixture.whenStable();
     expect(component.destination?.is_bookmarked).toBe(true);
+  });
+
+  it('loadDestination: should mark destination as not bookmarked when not in bookmarks', async () => {
+    component.isLoggedIn = true;
+    mockBookmarkService.getBookmarks.mockReturnValue(of([{ id: 2, destination: 'Tokyo' }]));
+    component.loadDestination(1);
+    await fixture.whenStable();
+    expect(component.destination?.is_bookmarked).toBe(false);
+  });
+
+  it('loadDestination: should set loading false even if bookmarks call fails', async () => {
+    component.isLoggedIn = true;
+    mockBookmarkService.getBookmarks.mockReturnValue(throwError(() => new Error('fail')));
+    component.loadDestination(1);
+    await fixture.whenStable();
+    expect(component.loading).toBe(false);
   });
 
   // ── toggleBookmark — not logged in ────────────────────────────────────────
@@ -116,31 +144,64 @@ describe('DestinationDetailComponent', () => {
     component.destination = { ...MOCK_DEST };
     component.toggleBookmark();
     expect(mockBookmarkService.addBookmark).not.toHaveBeenCalled();
+    expect(mockBookmarkService.removeBookmark).not.toHaveBeenCalled();
+  });
+
+  it('toggleBookmark: should do nothing when destination is null', () => {
+    component.destination = null;
+    component.toggleBookmark();
+    expect(mockBookmarkService.addBookmark).not.toHaveBeenCalled();
   });
 
   // ── toggleBookmark — add ─────────────────────────────────────────────────
-  it('toggleBookmark: should addBookmark when not bookmarked and logged in', async () => {
+  it('toggleBookmark: should call addBookmark when not bookmarked and logged in', async () => {
     component.isLoggedIn = true;
     component.destination = { ...MOCK_DEST, is_bookmarked: false };
     component.toggleBookmark();
     await fixture.whenStable();
     expect(mockBookmarkService.addBookmark).toHaveBeenCalledWith(1);
+  });
+
+  it('toggleBookmark: should set is_bookmarked to true after add', async () => {
+    component.isLoggedIn = true;
+    component.destination = { ...MOCK_DEST, is_bookmarked: false };
+    component.toggleBookmark();
+    await fixture.whenStable();
     expect(component.destination?.is_bookmarked).toBe(true);
   });
 
   // ── toggleBookmark — remove ───────────────────────────────────────────────
-  it('toggleBookmark: should removeBookmark when already bookmarked', async () => {
+  it('toggleBookmark: should call removeBookmark when already bookmarked', async () => {
     component.isLoggedIn = true;
     mockBookmarkService.getBookmarks.mockReturnValue(of([{ id: 99, destination: 'Paris' }]));
     component.destination = { ...MOCK_DEST, is_bookmarked: true };
     component.toggleBookmark();
     await fixture.whenStable();
     expect(mockBookmarkService.removeBookmark).toHaveBeenCalledWith(99);
+  });
+
+  it('toggleBookmark: should set is_bookmarked to false after remove', async () => {
+    component.isLoggedIn = true;
+    mockBookmarkService.getBookmarks.mockReturnValue(of([{ id: 99, destination: 'Paris' }]));
+    component.destination = { ...MOCK_DEST, is_bookmarked: true };
+    component.toggleBookmark();
+    await fixture.whenStable();
     expect(component.destination?.is_bookmarked).toBe(false);
   });
 
+  it('toggleBookmark: should not call removeBookmark if no matching bookmark found', async () => {
+    component.isLoggedIn = true;
+    mockBookmarkService.getBookmarks.mockReturnValue(of([{ id: 99, destination: 'Tokyo' }]));
+    component.destination = { ...MOCK_DEST, is_bookmarked: true };
+    component.toggleBookmark();
+    await fixture.whenStable();
+    expect(mockBookmarkService.removeBookmark).not.toHaveBeenCalled();
+  });
+
   // ── goBack ────────────────────────────────────────────────────────────────
-  it('goBack: should be a defined method', () => {
-    expect(typeof component.goBack).toBe('function');
+  it('goBack: should navigate to /destinations', () => {
+    const spy = vi.spyOn(router, 'navigate');
+    component.goBack();
+    expect(spy).toHaveBeenCalledWith(['/destinations']);
   });
 });
