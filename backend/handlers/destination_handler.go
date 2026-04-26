@@ -17,6 +17,7 @@ type DestinationRequest struct {
 	Country     string  `json:"country"`
 	Budget      float64 `json:"budget"`
 	Description string  `json:"description"`
+	Category    string  `json:"category"`
 }
 
 // CreateDestination handles the creation of a new destination
@@ -30,8 +31,8 @@ func CreateDestination(c *gin.Context) {
 	}
 
 	query := `
-	INSERT INTO destinations (name, country, budget, description)
-	VALUES (?, ?, ?, ?)
+	INSERT INTO destinations (name, country, budget, description, category)
+	VALUES (?, ?, ?, ?, ?)
 	`
 
 	_, err := database.DB.Exec(
@@ -40,6 +41,7 @@ func CreateDestination(c *gin.Context) {
 		req.Country,
 		req.Budget,
 		req.Description,
+		req.Category,
 	)
 
 	if err != nil {
@@ -53,6 +55,7 @@ func CreateDestination(c *gin.Context) {
 // GetDestinations retrieves all destinations, optionally filtered by budget
 func GetDestinations(c *gin.Context) {
 	budget := c.Query("budget")
+	category := c.Query("category")
 	country := c.Query("country")
 
 	db := database.DB
@@ -68,7 +71,7 @@ func GetDestinations(c *gin.Context) {
 	}
 
 	// Base query and args
-	query := "SELECT id, name, country, budget, description"
+	query := "SELECT id, name, country, budget, description, category"
 	args := []interface{}{}
 
 	if exists {
@@ -92,6 +95,10 @@ func GetDestinations(c *gin.Context) {
 		where = append(where, "t.country = ?")
 		args = append(args, country)
 	}
+	if category != "" {
+		where = append(where, "t.category = ?")
+		args = append(args, category)
+	}
 
 	if len(where) > 0 {
 		query += " WHERE " + strings.Join(where, " AND ")
@@ -112,18 +119,22 @@ func GetDestinations(c *gin.Context) {
 		if exists {
 			// Include is_bookmarked
 			var isBookmarked int
-			if err := rows.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description, &isBookmarked); err != nil {
+			var cat sql.NullString
+			if err := rows.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description, &cat, &isBookmarked); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading destinations"})
 				return
 			}
 			d.IsBookmarked = isBookmarked == 1
+			d.Category = cat.String
 		} else {
 			// No bookmark info
-			if err := rows.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description); err != nil {
+			var cat sql.NullString
+			if err := rows.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description, &cat); err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading destinations"})
 				return
 			}
 			d.IsBookmarked = false
+			d.Category = cat.String
 		}
 		destinations = append(destinations, d)
 	}
@@ -151,7 +162,7 @@ func GetDestinationByID(c *gin.Context) {
 	}
 
 	// Base query
-	query := "SELECT id, name, country, budget, description"
+	query := "SELECT id, name, country, budget, description, category"
 	args := []interface{}{destID}
 
 	if exists {
@@ -173,7 +184,8 @@ func GetDestinationByID(c *gin.Context) {
 	if exists {
 		// Logged-in: scan is_bookmarked
 		var isBookmarked int
-		err = row.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description, &isBookmarked)
+		var cat sql.NullString
+		err = row.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description, &cat, &isBookmarked)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Destination not found"})
@@ -183,9 +195,11 @@ func GetDestinationByID(c *gin.Context) {
 			return
 		}
 		d.IsBookmarked = isBookmarked == 1
+		d.Category = cat.String
 	} else {
 		// Public user: no bookmark info
-		err = row.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description)
+		var cat sql.NullString
+		err = row.Scan(&d.ID, &d.Name, &d.Country, &d.Budget, &d.Description, &cat)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Destination not found"})
@@ -195,6 +209,7 @@ func GetDestinationByID(c *gin.Context) {
 			return
 		}
 		d.IsBookmarked = false
+		d.Category = cat.String
 	}
 
 	c.JSON(http.StatusOK, d)
