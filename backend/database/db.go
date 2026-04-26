@@ -63,6 +63,9 @@ func InitDB(dataSourceName string) error {
 		return err
 	}
 
+	// Migrate: add category column to destinations if not already present
+	DB.Exec(`ALTER TABLE destinations ADD COLUMN category TEXT`)
+
 	// Create bookmarks table
 	createBookmarksTable := `
 	CREATE TABLE IF NOT EXISTS bookmarks (

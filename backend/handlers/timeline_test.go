@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"time"
+
 	"backend/database"
 	"backend/models"
 	"backend/utils"
@@ -305,6 +307,7 @@ func TestCreateTimelineItem_SortOrderAutoIncrement(t *testing.T) {
 		r.ServeHTTP(httptest.NewRecorder(), req)
 	}
 	createItem("First")
+	time.Sleep(20 * time.Millisecond) // let notifyItineraryChange goroutine finish
 	createItem("Second")
 
 	// Verify sort_order values in the DB

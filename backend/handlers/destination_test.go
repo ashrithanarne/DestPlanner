@@ -43,7 +43,8 @@ func setupDestinationDB(t *testing.T) {
 			name TEXT,
 			country TEXT,
 			budget REAL,
-			description TEXT
+			description TEXT,
+			category TEXT
 		);
 		CREATE TABLE IF NOT EXISTS bookmarks (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -184,4 +185,153 @@ func TestDestinationFlow(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+// ── Category filter tests ─────────────────────────────────────────────────────
+
+func setupDestinationCategoryDB(t *testing.T) {
+	t.Helper()
+	err := database.InitDB(":memory:")
+	if err != nil {
+		t.Fatalf("Failed to init test DB: %v", err)
+	}
+	_, err = database.DB.Exec(`
+		CREATE TABLE IF NOT EXISTS destinations (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT,
+			country TEXT,
+			budget REAL,
+			description TEXT,
+			category TEXT
+		);
+		CREATE TABLE IF NOT EXISTS bookmarks (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER,
+			destination_id INTEGER
+		);
+	`)
+	if err != nil {
+		t.Fatalf("Failed to create tables: %v", err)
+	}
+	database.DB.Exec(`
+		INSERT INTO destinations (name, country, budget, description, category) VALUES
+		('Bali',       'Indonesia', 2000, 'Island paradise',    'friends'),
+		('Paris',      'France',    5000, 'City of love',       'couples'),
+		('Orlando',    'USA',       3000, 'Theme park capital', 'family'),
+		('Ibiza',      'Spain',     2500, 'Party island',       'friends'),
+		('Maldives',   'Maldives',  8000, 'Luxury atolls',      'couples'),
+		('Tokyo',      'Japan',     4000, 'Urban adventure',    NULL)
+	`)
+}
+
+func TestGetDestinations_FilterByCategory_Friends(t *testing.T) {
+	setupDestinationCategoryDB(t)
+	defer database.CloseDB()
+
+	router := setupDestinationRouter()
+	req, _ := http.NewRequest("GET", "/api/auth/destinations?category=friends", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var results []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &results)
+	assert.Equal(t, 2, len(results))
+	for _, d := range results {
+		assert.Equal(t, "friends", d["category"])
+	}
+}
+
+func TestGetDestinations_FilterByCategory_Couples(t *testing.T) {
+	setupDestinationCategoryDB(t)
+	defer database.CloseDB()
+
+	router := setupDestinationRouter()
+	req, _ := http.NewRequest("GET", "/api/auth/destinations?category=couples", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var results []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &results)
+	assert.Equal(t, 2, len(results))
+}
+
+func TestGetDestinations_FilterByCategory_Family(t *testing.T) {
+	setupDestinationCategoryDB(t)
+	defer database.CloseDB()
+
+	router := setupDestinationRouter()
+	req, _ := http.NewRequest("GET", "/api/auth/destinations?category=family", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var results []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &results)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, "Orlando", results[0]["name"])
+}
+
+func TestGetDestinations_FilterByCategory_NoMatch(t *testing.T) {
+	setupDestinationCategoryDB(t)
+	defer database.CloseDB()
+
+	router := setupDestinationRouter()
+	req, _ := http.NewRequest("GET", "/api/auth/destinations?category=solo", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var results []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &results)
+	assert.Equal(t, 0, len(results))
+}
+
+func TestGetDestinations_NoCategory_ReturnsAll(t *testing.T) {
+	setupDestinationCategoryDB(t)
+	defer database.CloseDB()
+
+	router := setupDestinationRouter()
+	req, _ := http.NewRequest("GET", "/api/auth/destinations", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var results []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &results)
+	assert.Equal(t, 6, len(results))
+}
+
+func TestGetDestinations_CategoryAndCountry_Combined(t *testing.T) {
+	setupDestinationCategoryDB(t)
+	defer database.CloseDB()
+
+	router := setupDestinationRouter()
+	req, _ := http.NewRequest("GET", "/api/auth/destinations?category=friends&country=Indonesia", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var results []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &results)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, "Bali", results[0]["name"])
+}
+
+func TestGetDestinations_CategoryAndBudget_Combined(t *testing.T) {
+	setupDestinationCategoryDB(t)
+	defer database.CloseDB()
+
+	router := setupDestinationRouter()
+	// couples destinations under 6000: Paris(5000) qualifies, Maldives(8000) does not
+	req, _ := http.NewRequest("GET", "/api/auth/destinations?category=couples&budget=6000", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var results []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &results)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, "Paris", results[0]["name"])
 }
