@@ -177,7 +177,17 @@ func main() {
 		api.DELETE("/trips/:id/timeline/items/:itemId", handlers.DeleteTimelineItem)
 		api.PUT("/trips/:id/timeline/items/:itemId/reorder", handlers.ReorderTimelineItem)
 
-		// Trip invite routes
+		// Social routes (Sprint 4)
+		api.POST("/users/:id/follow", handlers.FollowUser)
+		api.DELETE("/users/:id/follow", handlers.UnfollowUser)
+		api.GET("/users/:id/profile", handlers.GetPublicProfile)
+		api.GET("/users/:id/followers", handlers.GetFollowers)
+		api.GET("/users/:id/following", handlers.GetFollowing)
+		api.GET("/users/:id/trips", handlers.GetPublicTripsForUser)
+		api.PUT("/trips/:id/visibility", handlers.UpdateTripVisibility)
+		api.GET("/feed", handlers.GetFeed)
+
+		// Trip invite routes (Sprint 4)
 		api.POST("/trips/:id/invite", handlers.SendTripInvites)
 		api.GET("/trips/:id/invites", handlers.GetTripInvites)
 		api.POST("/invites/:token/accept", handlers.AcceptInvite)
