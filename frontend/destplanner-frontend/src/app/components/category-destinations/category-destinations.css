@@ -1,0 +1,303 @@
+/* ── Page ────────────────────────────────────────────────────────── */
+.category-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.page-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.page-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.5rem;
+}
+
+.page-subtitle {
+  color: #6b7280;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+/* ── Category Tabs ──────────────────────────────────────────────── */
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.cat-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: 2px solid #e5e7eb;
+  border-radius: 50px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #374151;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.cat-tab:hover {
+  border-color: #667eea;
+  color: #667eea;
+  background: #f5f3ff;
+}
+
+.cat-tab-active {
+  background: var(--tab-gradient) !important;
+  border-color: transparent !important;
+  color: white !important;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+}
+
+.cat-tab-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* ── Banner ─────────────────────────────────────────────────────── */
+.category-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-radius: 14px;
+  padding: 20px 28px;
+  color: white;
+  margin-bottom: 2rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+
+.banner-icon {
+  font-size: 40px !important;
+  width: 40px !important;
+  height: 40px !important;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.banner-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.banner-desc {
+  margin: 0;
+  font-size: 0.92rem;
+  opacity: 0.88;
+}
+
+/* ── Loading / Empty / Error ─────────────────────────────────────── */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 4rem 0;
+  color: #6b7280;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 4rem 0;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.empty-state mat-icon {
+  font-size: 56px !important;
+  width: 56px !important;
+  height: 56px !important;
+  margin-bottom: 8px;
+}
+
+.empty-state h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.empty-state p {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.retry-btn {
+  margin-top: 12px;
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+/* ── Grid ───────────────────────────────────────────────────────── */
+.destinations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* ── Destination Card ───────────────────────────────────────────── */
+.dest-card {
+  border-radius: 14px !important;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-decoration: none;
+  display: block;
+}
+
+.dest-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.13) !important;
+}
+
+.card-image {
+  height: 180px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 14px 16px;
+  color: white;
+}
+
+.card-country-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.22);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.card-country-badge mat-icon {
+  font-size: 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.card-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+/* ── Card body ──────────────────────────────────────────────────── */
+.card-body {
+  padding: 14px 16px 0 !important;
+}
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.star {
+  color: #d1d5db;
+  font-size: 1rem;
+}
+
+.star-filled {
+  color: #f59e0b;
+}
+
+.rating-value {
+  margin-left: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.card-desc {
+  font-size: 0.87rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.budget-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f3f4f6;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.budget-chip mat-icon {
+  font-size: 15px !important;
+  width: 15px !important;
+  height: 15px !important;
+  color: #667eea;
+}
+
+/* ── Card actions ───────────────────────────────────────────────── */
+.card-actions {
+  padding: 8px 8px 12px !important;
+}
+
+.view-btn {
+  color: #667eea !important;
+  font-weight: 600 !important;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .category-page {
+    padding: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.6rem;
+  }
+
+  .cat-tab-label {
+    display: none;
+  }
+
+  .cat-tab {
+    padding: 8px 12px;
+  }
+
+  .category-banner {
+    padding: 14px 16px;
+  }
+
+  .banner-title {
+    font-size: 1.1rem;
+  }
+}

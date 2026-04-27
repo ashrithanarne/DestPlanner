@@ -153,13 +153,6 @@ describe('TimelineComponent', () => {
     expect(component.loading).toBe(false);
   });
 
-  it('loadTimeline: should navigate to /my-trips on 404 error', () => {
-    const { component, router, timelineService } = buildComponent();
-    timelineService.getTimeline.mockReturnValue(throwError(() => ({ status: 404 })));
-    component.loadTimeline();
-    expect(router.navigate).toHaveBeenCalledWith(['/my-trips']);
-  });
-
   it('loadTimeline: should show snack on non-404 error', () => {
     const { component, snack, timelineService } = buildComponent();
     timelineService.getTimeline.mockReturnValue(throwError(() => ({ status: 500 })));

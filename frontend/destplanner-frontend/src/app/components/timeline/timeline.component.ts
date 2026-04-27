@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, PLATFORM_ID, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -70,6 +70,7 @@ export class TimelineComponent implements OnInit, OnDestroy {
     public router: Router,
     private snack: MatSnackBar,
     private fb: FormBuilder,
+    private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: object
   ) {}
 
@@ -94,8 +95,7 @@ export class TimelineComponent implements OnInit, OnDestroy {
           return;
         }
         this.loadTimeline();
-      }),
-      this.timelineService.timeline$.subscribe(t => (this.timeline = t))
+      })
     );
   }
 
@@ -106,14 +106,19 @@ export class TimelineComponent implements OnInit, OnDestroy {
   loadTimeline(): void {
     this.loading = true;
     this.timelineService.getTimeline(this.tripId).subscribe({
-      next: () => (this.loading = false),
+      next: (data) => {
+        this.timeline = data;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
       error: (err: any) => {
         this.loading = false;
         if (err.status === 404) {
-          this.router.navigate(['/my-trips']);
+          this.timeline = { trip_id: this.tripId, days: [] } as any;
         } else {
           this.snack.open('Failed to load timeline', 'Close', { duration: 3000 });
         }
+        this.cdr.detectChanges();
       },
     });
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit, PLATFORM_ID, Inject } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, Inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -15,6 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { TripService, Trip } from '../../services/trip.service';
 import { BudgetService, BudgetSummary } from '../../services/budget';
+import { TripInviteComponent } from '../trip-invite/trip-invite';
 
 @Component({
   selector: 'app-mytrips',
@@ -34,6 +35,7 @@ import { BudgetService, BudgetSummary } from '../../services/budget';
     MatTooltipModule,
     MatDividerModule,
     MatSnackBarModule,
+    TripInviteComponent,
   ],
   templateUrl: './mytrips.html',
   styleUrls: ['./mytrips.css'],
@@ -42,19 +44,22 @@ export class MyTripsComponent implements OnInit {
   trips: Trip[] = [];
   filteredTrips: Trip[] = [];
   budgetsByTrip: Record<number, BudgetSummary> = {};
-
+ 
   loadingTrips = false;
   savingTrip = false;
   deletingTripId: number | null = null;
   activeFilter = 'all';
-
+ 
   showCreateForm = false;
   createForm!: FormGroup;
-
+ 
   editingTrip: Trip | null = null;
   editForm!: FormGroup;
-
+ 
   readonly statuses = ['planning', 'ongoing', 'completed', 'cancelled'];
+
+  /** Track which trip's invite panel is open (null = none) */
+  invitePanelTripId: number | null = null;
 
   constructor(
     private tripService: TripService,
@@ -62,12 +67,13 @@ export class MyTripsComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private snack: MatSnackBar,
+    private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: object
   ) {}
-
+ 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
-
+ 
     this.createForm = this.fb.group({
       trip_name: ['', Validators.required],
       destination: [''],
@@ -75,7 +81,7 @@ export class MyTripsComponent implements OnInit {
       end_date: [''],
       notes: [''],
     });
-
+ 
     this.editForm = this.fb.group({
       trip_name: ['', Validators.required],
       destination: [''],
@@ -84,11 +90,11 @@ export class MyTripsComponent implements OnInit {
       notes: [''],
       status: ['planning'],
     });
-
+ 
     this.loadTrips();
     this.loadBudgets();
   }
-
+ 
   loadTrips(): void {
     this.loadingTrips = true;
     this.tripService.getTrips().subscribe({
@@ -96,18 +102,36 @@ export class MyTripsComponent implements OnInit {
         this.trips = res?.trips ?? res ?? [];
         this.applyFilter(this.activeFilter);
         this.loadingTrips = false;
+        this.cdr.detectChanges();
       },
       error: (err: any) => {
         this.loadingTrips = false;
+        this.cdr.detectChanges();
         if (err.status === 401) {
-          this.router.navigate(['/login'], { queryParams: { returnUrl: '/mytrips' } });
+          this.router.navigate(['/login'], { queryParams: { returnUrl: '/my-trips' } });
         } else {
-          this.snack.open('Failed to load trips', 'Close', { duration: 3000 });
+          // Auto-retry once after 2 seconds
+          this.snack.open('Connection issue — retrying...', 'Close', { duration: 2000 });
+          setTimeout(() => {
+            this.tripService.getTrips().subscribe({
+              next: (res: any) => {
+                this.trips = res?.trips ?? res ?? [];
+                this.applyFilter(this.activeFilter);
+                this.loadingTrips = false;
+                this.cdr.detectChanges();
+              },
+              error: () => {
+                this.loadingTrips = false;
+                this.cdr.detectChanges();
+                this.snack.open('Failed to load trips. Please refresh.', 'Close', { duration: 4000 });
+              },
+            });
+          }, 2000);
         }
       },
     });
   }
-
+ 
   loadBudgets(): void {
     this.budgetService.getBudgets().subscribe({
       next: (res: any) => {
@@ -116,24 +140,25 @@ export class MyTripsComponent implements OnInit {
         budgets.forEach(b => {
           if (b.trip_id) this.budgetsByTrip[b.trip_id] = b;
         });
+        this.cdr.detectChanges();
       },
       error: () => {},
     });
   }
-
+ 
   applyFilter(filter: string): void {
     this.activeFilter = filter;
     this.filteredTrips =
       filter === 'all' ? [...this.trips] : this.trips.filter(t => t.status === filter);
   }
-
+ 
   toggleCreateForm(): void {
     this.showCreateForm = !this.showCreateForm;
     if (!this.showCreateForm) {
       this.createForm.reset();
     }
   }
-
+ 
   submitCreate(): void {
     if (this.createForm.invalid) return;
     this.savingTrip = true;
@@ -151,7 +176,7 @@ export class MyTripsComponent implements OnInit {
       },
     });
   }
-
+ 
   startEdit(trip: Trip, event: MouseEvent): void {
     event.stopPropagation();
     this.editingTrip = trip;
@@ -164,12 +189,12 @@ export class MyTripsComponent implements OnInit {
       status: trip.status,
     });
   }
-
+ 
   cancelEdit(): void {
     this.editingTrip = null;
     this.editForm.reset({ status: 'planning' });
   }
-
+ 
   submitEdit(): void {
     if (!this.editingTrip || this.editForm.invalid) return;
     this.savingTrip = true;
@@ -186,7 +211,7 @@ export class MyTripsComponent implements OnInit {
       },
     });
   }
-
+ 
   deleteTrip(trip: Trip, event: MouseEvent): void {
     event.stopPropagation();
     if (!confirm(`Delete "${trip.trip_name}"?`)) return;
@@ -203,26 +228,32 @@ export class MyTripsComponent implements OnInit {
       },
     });
   }
-
+ 
   openBudget(trip: Trip, event: MouseEvent): void {
     event.stopPropagation();
     this.router.navigate(['/budget'], { queryParams: { trip_id: trip.id } });
   }
-
+ 
   openPackingList(trip: Trip, event: MouseEvent): void {
     event.stopPropagation();
-    this.router.navigate(['/packing-list', trip.id]);
+    this.router.navigate(['/trips', trip.id, 'packing-list']);
   }
-
+ 
   openItinerary(trip: Trip, event: MouseEvent): void {
     event.stopPropagation();
-    this.router.navigate(['/itinerary', trip.id]);
+    this.router.navigate(['/trips', trip.id, 'itinerary']);
   }
-
+ 
   // ── Sprint 3: Visual timeline ──────────────────────────────────────────────
   openTimeline(tripId: number, event: MouseEvent): void {
     event.stopPropagation();
     this.router.navigate(['/timeline', tripId]);
+  }
+
+  // ── Sprint 4: Invite collaborators ────────────────────────────────────────
+  toggleInvitePanel(trip: Trip, event: MouseEvent): void {
+    event.stopPropagation();
+    this.invitePanelTripId = this.invitePanelTripId === trip.id ? null : trip.id;
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -236,7 +267,7 @@ export class MyTripsComponent implements OnInit {
     };
     return map[status] ?? { label: status, color: '#757575', icon: 'help_outline' };
   }
-
+ 
   getStatusCounts(): Record<string, number> {
     const counts: Record<string, number> = { all: this.trips.length };
     this.statuses.forEach(s => {
@@ -244,7 +275,7 @@ export class MyTripsComponent implements OnInit {
     });
     return counts;
   }
-
+ 
   formatDateRange(trip: Trip): string {
     if (!trip.start_date) return 'Dates TBD';
     const start = new Date(trip.start_date).toLocaleDateString(undefined, {
@@ -256,18 +287,18 @@ export class MyTripsComponent implements OnInit {
     });
     return `${start} – ${end}`;
   }
-
+ 
   getDurationLabel(trip: Trip): string {
     if (!trip.duration_days) return '';
     return trip.duration_days === 1 ? '1 day' : `${trip.duration_days} days`;
   }
-
+ 
   getPackingProgressColor(pct: number): 'primary' | 'accent' | 'warn' {
     if (pct >= 80) return 'primary';
     if (pct >= 40) return 'accent';
     return 'warn';
   }
-
+ 
   trackByTripId(_: number, trip: Trip): number {
     return trip.id;
   }

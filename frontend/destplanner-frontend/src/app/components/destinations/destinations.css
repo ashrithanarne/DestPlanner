@@ -116,3 +116,16 @@
 mat-card-actions {
   padding: 0 1rem 1rem 1rem !important;
 }
+
+.category-browse-btn {
+  margin-top: 1rem;
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 50px !important;
+  padding: 6px 20px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}

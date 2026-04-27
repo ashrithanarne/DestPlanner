@@ -2,6 +2,10 @@
   <div class="header-section">
     <h1>Explore Destinations</h1>
     <p>Find your next perfect getaway and save it for later.</p>
+    <a mat-raised-button routerLink="/destinations/categories" class="category-browse-btn">
+      <mat-icon>style</mat-icon>
+      Browse by Travel Style
+    </a>
   </div>
 
   <div *ngIf="loading" class="loading-container">

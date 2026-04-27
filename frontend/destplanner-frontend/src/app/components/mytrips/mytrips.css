@@ -520,3 +520,22 @@
   flex-wrap: wrap;
   gap: 6px !important;
 }
+
+/* ── Invite button ──────────────────────────────────────────── */
+.btn-invite {
+  color: #667eea !important;
+  border-color: #667eea !important;
+  font-weight: 600 !important;
+  font-size: 0.82rem !important;
+}
+
+.btn-invite:hover, .btn-invite-active {
+  background: #ede9fe !important;
+  color: #4c1d95 !important;
+  border-color: #4c1d95 !important;
+}
+
+/* ── Invite panel wrapper ───────────────────────────────────── */
+.invite-panel-wrapper {
+  padding: 0 16px 16px;
+}

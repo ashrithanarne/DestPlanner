@@ -1,0 +1,69 @@
+.accept-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 24px;
+}
+
+.accept-card {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 48px 32px;
+  text-align: center;
+}
+
+.state-icon-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.state-icon-wrap mat-icon {
+  font-size: 40px !important;
+  width: 40px !important;
+  height: 40px !important;
+  color: white;
+}
+
+.success-bg { background: #388e3c; }
+.warn-bg    { background: #f57c00; }
+.info-bg    { background: #1976d2; }
+.error-bg   { background: #d32f2f; }
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+p {
+  color: #555;
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  padding: 8px 24px !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

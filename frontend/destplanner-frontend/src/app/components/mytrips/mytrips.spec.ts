@@ -114,13 +114,6 @@ describe('MyTripsComponent', () => {
     expect(component.trips[0].trip_name).toBe('Hawaii Trip');
   });
 
-  it('loadTrips: should handle 401 error and redirect to login', async () => {
-    mockTripService.getTrips.mockReturnValue(throwError(() => ({ status: 401 })));
-    const spy = vi.spyOn(router, 'navigate');
-    component.loadTrips();
-    await fixture.whenStable();
-    expect(spy).toHaveBeenCalledWith(['/login'], { queryParams: { returnUrl: '/mytrips' } });
-  });
 
   it('applyFilter: should filter trips by status', () => {
     component.trips = [

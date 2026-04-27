@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,6 +17,7 @@ import { ItineraryService, Itinerary, ItineraryItem } from '../../services/itine
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
+    RouterModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatInputModule, MatFormFieldModule, MatSnackBarModule,
     MatProgressSpinnerModule,
