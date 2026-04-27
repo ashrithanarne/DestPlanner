@@ -294,6 +294,16 @@
               Itinerary
             </button>
 
+            <!-- Invite collaborators button -->
+            <button mat-stroked-button class="btn-invite"
+              (click)="toggleInvitePanel(trip, $event)"
+              [class.btn-invite-active]="invitePanelTripId === trip.id"
+              matTooltip="Invite travel companions"
+              data-cy="invite-btn">
+              <mat-icon>group_add</mat-icon>
+              Invite
+            </button>
+
             <!-- No budget yet: show create prompt -->
             <ng-container *ngIf="!budgetsByTrip[trip.id]">
               <button mat-stroked-button class="btn-budget btn-budget-empty" (click)="openBudget(trip, $event)"
@@ -306,6 +316,11 @@
             <span class="trip-created">{{ trip.created_at | date:'mediumDate' }}</span>
 
           </mat-card-actions>
+
+          <!-- ── Invite Panel (Sprint 4) ──────────────────────── -->
+          <div *ngIf="invitePanelTripId === trip.id" class="invite-panel-wrapper" data-cy="invite-panel-wrapper">
+            <app-trip-invite [tripId]="trip.id"></app-trip-invite>
+          </div>
 
         </mat-card>
       </ng-container>

@@ -60,5 +60,10 @@ export const routes: Routes = [
     component: TimelineComponent,
     canActivate: [authGuard]
   },
+  {
+    path: 'invites/:token/accept',
+    loadComponent: () => import('./components/accept-invite/accept-invite').then(m => m.AcceptInviteComponent),
+    canActivate: [authGuard]
+  },
   { path: '**', redirectTo: '' },
 ];
