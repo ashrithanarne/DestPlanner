@@ -1,0 +1,95 @@
+<div class="accept-page">
+  <mat-card class="accept-card">
+
+    <!-- Loading -->
+    <ng-container *ngIf="state === 'loading'">
+      <div class="state-content" data-cy="accept-loading">
+        <mat-spinner diameter="48"></mat-spinner>
+        <h2>Accepting your invite…</h2>
+        <p>Just a moment while we add you to the trip.</p>
+      </div>
+    </ng-container>
+
+    <!-- Success -->
+    <ng-container *ngIf="state === 'success'">
+      <div class="state-content success" data-cy="accept-success">
+        <div class="state-icon-wrap success-bg">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <h2>You're in! 🎉</h2>
+        <p>You've been added as a collaborator. Start planning your adventure together.</p>
+        <button mat-raised-button class="btn-primary" (click)="goToMyTrips()" data-cy="go-to-trips-btn">
+          <mat-icon>luggage</mat-icon>
+          Go to My Trips
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- Expired -->
+    <ng-container *ngIf="state === 'expired'">
+      <div class="state-content warn" data-cy="accept-expired">
+        <div class="state-icon-wrap warn-bg">
+          <mat-icon>timer_off</mat-icon>
+        </div>
+        <h2>Invite Expired</h2>
+        <p>This invite link has expired (invites are valid for 7 days). Ask the trip owner to send a new one.</p>
+        <button mat-stroked-button routerLink="/" data-cy="go-home-btn">Back to Home</button>
+      </div>
+    </ng-container>
+
+    <!-- Already accepted -->
+    <ng-container *ngIf="state === 'already_accepted'">
+      <div class="state-content info" data-cy="accept-already-accepted">
+        <div class="state-icon-wrap info-bg">
+          <mat-icon>info</mat-icon>
+        </div>
+        <h2>Already Accepted</h2>
+        <p>This invite has already been used. You may already be a collaborator on this trip.</p>
+        <button mat-raised-button class="btn-primary" (click)="goToMyTrips()" data-cy="go-to-trips-btn">
+          <mat-icon>luggage</mat-icon>
+          Go to My Trips
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- Already a collaborator -->
+    <ng-container *ngIf="state === 'already_collaborator'">
+      <div class="state-content info" data-cy="accept-already-collab">
+        <div class="state-icon-wrap info-bg">
+          <mat-icon>person_check</mat-icon>
+        </div>
+        <h2>Already a Collaborator</h2>
+        <p>You're already part of this trip. Head over to My Trips to start planning!</p>
+        <button mat-raised-button class="btn-primary" (click)="goToMyTrips()" data-cy="go-to-trips-btn">
+          <mat-icon>luggage</mat-icon>
+          Go to My Trips
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- Not found -->
+    <ng-container *ngIf="state === 'not_found'">
+      <div class="state-content error" data-cy="accept-not-found">
+        <div class="state-icon-wrap error-bg">
+          <mat-icon>link_off</mat-icon>
+        </div>
+        <h2>Invite Not Found</h2>
+        <p>This invite link is invalid or has already been used. Check the link or contact the trip owner.</p>
+        <button mat-stroked-button routerLink="/" data-cy="go-home-btn">Back to Home</button>
+      </div>
+    </ng-container>
+
+    <!-- Generic error -->
+    <ng-container *ngIf="state === 'error'">
+      <div class="state-content error" data-cy="accept-error">
+        <div class="state-icon-wrap error-bg">
+          <mat-icon>error_outline</mat-icon>
+        </div>
+        <h2>Something Went Wrong</h2>
+        <p>{{ errorMessage }}</p>
+        <button mat-stroked-button routerLink="/" data-cy="go-home-btn">Back to Home</button>
+      </div>
+    </ng-container>
+
+  </mat-card>
+</div>

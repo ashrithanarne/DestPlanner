@@ -10,6 +10,9 @@ export interface Destination {
   budget: number;
   description: string;
   is_bookmarked?: boolean;
+  category?: string;
+  rating?: number;
+  image_url?: string;
 }
 
 export interface DestinationReview {
@@ -64,6 +67,12 @@ export class DestinationService {
       url += '?' + params.join('&');
     }
     
+    return this.http.get<Destination[]>(url);
+  }
+
+  /** GET /auth/destinations?category=<category> */
+  getDestinationsByCategory(category: string): Observable<Destination[]> {
+    const url = `${this.baseUrl}/auth/destinations?category=${encodeURIComponent(category)}`;
     return this.http.get<Destination[]>(url);
   }
 

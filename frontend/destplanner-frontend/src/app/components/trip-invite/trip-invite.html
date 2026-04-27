@@ -1,0 +1,125 @@
+<div class="invite-panel" data-cy="trip-invite-panel">
+
+  <!-- ── Header ───────────────────────────────────────────────── -->
+  <div class="invite-header">
+    <mat-icon class="invite-header-icon">group_add</mat-icon>
+    <div>
+      <h3 class="invite-title">Invite Travel Companions</h3>
+      <p class="invite-subtitle">Collaborators can view and contribute to this trip's itinerary.</p>
+    </div>
+  </div>
+
+  <!-- ── Email Input Form ──────────────────────────────────────── -->
+  <form [formGroup]="inviteForm" (ngSubmit)="sendInvites()" class="invite-form">
+
+    <!-- Staged chips -->
+    <div class="chip-row" *ngIf="stagedEmails.length > 0" data-cy="staged-emails">
+      <span
+        *ngFor="let email of stagedEmails"
+        class="email-chip"
+        [attr.data-cy]="'chip-' + email">
+        <mat-icon class="chip-icon">mail</mat-icon>
+        {{ email }}
+        <button type="button" class="chip-remove" (click)="removeEmail(email)"
+          [attr.aria-label]="'Remove ' + email" data-cy="remove-email-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </span>
+    </div>
+
+    <div class="input-row">
+      <mat-form-field appearance="outline" class="email-field">
+        <mat-label>Enter email address</mat-label>
+        <input
+          matInput
+          type="email"
+          formControlName="emailInput"
+          placeholder="companion@example.com"
+          (keydown)="onInputKeydown($event)"
+          (blur)="addEmailFromInput()"
+          autocomplete="off"
+          data-cy="invite-email-input" />
+        <mat-icon matSuffix>email</mat-icon>
+        <mat-hint>Press Enter or comma to add multiple emails</mat-hint>
+        <mat-error *ngIf="inviteForm.get('emailInput')?.hasError('email')">
+          Enter a valid email address
+        </mat-error>
+      </mat-form-field>
+
+      <button
+        mat-raised-button
+        class="btn-send"
+        type="submit"
+        [disabled]="sending"
+        data-cy="send-invites-btn">
+        <mat-spinner *ngIf="sending" diameter="18" class="btn-spinner"></mat-spinner>
+        <mat-icon *ngIf="!sending">send</mat-icon>
+        {{ sending ? 'Sending…' : 'Send Invites' }}
+      </button>
+    </div>
+  </form>
+
+  <!-- ── Send Results ──────────────────────────────────────────── -->
+  <div class="results-section" *ngIf="lastResults.length > 0" data-cy="invite-results">
+    <h4 class="section-label">Results</h4>
+    <div
+      *ngFor="let r of lastResults"
+      class="result-row"
+      [class.result-success]="isResultSuccess(r.status)"
+      [class.result-warning]="isResultWarning(r.status)"
+      [class.result-error]="isResultError(r.status)"
+      [attr.data-cy]="'result-' + r.email">
+      <mat-icon class="result-icon">{{ getResultIcon(r.status) }}</mat-icon>
+      <span class="result-email">{{ r.email }}</span>
+      <span class="result-label">{{ getResultLabel(r.status) }}</span>
+    </div>
+  </div>
+
+  <!-- ── Invite Status List ────────────────────────────────────── -->
+  <div class="invites-section">
+    <div class="section-header">
+      <h4 class="section-label">Invite Status</h4>
+      <button
+        mat-icon-button
+        class="refresh-btn"
+        (click)="loadInvites()"
+        [disabled]="loading"
+        matTooltip="Refresh"
+        data-cy="refresh-invites-btn">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-row" *ngIf="loading">
+      <mat-spinner diameter="24"></mat-spinner>
+      <span>Loading invites…</span>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" *ngIf="!loading && invites.length === 0" data-cy="no-invites">
+      <mat-icon>mail_outline</mat-icon>
+      <p>No invites sent yet for this trip.</p>
+    </div>
+
+    <!-- Invite rows -->
+    <div
+      *ngFor="let inv of invites"
+      class="invite-row"
+      [attr.data-cy]="'invite-row-' + inv.id">
+      <mat-icon class="status-icon status-{{ inv.status }}" [matTooltip]="getStatusLabel(inv.status)">
+        {{ getStatusIcon(inv.status) }}
+      </mat-icon>
+      <div class="invite-info">
+        <span class="invite-email">{{ inv.email }}</span>
+        <span class="invite-meta">
+          <span class="status-badge status-{{ inv.status }}">{{ getStatusLabel(inv.status) }}</span>
+          <ng-container *ngIf="inv.status === 'pending'">
+            &nbsp;· Expires {{ formatExpiry(inv.expires_at) }}
+          </ng-container>
+        </span>
+      </div>
+    </div>
+  </div>
+
+</div>
