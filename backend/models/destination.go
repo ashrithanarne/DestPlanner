@@ -15,4 +15,5 @@ type DestinationResponse struct {
 	Budget       float64 `json:"budget"`
 	Description  string  `json:"description"`
 	IsBookmarked bool    `json:"is_bookmarked"`
+	Category     string  `json:"category"`
 }
