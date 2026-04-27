@@ -33,10 +33,6 @@ describe('DestinationsComponent', () => {
     isLoggedIn: vi.fn(() => false),
   };
 
-  // Synchronous no-op snack bar — no setTimeout, no overlay, no CDK portals.
-  // Must be injected via overrideComponent (not configureTestingModule providers)
-  // because DestinationsComponent is standalone and imports MatSnackBarModule,
-  // creating its own component-level injector that shadows root-level overrides.
   const mockSnackBar = {
     open: vi.fn(() => ({ onAction: () => new Subject() })),
   };
@@ -113,7 +109,15 @@ describe('DestinationsComponent', () => {
     expect(mockBookmarkService.addBookmark).not.toHaveBeenCalled();
   });
 
-
+  it('toggleBookmark: should call addBookmark when not bookmarked and logged in', async () => {
+    component.isLoggedIn = true;
+    const dest = { ...MOCK_DESTINATIONS[0], is_bookmarked: false };
+    const event = new MouseEvent('click');
+    component.toggleBookmark(dest, event);
+    await fixture.whenStable();
+    expect(mockBookmarkService.addBookmark).toHaveBeenCalledWith(1);
+    expect(dest.is_bookmarked).toBe(true);
+  });
 
   it('toggleBookmark: should call removeBookmark when already bookmarked', async () => {
     component.isLoggedIn = true;

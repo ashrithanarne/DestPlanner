@@ -1,6 +1,6 @@
-import { Component, OnInit, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,11 +10,11 @@ import { MatChipsModule } from '@angular/material/chips';
 import { DestinationService, Destination } from '../../services/destination';
 import { BookmarkService } from '../../services/bookmark';
 import { AuthService } from '../../services/auth';
-import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-destinations',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     RouterModule,
@@ -38,7 +38,7 @@ export class DestinationsComponent implements OnInit {
     private bookmarkService: BookmarkService,
     private authService: AuthService,
     private snack: MatSnackBar,
-    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef,
     private router: Router
   ) {}
 
@@ -49,57 +49,51 @@ export class DestinationsComponent implements OnInit {
 
   loadDestinations(): void {
     this.loading = true;
+    this.cdr.markForCheck();
+
     this.destService.getDestinations().subscribe({
       next: (data) => {
-        this.ngZone.run(() => {
-          this.destinations = data || [];
+        this.destinations = data || [];
 
-          if (this.isLoggedIn) {
-            this.bookmarkService.getBookmarks().subscribe({
-              next: (bookmarks) => {
-                this.ngZone.run(() => {
-                  const bookmarkedNames = new Set((bookmarks || []).map(b => b.destination));
-                  this.destinations.forEach(d => {
-                    d.is_bookmarked = bookmarkedNames.has(d.name);
-                  });
-                  this.loading = false;
-                });
-              },
-              error: (err: { status?: number }) => {
-                this.ngZone.run(() => {
-                  if (err.status === 401) {
-                    this.isLoggedIn = false;
-                  }
-                  this.loading = false;
-                });
-              }
-            });
-          } else {
-            this.loading = false;
-          }
-        });
+        if (this.isLoggedIn) {
+          this.bookmarkService.getBookmarks().subscribe({
+            next: (bookmarks) => {
+              const bookmarkedNames = new Set((bookmarks || []).map(b => b.destination));
+              this.destinations.forEach(d => {
+                d.is_bookmarked = bookmarkedNames.has(d.name);
+              });
+              this.loading = false;
+              this.cdr.markForCheck();
+            },
+            error: (err: { status?: number }) => {
+              if (err.status === 401) this.isLoggedIn = false;
+              this.loading = false;
+              this.cdr.markForCheck();
+            }
+          });
+        } else {
+          this.loading = false;
+          this.cdr.markForCheck();
+        }
       },
       error: () => {
-        this.ngZone.run(() => {
-          this.snack.open('Failed to load destinations', 'Close', { duration: 3000 });
-          this.loading = false;
-        });
+        this.snack.open('Failed to load destinations', 'Close', { duration: 3000 });
+        this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
 
   toggleBookmark(dest: Destination, event: Event): void {
     event.stopPropagation();
-    
+
     if (!this.isLoggedIn) {
-      this.snack.open('Please login to bookmark destinations', 'Login', { duration: 3000 }).onAction().subscribe(() => {
-        this.router.navigate(['/login']);
-      });
+      this.snack.open('Please login to bookmark destinations', 'Login', { duration: 3000 })
+        .onAction().subscribe(() => this.router.navigate(['/login']));
       return;
     }
 
     if (dest.is_bookmarked) {
-      // Find the bookmark ID to delete
       this.bookmarkService.getBookmarks().subscribe({
         next: (bookmarks) => {
           const match = bookmarks.find(b => b.destination === dest.name);
@@ -107,6 +101,7 @@ export class DestinationsComponent implements OnInit {
             this.bookmarkService.removeBookmark(match.id).subscribe({
               next: () => {
                 dest.is_bookmarked = false;
+                this.cdr.markForCheck();
                 this.snack.open('Removed from bookmarks', 'OK', { duration: 2000 });
               },
               error: () => this.snack.open('Failed to remove bookmark', 'OK', { duration: 2000 })
@@ -118,6 +113,7 @@ export class DestinationsComponent implements OnInit {
       this.bookmarkService.addBookmark(dest.id).subscribe({
         next: () => {
           dest.is_bookmarked = true;
+          this.cdr.markForCheck();
           this.snack.open('Added to bookmarks', 'OK', { duration: 2000 });
         },
         error: () => this.snack.open('Failed to add bookmark', 'OK', { duration: 2000 })
@@ -126,7 +122,6 @@ export class DestinationsComponent implements OnInit {
   }
 
   viewDetails(dest: Destination): void {
-    // We will implement destination details later in Task 3
     this.router.navigate(['/destinations', dest.id]);
   }
 }
