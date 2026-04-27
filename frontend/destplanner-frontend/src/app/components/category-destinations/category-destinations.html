@@ -1,0 +1,116 @@
+<div class="category-page" data-cy="category-destinations-page">
+
+  <!-- ── Page Header ─────────────────────────────────────────────── -->
+  <div class="page-header">
+    <h1 class="page-title">Discover by Travel Style</h1>
+    <p class="page-subtitle">
+      Pick a category and find destinations perfectly suited to your journey.
+    </p>
+  </div>
+
+  <!-- ── Category Selector ───────────────────────────────────────── -->
+  <div class="category-tabs" data-cy="category-tabs">
+    <button
+      *ngFor="let cat of categories"
+      class="cat-tab"
+      [class.cat-tab-active]="selectedCategory?.key === cat.key"
+      [style.--tab-gradient]="cat.gradient"
+      (click)="selectCategory(cat)"
+      [attr.data-cy]="'cat-tab-' + cat.key">
+      <mat-icon class="cat-tab-icon">{{ cat.icon }}</mat-icon>
+      <span class="cat-tab-label">{{ cat.label }}</span>
+    </button>
+  </div>
+
+  <!-- ── Selected Category Banner ─────────────────────────────────── -->
+  <div
+    *ngIf="selectedCategory"
+    class="category-banner"
+    [style.background]="selectedCategory.gradient"
+    data-cy="category-banner">
+    <mat-icon class="banner-icon">{{ selectedCategory.icon }}</mat-icon>
+    <div>
+      <h2 class="banner-title">{{ selectedCategory.label }}</h2>
+      <p class="banner-desc">{{ selectedCategory.description }}</p>
+    </div>
+  </div>
+
+  <!-- ── Loading ──────────────────────────────────────────────────── -->
+  <div *ngIf="loading" class="loading-state" data-cy="loading-state">
+    <mat-spinner diameter="44"></mat-spinner>
+    <p>Finding the best destinations for you…</p>
+  </div>
+
+  <!-- ── Error ────────────────────────────────────────────────────── -->
+  <div *ngIf="!loading && error" class="empty-state" data-cy="error-state">
+    <mat-icon>wifi_off</mat-icon>
+    <h3>Couldn't load destinations</h3>
+    <p>Please check your connection and try again.</p>
+    <button mat-raised-button class="retry-btn"
+      (click)="selectedCategory && loadDestinations(selectedCategory.key)"
+      data-cy="retry-btn">
+      <mat-icon>refresh</mat-icon> Retry
+    </button>
+  </div>
+
+  <!-- ── Empty state ──────────────────────────────────────────────── -->
+  <div
+    *ngIf="!loading && !error && destinations.length === 0"
+    class="empty-state"
+    data-cy="empty-state">
+    <mat-icon>travel_explore</mat-icon>
+    <h3>No destinations found</h3>
+    <p>We don't have destinations for this category yet. Check back soon!</p>
+  </div>
+
+  <!-- ── Destination Grid ─────────────────────────────────────────── -->
+  <div
+    *ngIf="!loading && !error && destinations.length > 0"
+    class="destinations-grid"
+    data-cy="destinations-grid">
+
+    <mat-card
+      *ngFor="let dest of destinations; let i = index"
+      class="dest-card"
+      [routerLink]="['/destinations', dest.id]"
+      [attr.data-cy]="'dest-card-' + dest.id">
+
+      <!-- Card image / gradient header -->
+      <div class="card-image" [style.background]="getCardGradient(i)">
+        <span class="card-country-badge">
+          <mat-icon>place</mat-icon>{{ dest.country }}
+        </span>
+        <h3 class="card-name">{{ dest.name }}</h3>
+      </div>
+
+      <mat-card-content class="card-body">
+        <!-- Rating -->
+        <div class="rating-row" *ngIf="dest.rating">
+          <span
+            *ngFor="let star of getStars(dest.rating)"
+            class="star"
+            [class.star-filled]="star.filled">★</span>
+          <span class="rating-value">{{ dest.rating | number:'1.1-1' }}</span>
+        </div>
+
+        <!-- Description -->
+        <p class="card-desc">{{ dest.description | slice:0:110 }}…</p>
+
+        <!-- Budget -->
+        <div class="budget-chip">
+          <mat-icon>payments</mat-icon>
+          ${{ dest.budget | number:'1.0-0' }} avg/day
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions class="card-actions">
+        <button mat-button class="view-btn" [routerLink]="['/destinations', dest.id]">
+          View Details
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+  </div>
+
+</div>

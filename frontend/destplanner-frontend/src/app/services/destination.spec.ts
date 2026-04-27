@@ -102,4 +102,51 @@ describe('DestinationService', () => {
     req.flush([{ id: 2, name: 'Tokyo' }]);
     expect(result[0].name).toBe('Tokyo');
   });
+
+  // ── getDestinationsByCategory ─────────────────────────────────────────────
+
+  it('getDestinationsByCategory: should GET /auth/destinations?category=friends', () => {
+    service.getDestinationsByCategory('friends').subscribe();
+    const req = httpMock.expectOne((r) =>
+      r.url.includes('/auth/destinations') && r.url.includes('category=friends')
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush(MOCK_DESTINATIONS);
+  });
+
+  it('getDestinationsByCategory: should URL-encode the category value', () => {
+    service.getDestinationsByCategory('Trip with Friends').subscribe();
+    const req = httpMock.expectOne((r) =>
+      r.url.includes('category=Trip%20with%20Friends')
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+  });
+
+  it('getDestinationsByCategory: should return matching destinations', () => {
+    let result: Destination[] = [];
+    service.getDestinationsByCategory('couples').subscribe((r) => (result = r));
+    const req = httpMock.expectOne((r) => r.url.includes('category=couples'));
+    req.flush(MOCK_DESTINATIONS);
+    expect(result.length).toBe(2);
+    expect(result[0].name).toBe('Paris');
+  });
+
+  it('getDestinationsByCategory: should return empty array when no match', () => {
+    let result: Destination[] = [];
+    service.getDestinationsByCategory('solo').subscribe((r) => (result = r));
+    const req = httpMock.expectOne((r) => r.url.includes('category=solo'));
+    req.flush([]);
+    expect(result).toEqual([]);
+  });
+
+  it('getDestinationsByCategory: should propagate HTTP errors', () => {
+    let error: any;
+    service.getDestinationsByCategory('adventure').subscribe({ error: (e) => (error = e) });
+    httpMock.expectOne((r) => r.url.includes('category=adventure')).flush(
+      { error: 'server error' },
+      { status: 500, statusText: 'Internal Server Error' }
+    );
+    expect(error.status).toBe(500);
+  });
 });

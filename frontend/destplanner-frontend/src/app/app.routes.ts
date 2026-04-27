@@ -43,6 +43,10 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'destinations/categories',
+    loadComponent: () => import('./components/category-destinations/category-destinations').then(m => m.CategoryDestinationsComponent)
+  },
+  {
     path: 'destinations',
     loadComponent: () => import('./components/destinations/destinations').then(m => m.DestinationsComponent)
   },
@@ -58,11 +62,6 @@ export const routes: Routes = [
   {
     path: 'timeline/:tripId',
     component: TimelineComponent,
-    canActivate: [authGuard]
-  },
-  {
-    path: 'invites/:token/accept',
-    loadComponent: () => import('./components/accept-invite/accept-invite').then(m => m.AcceptInviteComponent),
     canActivate: [authGuard]
   },
   { path: '**', redirectTo: '' },
