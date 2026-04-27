@@ -425,7 +425,7 @@ CREATE TABLE IF NOT EXISTS activities (
 		return err
 	}
 
-	// Create trip_invites table
+	// Create trip_invites table (Sprint 4 - invite collaborators by email)
 	createTripInvitesTable := `
 	CREATE TABLE IF NOT EXISTS trip_invites (
 		id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -443,6 +443,24 @@ CREATE TABLE IF NOT EXISTS activities (
 	if err != nil {
 		return err
 	}
+
+	// Create user_follows table (Sprint 4 - social follow)
+	_, err = DB.Exec(`
+	CREATE TABLE IF NOT EXISTS user_follows (
+		id           INTEGER PRIMARY KEY AUTOINCREMENT,
+		follower_id  INTEGER NOT NULL,
+		following_id INTEGER NOT NULL,
+		created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(follower_id)  REFERENCES users(id) ON DELETE CASCADE,
+		FOREIGN KEY(following_id) REFERENCES users(id) ON DELETE CASCADE,
+		UNIQUE(follower_id, following_id)
+	);`)
+	if err != nil {
+		return err
+	}
+
+	// Migrate: add visibility column to trips if not already present
+	DB.Exec(`ALTER TABLE trips ADD COLUMN visibility TEXT NOT NULL DEFAULT 'private'`)
 
 	log.Println("Database initialized successfully")
 	return nil
