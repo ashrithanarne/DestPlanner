@@ -111,8 +111,16 @@ export class NotificationService {
   startPolling(intervalMs = 30000): void {
     if (this.pollSub) return;
     this.pollSub = interval(intervalMs)
-      .pipe(startWith(0), switchMap(() => this.getUnreadCount()))
-      .subscribe();
+      .pipe(
+        startWith(0),
+        switchMap(() =>
+          this.getUnreadCount().pipe(
+            // silently swallow errors so polling never throws uncaught exceptions
+            tap({ error: () => {} })
+          )
+        )
+      )
+      .subscribe({ error: () => {} });
   }
 
   stopPolling(): void {

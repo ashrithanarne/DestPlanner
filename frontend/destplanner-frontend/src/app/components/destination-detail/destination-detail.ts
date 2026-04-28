@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
-import { DestinationService, Destination, DestinationReview, DestinationActivity } from '../../services/destination';
+import { DestinationService, Destination, DestinationReview, DestinationActivity, TravelOption, AccommodationOption } from '../../services/destination';
 import { BookmarkService } from '../../services/bookmark';
 import { AuthService } from '../../services/auth';
 
@@ -27,6 +27,7 @@ import { AuthService } from '../../services/auth';
 export class DestinationDetailComponent implements OnInit {
   destination: Destination | null = null;
   loading = true;
+  loadError = false;
   isLoggedIn = false;
   currentUserId: number | null = null;
 
@@ -38,6 +39,12 @@ export class DestinationDetailComponent implements OnInit {
   activities: DestinationActivity[] = [];
   activitiesLoading = false;
   activitiesError = '';
+  travelOptions: TravelOption[] = [];
+  travelLoading = false;
+  travelError = '';
+  accommodations: AccommodationOption[] = [];
+  accommodationsLoading = false;
+  accommodationsError = '';
   submittingReview = false;
   editingReviewId: number | null = null;
   stars = [1, 2, 3, 4, 5];
@@ -68,12 +75,12 @@ export class DestinationDetailComponent implements OnInit {
     if (id) {
       const destinationId = +id;
       this.loadDestination(destinationId);
-      if (this.isLoggedIn) {
-        this.loadActivities(destinationId);
-        this.loadReviews(destinationId);
-      } else {
-        this.activitiesError = 'Please login to view destination activities.';
-        this.reviewsError = 'Please login to view and submit reviews.';
+      this.loadActivities(destinationId);
+      this.loadTravelOptions(destinationId);
+      this.loadAccommodationOptions(destinationId);
+      this.loadReviews(destinationId);
+      if (!this.isLoggedIn) {
+        this.reviewsError = '';
       }
     } else {
       this.router.navigate(['/destinations']);
@@ -92,10 +99,8 @@ export class DestinationDetailComponent implements OnInit {
               this.destination!.is_bookmarked = bookmarkedNames.has(this.destination!.name);
               this.loading = false;
             },
-            error: (err: { status?: number }) => {
-              if (err.status === 401) {
-                this.isLoggedIn = false;
-              }
+            error: () => {
+              // bookmark fetch failed — still show the destination
               this.loading = false;
             }
           });
@@ -104,7 +109,7 @@ export class DestinationDetailComponent implements OnInit {
         }
       },
       error: () => {
-        this.snack.open('Failed to load destination details', 'Close', { duration: 3000 });
+        this.loadError = true;
         this.loading = false;
       }
     });
@@ -206,6 +211,36 @@ export class DestinationDetailComponent implements OnInit {
           return;
         }
         this.activitiesError = err.error?.message || 'Failed to load activities';
+      },
+    });
+  }
+
+  loadTravelOptions(destinationId: number): void {
+    this.travelLoading = true;
+    this.travelError = '';
+    this.destService.getTravelOptions(destinationId).subscribe({
+      next: (res) => {
+        this.travelOptions = res.travel_options || [];
+        this.travelLoading = false;
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.travelLoading = false;
+        this.travelError = err.error?.message || 'Failed to load travel options';
+      },
+    });
+  }
+
+  loadAccommodationOptions(destinationId: number): void {
+    this.accommodationsLoading = true;
+    this.accommodationsError = '';
+    this.destService.getAccommodationOptions(destinationId).subscribe({
+      next: (res) => {
+        this.accommodations = res.accommodation_options || [];
+        this.accommodationsLoading = false;
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.accommodationsLoading = false;
+        this.accommodationsError = err.error?.message || 'Failed to load accommodation options';
       },
     });
   }
