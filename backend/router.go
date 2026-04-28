@@ -177,7 +177,7 @@ func main() {
 		api.DELETE("/trips/:id/timeline/items/:itemId", handlers.DeleteTimelineItem)
 		api.PUT("/trips/:id/timeline/items/:itemId/reorder", handlers.ReorderTimelineItem)
 
-		// Social routes (Sprint 4)
+		// Social routes 
 		api.POST("/users/:id/follow", handlers.FollowUser)
 		api.DELETE("/users/:id/follow", handlers.UnfollowUser)
 		api.GET("/users/:id/profile", handlers.GetPublicProfile)
@@ -187,7 +187,7 @@ func main() {
 		api.PUT("/trips/:id/visibility", handlers.UpdateTripVisibility)
 		api.GET("/feed", handlers.GetFeed)
 
-		// Trip invite routes (Sprint 4)
+		// Trip invite routes 
 		api.POST("/trips/:id/invite", handlers.SendTripInvites)
 		api.GET("/trips/:id/invites", handlers.GetTripInvites)
 		api.POST("/invites/:token/accept", handlers.AcceptInvite)
