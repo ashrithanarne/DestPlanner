@@ -1,0 +1,175 @@
+.search-page {
+  min-height: 100vh;
+  background: #f4f6fb;
+  padding-bottom: 60px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.search-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 36px 20px 32px;
+  color: white;
+}
+
+.header-content {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  opacity: 0.9;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.btn-back {
+  color: white;
+  border-color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-back mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────── */
+.search-body {
+  max-width: 860px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+
+.search-box-wrapper {
+  margin-bottom: 28px;
+}
+
+.search-field {
+  width: 100%;
+}
+
+/* ── Results ──────────────────────────────────────────────────────────── */
+.results-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.15s;
+  border-radius: 12px !important;
+}
+
+.user-card:hover {
+  box-shadow: 0 4px 18px rgba(102, 126, 234, 0.18) !important;
+  transform: translateY(-1px);
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 2px;
+}
+
+.user-email {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-view {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── States ───────────────────────────────────────────────────────────── */
+.state-container {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.empty-icon {
+  font-size: 56px;
+  width: 56px;
+  height: 56px;
+  color: #c0c4d0;
+  margin-bottom: 12px;
+}
+
+.empty-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #444;
+  margin: 0 0 6px;
+}
+
+.empty-sub {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .page-title { font-size: 22px; }
+  .btn-back span { display: none; }
+  .user-card { padding: 12px 14px; }
+  .btn-view mat-icon { display: none; }
+}

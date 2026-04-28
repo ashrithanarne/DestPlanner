@@ -18,7 +18,7 @@
 
     <ng-container *ngIf="!loading && profile">
 
-      <!-- Avatar + Name Card -->
+      <!-- Avatar + Stats Card -->
       <mat-card class="avatar-card">
         <div class="avatar-section">
           <div class="avatar-circle">
@@ -28,6 +28,18 @@
             <h2 class="avatar-name">{{ profile.first_name }} {{ profile.last_name }}</h2>
             <p class="avatar-email">{{ profile.email }}</p>
             <p class="avatar-joined">Member since {{ formatDate(profile.created_at) }}</p>
+            <!-- Follower / Following counts -->
+            <div class="social-stats">
+              <div class="stat-chip">
+                <span class="stat-num">{{ followers.length }}</span>
+                <span class="stat-label">Followers</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-chip">
+                <span class="stat-num">{{ following.length }}</span>
+                <span class="stat-label">Following</span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="avatar-actions">
@@ -120,6 +132,79 @@
         </mat-card-content>
       </mat-card>
 
+      <!-- Social Tabs: Followers / Following -->
+      <mat-card class="info-card social-card" *ngIf="!editMode">
+        <mat-tab-group animationDuration="200ms" class="social-tabs">
+
+          <!-- Followers Tab -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="tab-icon">group</mat-icon>
+              Followers ({{ followers.length }})
+            </ng-template>
+
+            <div class="tab-content">
+              <div *ngIf="loadingFollowers" class="inner-loading">
+                <mat-spinner diameter="32"></mat-spinner>
+              </div>
+
+              <div *ngIf="!loadingFollowers && followers.length === 0" class="inner-empty">
+                <mat-icon>group_off</mat-icon>
+                <p>No followers yet.</p>
+              </div>
+
+              <div class="user-list" *ngIf="!loadingFollowers && followers.length > 0">
+                <div
+                  class="user-list-item"
+                  *ngFor="let user of followers"
+                  (click)="navigateToProfile(user.id)"
+                >
+                  <div class="user-list-avatar">{{ getInitialsFromEntry(user) }}</div>
+                  <span class="user-list-name">{{ user.first_name }} {{ user.last_name }}</span>
+                  <mat-icon class="user-list-arrow">chevron_right</mat-icon>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Following Tab -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="tab-icon">person_add</mat-icon>
+              Following ({{ following.length }})
+            </ng-template>
+
+            <div class="tab-content">
+              <div *ngIf="loadingFollowing" class="inner-loading">
+                <mat-spinner diameter="32"></mat-spinner>
+              </div>
+
+              <div *ngIf="!loadingFollowing && following.length === 0" class="inner-empty">
+                <mat-icon>people_outline</mat-icon>
+                <p>Not following anyone yet.</p>
+                <button mat-stroked-button color="primary" routerLink="/users/search" class="btn-find">
+                  <mat-icon>person_search</mat-icon>
+                  Find Travelers
+                </button>
+              </div>
+
+              <div class="user-list" *ngIf="!loadingFollowing && following.length > 0">
+                <div
+                  class="user-list-item"
+                  *ngFor="let user of following"
+                  (click)="navigateToProfile(user.id)"
+                >
+                  <div class="user-list-avatar">{{ getInitialsFromEntry(user) }}</div>
+                  <span class="user-list-name">{{ user.first_name }} {{ user.last_name }}</span>
+                  <mat-icon class="user-list-arrow">chevron_right</mat-icon>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+        </mat-tab-group>
+      </mat-card>
+
       <!-- Bookmarks Section -->
       <mat-card class="info-card bookmarks-card" *ngIf="!editMode">
         <mat-card-header>
@@ -135,11 +220,11 @@
           <div *ngIf="!loadingBookmarks && bookmarks.length === 0" class="empty-state">
             <p style="color:#6b7280; margin-top:1rem;">You haven't bookmarked any destinations yet.</p>
           </div>
-          <div *ngIf="!loadingBookmarks && bookmarks.length > 0" class="bookmarks-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
-            <div class="bookmark-item" *ngFor="let b of bookmarks" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 8px;">
-              <div class="bookmark-info" style="display: flex; align-items: center; gap: 0.5rem;">
+          <div *ngIf="!loadingBookmarks && bookmarks.length > 0" class="bookmarks-list">
+            <div class="bookmark-item" *ngFor="let b of bookmarks">
+              <div class="bookmark-info">
                 <mat-icon color="warn">favorite</mat-icon>
-                <span class="bookmark-name" style="font-weight: 500;">{{ b.destination }}</span>
+                <span class="bookmark-name">{{ b.destination }}</span>
               </div>
               <button mat-icon-button color="warn" (click)="removeBookmark(b.id)" aria-label="Remove bookmark">
                 <mat-icon>delete</mat-icon>

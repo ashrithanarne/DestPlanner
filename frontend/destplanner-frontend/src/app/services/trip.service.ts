@@ -13,6 +13,7 @@ export interface Trip {
   end_date?: string;
   notes?: string;
   status: string;
+  visibility?: 'public' | 'private';
   duration_days?: number;
   // null = no packing list created yet; number = list exists (0–100)
   packing_progress: number | null;

@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,16 +11,19 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTabsModule } from '@angular/material/tabs';
 
 import { UserProfileService } from '../../services/user-profile.service';
 import { AuthService, User } from '../../services/auth';
 import { BookmarkService, BookmarkResponse } from '../../services/bookmark';
+import { SocialService, FollowListEntry } from '../../services/social.service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
@@ -30,6 +33,7 @@ import { BookmarkService, BookmarkResponse } from '../../services/bookmark';
     MatSnackBarModule,
     MatDividerModule,
     MatProgressSpinnerModule,
+    MatTabsModule,
   ],
   templateUrl: './profile.html',
   styleUrls: ['./profile.css'],
@@ -42,6 +46,11 @@ export class ProfileComponent implements OnInit {
   bookmarks: BookmarkResponse[] = [];
   loadingBookmarks = false;
 
+  followers: FollowListEntry[] = [];
+  following: FollowListEntry[] = [];
+  loadingFollowers = false;
+  loadingFollowing = false;
+
   editForm: ReturnType<FormBuilder['group']>;
 
   constructor(
@@ -49,6 +58,7 @@ export class ProfileComponent implements OnInit {
     private profileService: UserProfileService,
     private authService: AuthService,
     private bookmarkService: BookmarkService,
+    private socialService: SocialService,
     private snack: MatSnackBar,
     private router: Router,
     private cdr: ChangeDetectorRef,
@@ -74,6 +84,8 @@ export class ProfileComponent implements OnInit {
         this.profile = user;
         this.loading = false;
         this.loadBookmarks();
+        this.loadFollowers(user.id);
+        this.loadFollowing(user.id);
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -86,6 +98,36 @@ export class ProfileComponent implements OnInit {
         } else {
           this.snack.open('Failed to load profile.', 'Close', { duration: 3000 });
         }
+      },
+    });
+  }
+
+  loadFollowers(userId: number): void {
+    this.loadingFollowers = true;
+    this.socialService.getFollowers(userId).subscribe({
+      next: (res) => {
+        this.followers = res.followers;
+        this.loadingFollowers = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingFollowers = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  loadFollowing(userId: number): void {
+    this.loadingFollowing = true;
+    this.socialService.getFollowing(userId).subscribe({
+      next: (res) => {
+        this.following = res.following;
+        this.loadingFollowing = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingFollowing = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -142,6 +184,10 @@ export class ProfileComponent implements OnInit {
     return this.profileService.getInitials(this.profile.first_name, this.profile.last_name);
   }
 
+  getInitialsFromEntry(entry: FollowListEntry): string {
+    return ((entry.first_name?.[0] ?? '') + (entry.last_name?.[0] ?? '')).toUpperCase();
+  }
+
   formatDate(dateStr: string): string {
     return this.profileService.formatJoinDate(dateStr);
   }
@@ -169,5 +215,9 @@ export class ProfileComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  navigateToProfile(userId: number): void {
+    this.router.navigate(['/users', userId, 'profile']);
   }
 }
