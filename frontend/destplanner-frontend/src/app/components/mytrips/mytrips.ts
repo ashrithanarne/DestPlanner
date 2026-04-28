@@ -15,6 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { TripService, Trip } from '../../services/trip.service';
 import { BudgetService, BudgetSummary } from '../../services/budget';
+import { SocialService } from '../../services/social.service';
 import { TripInviteComponent } from '../trip-invite/trip-invite';
 
 @Component({
@@ -61,9 +62,13 @@ export class MyTripsComponent implements OnInit {
   /** Track which trip's invite panel is open (null = none) */
   invitePanelTripId: number | null = null;
 
+  /** Track visibility toggle in-progress */
+  visibilityTogglingId: number | null = null;
+
   constructor(
     private tripService: TripService,
     private budgetService: BudgetService,
+    private socialService: SocialService,
     private router: Router,
     private fb: FormBuilder,
     private snack: MatSnackBar,
@@ -299,6 +304,24 @@ export class MyTripsComponent implements OnInit {
     return 'warn';
   }
  
+  toggleVisibility(trip: Trip): void {
+    const newVisibility = trip.visibility === 'public' ? 'private' : 'public';
+    this.visibilityTogglingId = trip.id;
+    this.socialService.updateTripVisibility(trip.id, newVisibility).subscribe({
+      next: (res) => {
+        trip.visibility = res.visibility as 'public' | 'private';
+        this.visibilityTogglingId = null;
+        this.snack.open(`Trip is now ${res.visibility}.`, 'OK', { duration: 2500 });
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.visibilityTogglingId = null;
+        this.snack.open('Failed to update visibility.', 'Close', { duration: 3000 });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   trackByTripId(_: number, trip: Trip): number {
     return trip.id;
   }

@@ -1,0 +1,176 @@
+<div class="pub-profile-page">
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="52"></mat-spinner>
+    <p>Loading profile...</p>
+  </div>
+
+  <ng-container *ngIf="!loading && profile">
+
+    <!-- Hero Header -->
+    <div class="profile-hero">
+      <div class="hero-content">
+        <!-- Avatar -->
+        <div class="hero-avatar">
+          {{ getInitials(profile.first_name, profile.last_name) }}
+        </div>
+
+        <!-- Name + stats -->
+        <div class="hero-info">
+          <h1 class="hero-name">{{ profile.first_name }} {{ profile.last_name }}</h1>
+          <div class="hero-stats">
+            <div class="stat-item">
+              <span class="stat-num">{{ profile.follower_count }}</span>
+              <span class="stat-label">Followers</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-num">{{ profile.following_count }}</span>
+              <span class="stat-label">Following</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-num">{{ publicTrips.length }}</span>
+              <span class="stat-label">Public Trips</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Follow Button -->
+        <div class="hero-actions" *ngIf="!isOwnProfile">
+          <button
+            mat-raised-button
+            [color]="profile.is_following ? '' : 'primary'"
+            [class.btn-following]="profile.is_following"
+            (click)="toggleFollow()"
+            [disabled]="followLoading"
+            class="btn-follow"
+          >
+            <mat-spinner diameter="18" *ngIf="followLoading"></mat-spinner>
+            <ng-container *ngIf="!followLoading">
+              <mat-icon>{{ profile.is_following ? 'person_remove' : 'person_add' }}</mat-icon>
+              {{ profile.is_following ? 'Unfollow' : 'Follow' }}
+            </ng-container>
+          </button>
+        </div>
+
+        <div class="hero-actions" *ngIf="isOwnProfile">
+          <button mat-stroked-button class="btn-edit-profile" (click)="goToMyProfile()">
+            <mat-icon>edit</mat-icon>
+            Edit Profile
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <mat-tab-group animationDuration="200ms" class="profile-tabs">
+
+        <!-- Public Trips Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">luggage</mat-icon>
+            Trips ({{ publicTrips.length }})
+          </ng-template>
+
+          <div class="tab-content">
+            <div *ngIf="tripsLoading" class="inner-loading">
+              <mat-spinner diameter="36"></mat-spinner>
+            </div>
+
+            <div *ngIf="!tripsLoading && publicTrips.length === 0" class="inner-empty">
+              <mat-icon>luggage</mat-icon>
+              <p>No public trips yet.</p>
+            </div>
+
+            <div class="trips-grid" *ngIf="!tripsLoading && publicTrips.length > 0">
+              <mat-card class="trip-card" *ngFor="let trip of publicTrips" (click)="viewTrip(trip)">
+                <mat-card-content>
+                  <div class="trip-card-header">
+                    <h3 class="trip-card-name">{{ trip.trip_name }}</h3>
+                    <span class="trip-status-badge" [ngClass]="getStatusClass(trip.status)">
+                      {{ trip.status }}
+                    </span>
+                  </div>
+                  <div class="trip-card-meta" *ngIf="trip.destination">
+                    <mat-icon class="meta-icon">place</mat-icon>
+                    {{ trip.destination }}
+                  </div>
+                  <div class="trip-card-meta" *ngIf="trip.start_date">
+                    <mat-icon class="meta-icon">calendar_today</mat-icon>
+                    {{ formatDate(trip.start_date) }}
+                    <ng-container *ngIf="trip.end_date"> → {{ formatDate(trip.end_date) }}</ng-container>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Followers Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">group</mat-icon>
+            Followers ({{ profile.follower_count }})
+          </ng-template>
+
+          <div class="tab-content">
+            <div *ngIf="followersLoading" class="inner-loading">
+              <mat-spinner diameter="36"></mat-spinner>
+            </div>
+
+            <div *ngIf="!followersLoading && followers.length === 0" class="inner-empty">
+              <mat-icon>group_off</mat-icon>
+              <p>No followers yet.</p>
+            </div>
+
+            <div class="user-list" *ngIf="!followersLoading && followers.length > 0">
+              <div class="user-list-item" *ngFor="let user of followers"
+                (click)="navigateToProfile(user.id)">
+                <div class="user-list-avatar">
+                  {{ getInitials(user.first_name, user.last_name) }}
+                </div>
+                <span class="user-list-name">{{ user.first_name }} {{ user.last_name }}</span>
+                <mat-icon class="user-list-arrow">chevron_right</mat-icon>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Following Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">person_add</mat-icon>
+            Following ({{ profile.following_count }})
+          </ng-template>
+
+          <div class="tab-content">
+            <div *ngIf="followingLoading" class="inner-loading">
+              <mat-spinner diameter="36"></mat-spinner>
+            </div>
+
+            <div *ngIf="!followingLoading && following.length === 0" class="inner-empty">
+              <mat-icon>people_outline</mat-icon>
+              <p>Not following anyone yet.</p>
+            </div>
+
+            <div class="user-list" *ngIf="!followingLoading && following.length > 0">
+              <div class="user-list-item" *ngFor="let user of following"
+                (click)="navigateToProfile(user.id)">
+                <div class="user-list-avatar">
+                  {{ getInitials(user.first_name, user.last_name) }}
+                </div>
+                <span class="user-list-name">{{ user.first_name }} {{ user.last_name }}</span>
+                <mat-icon class="user-list-arrow">chevron_right</mat-icon>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
+      </mat-tab-group>
+    </div>
+
+  </ng-container>
+</div>

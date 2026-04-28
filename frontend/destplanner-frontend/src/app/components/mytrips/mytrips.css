@@ -268,7 +268,7 @@
   gap: 12px;
 }
 
-/* Header row: title + buttons */
+/* Header row: title + icon buttons */
 .trip-card-header {
   display: flex;
   align-items: flex-start;
@@ -413,55 +413,103 @@
   border-radius: 4px;
 }
 
-/* Card footer */
-.trip-card-footer {
-  display: flex !important;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px 12px !important;
+/* ── Budget inline (inside card body) ───────────────────────── */
+.budget-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
   border-top: 1px solid #f0f4ff;
 }
 
-.btn-budget {
-  color: #667eea !important;
-  border-color: #667eea !important;
-  font-size: 0.82rem !important;
-  font-weight: 600 !important;
-}
-
-.trip-created {
-  font-size: 0.75rem;
-  color: #c3cfe2;
-}
-
-/* Status option in select dropdown */
-.status-option {
+.budget-inline-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
 }
 
-/* ── Responsive ─────────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .page-title { font-size: 1.5rem; }
-  .header-icon { font-size: 36px !important; width: 36px !important; height: 36px !important; }
-  .trips-grid { grid-template-columns: 1fr; }
-  .form-row { flex-direction: column; gap: 0; }
-  .filter-tabs { gap: 6px; }
-  .filter-tab { padding: 6px 12px; font-size: 0.82rem; }
+.budget-inline-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #38a169;
 }
 
-/* ── Budget footer styles ───────────────────────────────────── */
+.budget-inline-label mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+
+.budget-inline-pct {
+  font-size: 0.78rem;
+  color: #718096;
+  font-weight: 600;
+}
+
+/* ── Card Footer ─────────────────────────────────────────────── */
+.trip-card-footer {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  padding: 8px 12px 12px !important;
+  border-top: 1px solid #f0f4ff;
+  gap: 6px !important;
+}
+
+/* Each row inside the footer */
+.footer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Second row: smaller/secondary actions pushed apart */
+.footer-row-secondary {
+  border-top: 1px solid #f5f5f5;
+  padding-top: 6px;
+}
+
+/* Shared button style for all footer buttons */
+.btn-footer {
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  padding: 0 10px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.btn-footer mat-icon {
+  font-size: 15px !important;
+  width: 15px !important;
+  height: 15px !important;
+}
+
+/* Packing button */
+.btn-packing {
+  color: #11998e !important;
+  border-color: #11998e !important;
+}
+
+.btn-packing:hover {
+  background: #e6fff9 !important;
+}
+
+/* Budget buttons */
 .btn-budget-linked {
   color: #38a169 !important;
   border-color: #38a169 !important;
-  font-weight: 700 !important;
 }
 
 .btn-budget-empty {
   color: #a0aec0 !important;
   border-color: #e2e8f0 !important;
-  font-size: 0.82rem !important;
 }
 
 .btn-budget-empty:hover {
@@ -469,28 +517,55 @@
   border-color: #667eea !important;
 }
 
-.budget-mini-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
+/* Itinerary button */
+.btn-itinerary {
+  /* inherits color="primary" from Angular Material */
 }
 
-.mini-bar {
-  flex: 1;
-  height: 4px !important;
-  border-radius: 4px;
+/* Invite button */
+.btn-invite {
+  color: #667eea !important;
+  border-color: #667eea !important;
 }
 
-.mini-bar-label {
+.btn-invite:hover,
+.btn-invite-active {
+  background: #ede9fe !important;
+  color: #4c1d95 !important;
+  border-color: #4c1d95 !important;
+}
+
+/* Visibility button */
+.btn-visibility {
+  color: #059669 !important;
+  border-color: #059669 !important;
+}
+
+.btn-visibility:hover {
+  background: #d1fae5 !important;
+}
+
+/* Created date — pushed to the right in secondary row */
+.trip-created {
+  margin-left: auto;
   font-size: 0.72rem;
-  color: #a0aec0;
-  font-weight: 600;
+  color: #c3cfe2;
   white-space: nowrap;
 }
 
-/* ── Empty budget state CSS ─────────────────────────────────── */
+/* ── Invite panel wrapper ───────────────────────────────────── */
+.invite-panel-wrapper {
+  padding: 0 16px 16px;
+}
+
+/* ── Status option in select dropdown ───────────────────────── */
+.status-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Empty actions ──────────────────────────────────────────── */
 .empty-actions {
   display: flex;
   gap: 12px;
@@ -504,38 +579,14 @@
   border-color: #667eea !important;
   font-weight: 600 !important;
 }
-.btn-packing {
-  color: #11998e !important;
-  border-color: #11998e !important;
-  font-size: 0.82rem !important;
-  font-weight: 600 !important;
-}
- 
-.btn-packing:hover {
-  background: #e6fff9 !important;
-}
- 
-/* Shrink the footer to fit three buttons on one row */
-.trip-card-footer {
-  flex-wrap: wrap;
-  gap: 6px !important;
-}
 
-/* ── Invite button ──────────────────────────────────────────── */
-.btn-invite {
-  color: #667eea !important;
-  border-color: #667eea !important;
-  font-weight: 600 !important;
-  font-size: 0.82rem !important;
-}
-
-.btn-invite:hover, .btn-invite-active {
-  background: #ede9fe !important;
-  color: #4c1d95 !important;
-  border-color: #4c1d95 !important;
-}
-
-/* ── Invite panel wrapper ───────────────────────────────────── */
-.invite-panel-wrapper {
-  padding: 0 16px 16px;
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .page-title { font-size: 1.5rem; }
+  .header-icon { font-size: 36px !important; width: 36px !important; height: 36px !important; }
+  .trips-grid { grid-template-columns: 1fr; }
+  .form-row { flex-direction: column; gap: 0; }
+  .filter-tabs { gap: 6px; }
+  .filter-tab { padding: 6px 12px; font-size: 0.82rem; }
+  .footer-row { gap: 4px; }
 }
