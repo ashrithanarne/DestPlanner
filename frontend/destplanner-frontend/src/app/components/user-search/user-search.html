@@ -1,0 +1,77 @@
+<div class="search-page">
+
+  <!-- Header -->
+  <div class="search-header">
+    <div class="header-content">
+      <div class="header-title-group">
+        <mat-icon class="header-icon">person_search</mat-icon>
+        <div>
+          <h1 class="page-title">Find Travelers</h1>
+          <p class="page-subtitle">Search for people to follow and discover their trips</p>
+        </div>
+      </div>
+      <button mat-stroked-button class="btn-back" (click)="goToFeed()">
+        <mat-icon>arrow_back</mat-icon>
+        Back to Feed
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Box -->
+  <div class="search-body">
+    <div class="search-box-wrapper">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search by name or email</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput
+          [(ngModel)]="query"
+          (ngModelChange)="onQueryChange()"
+          placeholder="e.g. Alice, smith@email.com…"
+          autocomplete="off"
+        />
+        <mat-hint>Type at least 2 characters</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="state-container">
+      <mat-spinner diameter="44"></mat-spinner>
+      <p>Searching…</p>
+    </div>
+
+    <!-- Results -->
+    <div *ngIf="!loading && results.length > 0" class="results-grid">
+      <mat-card
+        *ngFor="let user of results"
+        class="user-card"
+        (click)="viewProfile(user.user_id)"
+      >
+        <div class="user-avatar">{{ getInitials(user.first_name, user.last_name) }}</div>
+        <div class="user-info">
+          <p class="user-name">{{ user.first_name }} {{ user.last_name }}</p>
+          <p class="user-email">{{ user.email }}</p>
+        </div>
+        <button mat-stroked-button color="primary" class="btn-view" (click)="viewProfile(user.user_id); $event.stopPropagation()">
+          <mat-icon>person</mat-icon>
+          View Profile
+        </button>
+      </mat-card>
+    </div>
+
+    <!-- No results -->
+    <div *ngIf="!loading && searched && results.length === 0" class="state-container">
+      <mat-icon class="empty-icon">search_off</mat-icon>
+      <p class="empty-title">No travelers found</p>
+      <p class="empty-sub">Try a different name or email address</p>
+    </div>
+
+    <!-- Idle prompt -->
+    <div *ngIf="!loading && !searched" class="state-container">
+      <mat-icon class="empty-icon">travel_explore</mat-icon>
+      <p class="empty-title">Discover fellow travelers</p>
+      <p class="empty-sub">Search by name or email to find people to follow</p>
+    </div>
+  </div>
+
+</div>

@@ -47,7 +47,7 @@
   margin-top: 16px;
 }
 
-/* Avatar Card */
+/* ── Avatar Card ─────────────────────────────────────────────────────── */
 .avatar-card {
   border-radius: 16px !important;
   padding: 8px !important;
@@ -95,8 +95,42 @@
 
 .avatar-joined {
   color: #a0aec0;
-  margin: 0;
+  margin: 0 0 12px;
   font-size: 0.85rem;
+}
+
+/* Social stats row under avatar info */
+.social-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.stat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-num {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2d3748;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  color: #a0aec0;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 28px;
+  background: #e2e8f0;
 }
 
 .avatar-actions {
@@ -110,7 +144,7 @@
   border-color: #e53e3e !important;
 }
 
-/* Info Card */
+/* ── Info Card ───────────────────────────────────────────────────────── */
 .info-card {
   border-radius: 16px !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07) !important;
@@ -159,7 +193,7 @@ mat-card-actions {
   font-weight: 600 !important;
 }
 
-/* Edit Card */
+/* ── Edit Card ───────────────────────────────────────────────────────── */
 .edit-card {
   border-left: 4px solid #667eea;
   animation: slideDown 0.2s ease-out;
@@ -204,9 +238,142 @@ mat-card-actions {
   padding: 0 28px !important;
 }
 
+/* ── Social Card (Followers / Following tabs) ────────────────────────── */
+.social-card {
+  overflow: hidden;
+}
+
+.social-tabs {
+  width: 100%;
+}
+
+.tab-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.tab-content {
+  padding: 16px 8px;
+  min-height: 120px;
+}
+
+/* Inner loading/empty states */
+.inner-loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.inner-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: #a0aec0;
+}
+
+.inner-empty mat-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 8px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.inner-empty p {
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+}
+
+.btn-find {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* User list rows */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.user-list-item:hover {
+  background: #f0f4ff;
+}
+
+.user-list-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.user-list-name {
+  flex: 1;
+  font-size: 0.97rem;
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.user-list-arrow {
+  color: #cbd5e0;
+  font-size: 20px;
+}
+
+/* ── Bookmarks Card ──────────────────────────────────────────────────── */
+.bookmarks-list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bookmark-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.bookmark-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bookmark-name {
+  font-weight: 500;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .header-title { font-size: 1.5rem; }
   .info-grid { grid-template-columns: 1fr; }
   .form-row { flex-direction: column; }
   .avatar-section { flex-direction: column; text-align: center; }
+  .social-stats { justify-content: center; }
+  .avatar-actions { justify-content: center; }
 }
