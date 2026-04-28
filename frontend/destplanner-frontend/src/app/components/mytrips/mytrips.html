@@ -102,8 +102,7 @@
     <!-- ── Empty State ───────────────────────────────────────────── -->
     <div class="empty-state" *ngIf="!loadingTrips && filteredTrips.length === 0 && !showCreateForm">
       <div class="empty-illustration">
-        <mat-icon class="empty-icon">{{ activeFilter === 'all' ? 'luggage' : getStatusConfig(activeFilter).icon
-          }}</mat-icon>
+        <mat-icon class="empty-icon">{{ activeFilter === 'all' ? 'luggage' : getStatusConfig(activeFilter).icon }}</mat-icon>
       </div>
       <h3>{{ activeFilter === 'all' ? 'No trips yet' : 'No ' + activeFilter + ' trips' }}</h3>
       <p *ngIf="activeFilter === 'all'">Click <strong>New Trip</strong> to start planning your first adventure.</p>
@@ -233,91 +232,110 @@
                 <span class="packing-label"><mat-icon>inventory_2</mat-icon> Packing</span>
                 <span class="packing-pct">{{ trip.packing_progress | number:'1.0-0' }}%</span>
               </div>
-              <mat-progress-bar [value]="trip.packing_progress" [color]="getPackingProgressColor(trip.packing_progress)"
+              <mat-progress-bar
+                [value]="trip.packing_progress"
+                [color]="getPackingProgressColor(trip.packing_progress)"
                 class="packing-bar">
               </mat-progress-bar>
             </div>
 
-          </mat-card-content>
-
-          <!-- Card Footer -->
-          <mat-card-actions class="trip-card-footer">
-
-            <!-- ── Timeline button (Sprint 3) ── -->
-            <button
-              mat-stroked-button
-              color="primary"
-              class="btn-timeline"
-              (click)="openTimeline(trip.id, $event)"
-              matTooltip="View visual trip timeline"
-              data-cy="timeline-btn">
-              <mat-icon>view_timeline</mat-icon>
-              Timeline
-            </button>
-
-            <!-- Packing List button -->
-            <button mat-stroked-button class="btn-packing"
-              (click)="openPackingList(trip, $event)"
-              matTooltip="Manage packing list"
-              data-cy="packing-list-btn">
-              <mat-icon>inventory_2</mat-icon>
-              <span *ngIf="trip.packing_progress !== null">
-                {{ trip.packing_progress | number:'1.0-0' }}% packed
-              </span>
-              <span *ngIf="trip.packing_progress === null">
-                Packing List
-              </span>
-            </button>
-
-            <!-- Has a linked budget: show spend summary -->
+            <!-- Budget mini bar (inside body, below packing) -->
             <ng-container *ngIf="budgetsByTrip[trip.id] as budget">
-              <button mat-stroked-button class="btn-budget btn-budget-linked"
-                (click)="openBudget(trip, $event)"
-                matTooltip="View budget">
-                <mat-icon>account_balance_wallet</mat-icon>
-                {{ budget.currency }} {{ budget.total_budget | number:'1.0-0' }}
-              </button>
-              <div class="budget-mini-bar">
+              <div class="budget-inline">
+                <div class="budget-inline-header">
+                  <span class="budget-inline-label">
+                    <mat-icon>account_balance_wallet</mat-icon>
+                    {{ budget.currency }} {{ budget.total_budget | number:'1.0-0' }}
+                  </span>
+                  <span class="budget-inline-pct">{{ budget.percentage_used | number:'1.0-0' }}% used</span>
+                </div>
                 <mat-progress-bar
                   [value]="budget.percentage_used"
                   [color]="budget.percentage_used >= 90 ? 'warn' : budget.percentage_used >= 70 ? 'accent' : 'primary'"
-                  class="mini-bar">
+                  class="packing-bar">
                 </mat-progress-bar>
-                <span class="mini-bar-label">{{ budget.percentage_used | number:'1.0-0' }}% used</span>
               </div>
             </ng-container>
 
-            <!-- Itinerary button -->
-            <button mat-stroked-button color="primary" class="btn-itinerary" (click)="openItinerary(trip, $event)"
-              matTooltip="Manage daily itinerary" style="margin-right: 8px;">
-              <mat-icon>format_list_numbered</mat-icon>
-              Itinerary
-            </button>
+          </mat-card-content>
 
-            <!-- Invite collaborators button -->
-            <button mat-stroked-button class="btn-invite"
-              (click)="toggleInvitePanel(trip, $event)"
-              [class.btn-invite-active]="invitePanelTripId === trip.id"
-              matTooltip="Invite travel companions"
-              data-cy="invite-btn">
-              <mat-icon>group_add</mat-icon>
-              Invite
-            </button>
+          <!-- ── Card Footer: two clean rows of buttons ── -->
+          <mat-card-actions class="trip-card-footer">
 
-            <!-- No budget yet: show create prompt -->
-            <ng-container *ngIf="!budgetsByTrip[trip.id]">
-              <button mat-stroked-button class="btn-budget btn-budget-empty" (click)="openBudget(trip, $event)"
-                matTooltip="Add a budget for this trip">
-                <mat-icon>add_circle_outline</mat-icon>
-                Add Budget
+            <!-- Row 1: primary navigation actions -->
+            <div class="footer-row">
+              <button
+                mat-stroked-button
+                color="primary"
+                class="btn-footer"
+                (click)="openTimeline(trip.id, $event)"
+                matTooltip="View visual trip timeline"
+                data-cy="timeline-btn">
+                <mat-icon>view_timeline</mat-icon>
+                Timeline
               </button>
-            </ng-container>
 
-            <span class="trip-created">{{ trip.created_at | date:'mediumDate' }}</span>
+              <button mat-stroked-button class="btn-footer btn-packing"
+                (click)="openPackingList(trip, $event)"
+                matTooltip="Manage packing list"
+                data-cy="packing-list-btn">
+                <mat-icon>inventory_2</mat-icon>
+                <span *ngIf="trip.packing_progress !== null">{{ trip.packing_progress | number:'1.0-0' }}% packed</span>
+                <span *ngIf="trip.packing_progress === null">Packing</span>
+              </button>
+
+              <button mat-stroked-button color="primary" class="btn-footer btn-itinerary"
+                (click)="openItinerary(trip, $event)"
+                matTooltip="Manage daily itinerary">
+                <mat-icon>format_list_numbered</mat-icon>
+                Itinerary
+              </button>
+
+              <ng-container *ngIf="!budgetsByTrip[trip.id]">
+                <button mat-stroked-button class="btn-footer btn-budget-empty"
+                  (click)="openBudget(trip, $event)"
+                  matTooltip="Add a budget for this trip">
+                  <mat-icon>add_circle_outline</mat-icon>
+                  Budget
+                </button>
+              </ng-container>
+
+              <ng-container *ngIf="budgetsByTrip[trip.id] as budget">
+                <button mat-stroked-button class="btn-footer btn-budget-linked"
+                  (click)="openBudget(trip, $event)"
+                  matTooltip="View budget">
+                  <mat-icon>account_balance_wallet</mat-icon>
+                  Budget
+                </button>
+              </ng-container>
+            </div>
+
+            <!-- Row 2: social / settings actions + date -->
+            <div class="footer-row footer-row-secondary">
+              <button mat-stroked-button class="btn-footer btn-invite"
+                (click)="toggleInvitePanel(trip, $event)"
+                [class.btn-invite-active]="invitePanelTripId === trip.id"
+                matTooltip="Invite travel companions"
+                data-cy="invite-btn">
+                <mat-icon>group_add</mat-icon>
+                Invite
+              </button>
+
+              <button mat-stroked-button class="btn-footer btn-visibility"
+                (click)="toggleVisibility(trip); $event.stopPropagation()"
+                [disabled]="visibilityTogglingId === trip.id"
+                [matTooltip]="trip.visibility === 'public' ? 'Make private' : 'Make public'"
+                data-cy="visibility-btn">
+                <mat-icon>{{ trip.visibility === 'public' ? 'public' : 'lock' }}</mat-icon>
+                {{ trip.visibility === 'public' ? 'Public' : 'Private' }}
+              </button>
+
+              <span class="trip-created">{{ trip.created_at | date:'mediumDate' }}</span>
+            </div>
 
           </mat-card-actions>
 
-          <!-- ── Invite Panel (Sprint 4) ──────────────────────── -->
+          <!-- ── Invite Panel ──────────────────────────────────────── -->
           <div *ngIf="invitePanelTripId === trip.id" class="invite-panel-wrapper" data-cy="invite-panel-wrapper">
             <app-trip-invite [tripId]="trip.id"></app-trip-invite>
           </div>
