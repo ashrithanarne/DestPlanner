@@ -64,5 +64,20 @@ export const routes: Routes = [
     component: TimelineComponent,
     canActivate: [authGuard]
   },
+  {
+    path: 'feed',
+    loadComponent: () => import('./components/feed/feed').then(m => m.FeedComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'users/search',
+    loadComponent: () => import('./components/user-search/user-search').then(m => m.UserSearchComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'users/:id/profile',
+    loadComponent: () => import('./components/public-profile/public-profile').then(m => m.PublicProfileComponent),
+    canActivate: [authGuard]
+  },
   { path: '**', redirectTo: '' },
 ];

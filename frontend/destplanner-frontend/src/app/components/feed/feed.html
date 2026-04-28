@@ -1,0 +1,108 @@
+<div class="feed-page">
+
+  <!-- Page Header -->
+  <div class="feed-header">
+    <div class="header-content">
+      <div class="header-title-group">
+        <mat-icon class="header-icon">dynamic_feed</mat-icon>
+        <div>
+          <h1 class="page-title">Travel Feed</h1>
+          <p class="page-subtitle">Discover public trips from travelers you follow</p>
+        </div>
+      </div>
+      <button mat-stroked-button class="btn-find-travelers" routerLink="/users/search">
+        <mat-icon>person_search</mat-icon>
+        Find Travelers
+      </button>
+    </div>
+  </div>
+
+  <div class="feed-container">
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-state">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Loading your travel feed...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && feed.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">explore_off</mat-icon>
+      <h2>Your feed is empty</h2>
+      <p>Follow other travelers to see their public trips here. Discover amazing journeys and get inspiration for your next adventure!</p>
+      <button mat-raised-button color="primary" routerLink="/users/search" class="btn-explore">
+        <mat-icon>person_search</mat-icon>
+        Find Travelers to Follow
+      </button>
+    </div>
+
+    <!-- Feed Cards -->
+    <div *ngIf="!loading && feed.length > 0" class="feed-list">
+      <mat-card class="feed-card" *ngFor="let trip of feed" (click)="viewTrip(trip)">
+
+        <!-- Card Header: owner info + timestamp -->
+        <div class="card-owner-row">
+          <div class="owner-avatar" (click)="viewProfile(trip.owner_id); $event.stopPropagation()">
+            {{ getInitials(trip.owner_name) }}
+          </div>
+          <div class="owner-meta">
+            <span class="owner-name" (click)="viewProfile(trip.owner_id); $event.stopPropagation()">
+              {{ trip.owner_name }}
+            </span>
+            <span class="posted-time">{{ timeAgo(trip.created_at) }}</span>
+          </div>
+          <div class="status-chip" [ngClass]="'status-' + trip.status">
+            <mat-icon class="status-icon-sm">{{ getStatusIcon(trip.status) }}</mat-icon>
+            {{ trip.status }}
+          </div>
+        </div>
+
+        <mat-card-content>
+          <!-- Trip Name -->
+          <h3 class="trip-title">{{ trip.trip_name }}</h3>
+
+          <!-- Destination -->
+          <div class="trip-meta-row" *ngIf="trip.destination">
+            <mat-icon class="meta-icon">place</mat-icon>
+            <span class="destination-text">{{ trip.destination }}</span>
+          </div>
+
+          <!-- Dates -->
+          <div class="trip-meta-row" *ngIf="trip.start_date">
+            <mat-icon class="meta-icon">calendar_today</mat-icon>
+            <span class="dates-text">
+              {{ formatDate(trip.start_date) }}
+              <ng-container *ngIf="trip.end_date"> → {{ formatDate(trip.end_date) }}</ng-container>
+            </span>
+          </div>
+
+          <!-- View Details Button -->
+          <div class="card-actions">
+            <button mat-stroked-button class="btn-view-trip" (click)="viewTrip(trip); $event.stopPropagation()">
+              <mat-icon>open_in_new</mat-icon>
+              View Trip
+            </button>
+            <button mat-icon-button class="btn-view-profile" matTooltip="View {{ trip.owner_name }}'s profile"
+              (click)="viewProfile(trip.owner_id); $event.stopPropagation()">
+              <mat-icon>account_circle</mat-icon>
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Load More -->
+      <div class="load-more-section" *ngIf="hasMore">
+        <button mat-stroked-button (click)="loadMore()" [disabled]="loadingMore" class="btn-load-more">
+          <mat-spinner diameter="18" *ngIf="loadingMore"></mat-spinner>
+          <span *ngIf="!loadingMore">Load More</span>
+        </button>
+      </div>
+
+      <div class="end-of-feed" *ngIf="!hasMore && feed.length > 0">
+        <mat-icon>check_circle_outline</mat-icon>
+        <span>You're all caught up!</span>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import { MyTripsComponent } from './mytrips';
 import { TripService, Trip } from '../../services/trip.service';
 import { BudgetService, BudgetSummary } from '../../services/budget';
+import { SocialService } from '../../services/social.service';
 
 const MOCK_TRIP: Trip = {
   id: 1,
@@ -63,6 +64,10 @@ const mockBudgetService = {
   updateLocalSummary: vi.fn(),
 };
 
+const mockSocialService = {
+  updateTripVisibility: vi.fn(() => of({ message: 'Visibility updated', visibility: 'public' })),
+};
+
 describe('MyTripsComponent', () => {
   let component: MyTripsComponent;
   let fixture: ComponentFixture<MyTripsComponent>;
@@ -78,6 +83,7 @@ describe('MyTripsComponent', () => {
       providers: [
         { provide: TripService, useValue: mockTripService },
         { provide: BudgetService, useValue: mockBudgetService },
+        { provide: SocialService, useValue: mockSocialService },
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([
@@ -328,5 +334,42 @@ describe('MyTripsComponent', () => {
 
   it('trackByTripId: should return trip id', () => {
     expect(component.trackByTripId(0, MOCK_TRIP)).toBe(1);
+  });
+
+  // ── Visibility toggle ──────────────────────────────────────────────
+
+  it('toggleVisibility: should call socialService with public when trip is private', () => {
+    const trip: Trip = { ...MOCK_TRIP, visibility: 'private' };
+    mockSocialService.updateTripVisibility.mockReturnValue(of({ message: 'ok', visibility: 'public' }));
+    component.toggleVisibility(trip);
+    expect(mockSocialService.updateTripVisibility).toHaveBeenCalledWith(trip.id, 'public');
+  });
+
+  it('toggleVisibility: should call socialService with private when trip is public', () => {
+    const trip: Trip = { ...MOCK_TRIP, visibility: 'public' };
+    mockSocialService.updateTripVisibility.mockReturnValue(of({ message: 'ok', visibility: 'private' }));
+    component.toggleVisibility(trip);
+    expect(mockSocialService.updateTripVisibility).toHaveBeenCalledWith(trip.id, 'private');
+  });
+
+  it('toggleVisibility: should update trip.visibility on success', () => {
+    const trip: Trip = { ...MOCK_TRIP, visibility: 'private' };
+    mockSocialService.updateTripVisibility.mockReturnValue(of({ message: 'ok', visibility: 'public' }));
+    component.toggleVisibility(trip);
+    expect(trip.visibility).toBe('public');
+  });
+
+  it('toggleVisibility: should clear visibilityTogglingId on success', () => {
+    const trip: Trip = { ...MOCK_TRIP, visibility: 'private' };
+    mockSocialService.updateTripVisibility.mockReturnValue(of({ message: 'ok', visibility: 'public' }));
+    component.toggleVisibility(trip);
+    expect(component.visibilityTogglingId).toBeNull();
+  });
+
+  it('toggleVisibility: should clear visibilityTogglingId on error', () => {
+    const trip: Trip = { ...MOCK_TRIP, visibility: 'private' };
+    mockSocialService.updateTripVisibility.mockReturnValue(throwError(() => new Error('err')));
+    component.toggleVisibility(trip);
+    expect(component.visibilityTogglingId).toBeNull();
   });
 });
