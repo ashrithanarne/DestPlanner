@@ -113,22 +113,187 @@ Tarun Reddy Chittela - Frontend<br>
 Nikhitha Pydipati - Backend<br>
 Ashritha Narne - Backend<br>
 
-## Environment Setup
-
-### Frontend
+---
+ 
+## Prerequisites
+ 
+Make sure the following are installed before running the project:
+ 
+### Required
+ 
+| Tool | Minimum Version | Check |
+|------|----------------|-------|
+| Node.js | 18+ | `node --version` |
+| npm | 9+ | `npm --version` |
+| Go | 1.21+ | `go version` |
+| Angular CLI | 17+ | `ng version` |
+ 
+### Install Angular CLI (if not already installed)
+ 
 ```bash
-# Node.js 18+
-# Angular CLI 17+
-npm install
-ng serve
-# Runs on http://localhost:4200
+npm install -g @angular/cli
 ```
-
-### Backend
+ 
+---
+ 
+## Getting Started
+ 
+### 1. Clone the Repository
+ 
 ```bash
-# Go 1.21+
+git clone https://github.com/ashrithanarne/DestPlanner.git
+cd DestPlanner
+```
+ 
+---
+ 
+### 2. Run the Backend
+ 
+The backend uses SQLite — **no database installation or configuration required**. The database file (`destplanner.db`) is created automatically on first run.
+ 
+```bash
 cd backend
 go mod download
 go run router.go
-# Runs on http://localhost:8080
 ```
+ 
+The backend will start at **http://localhost:8080**
+ 
+You should see output like:
+```
+[GIN-debug] Listening and serving HTTP on :8080
+```
+ 
+> **Note:** Keep this terminal open. The frontend depends on the backend being running.
+ 
+---
+ 
+### 3. Run the Frontend
+ 
+Open a **new terminal** (keep the backend running):
+ 
+```bash
+cd frontend/destplanner-frontend
+npm install
+ng serve
+```
+ 
+The frontend will start at **http://localhost:4200**
+ 
+Open your browser and navigate to **http://localhost:4200** to use the application.
+ 
+---
+ 
+## Running Tests
+ 
+### Frontend Unit Tests
+ 
+```bash
+cd frontend/destplanner-frontend
+npm test
+```
+ 
+This runs all Vitest unit tests across components and services. You should see output like:
+```
+Test Files  33 passed (33)
+     Tests  642 passed (706)
+```
+ 
+To run in watch mode (re-runs on file save):
+```bash
+ng test
+```
+ 
+---
+ 
+### Frontend E2E Tests (Cypress)
+ 
+Make sure both the backend and frontend are running first, then in a separate terminal:
+ 
+```bash
+cd frontend/destplanner-frontend
+ 
+# Open Cypress interactive runner
+npm run cypress:open
+ 
+# Or run headlessly
+npm run cypress:run
+```
+ 
+---
+ 
+### Backend Unit Tests
+ 
+```bash
+cd backend
+go test ./handlers/... -v
+```
+ 
+Run with coverage report:
+```bash
+go test ./handlers/... -cover
+```
+ 
+All tests use an in-memory SQLite database — no running backend or external database is needed.
+ 
+---
+
+## Project Structure
+ 
+```
+DestPlanner/
+├── backend/
+│   ├── router.go               # Gin router and route definitions
+│   ├── go.mod / go.sum         # Go module dependencies
+│   ├── destplanner.db          # SQLite database (auto-created on first run)
+│   ├── database/
+│   │   └── db.go               # Database connection and schema migrations
+│   ├── handlers/               # Route handlers and unit tests
+│   │   ├── auth.go / auth_test.go
+│   │   ├── trip_handler.go / trip_test.go
+│   │   ├── itinerary_handler.go / itinerary_test.go
+│   │   ├── budget_handler.go / budget_test.go
+│   │   ├── destination_handler.go / destination_test.go
+│   │   ├── invite_handler.go / invite_test.go
+│   │   ├── social_handler.go / social_test.go
+│   │   ├── analytics_handler.go / analytics_test.go
+│   │   ├── travel_handler.go / travel_test.go
+│   │   └── ...
+│   ├── middleware/             # JWT auth middleware
+│   ├── models/                 # Data models/structs
+│   └── utils/                  # Helper utilities
+│
+├── frontend/
+│   └── destplanner-frontend/
+│       ├── src/app/
+│       │   ├── auth/           # Login, Register
+│       │   ├── components/     # All UI components
+│       │   │   ├── landing-page/
+│       │   │   ├── destinations/
+│       │   │   ├── category-destinations/
+│       │   │   ├── destination-detail/
+│       │   │   ├── mytrips/
+│       │   │   ├── itinerary/
+│       │   │   ├── timeline/
+│       │   │   ├── budget/
+│       │   │   ├── expense-split/
+│       │   │   ├── packing-list/
+│       │   │   ├── profile/
+│       │   │   ├── public-profile/
+│       │   │   ├── feed/
+│       │   │   ├── user-search/
+│       │   │   ├── trip-invite/
+│       │   │   ├── accept-invite/
+│       │   │   ├── notifications/
+│       │   │   └── navigation/
+│       │   ├── services/       # Angular services (API calls)
+│       │   └── interceptors/   # HTTP auth interceptor
+│       └── cypress/e2e/        # Cypress end-to-end tests
+│
+├── Sprint1.md
+├── Sprint2.md
+├── Sprint3.md
+├── Sprint4.md
+└── README.md
+```
+
