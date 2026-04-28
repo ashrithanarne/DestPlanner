@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"backend/database"
 	"backend/models"
@@ -61,6 +63,16 @@ func GetAnalyticsSummary(c *gin.Context) {
 		avgSpent = spent / float64(totalTrips)
 	}
 
+	// Get distinct countries visited (non-empty destinations treated as countries)
+	var countriesVisited int
+	err = database.DB.QueryRow(
+		"SELECT COUNT(DISTINCT destination) FROM trips WHERE user_id = ? AND destination != '' AND destination IS NOT NULL",
+		claims.UserID,
+	).Scan(&countriesVisited)
+	if err != nil {
+		countriesVisited = 0
+	}
+
 	c.JSON(http.StatusOK, models.AnalyticsSummaryResponse{
 		UserID: claims.UserID,
 		Summary: models.AnalyticsSummary{
@@ -68,6 +80,7 @@ func GetAnalyticsSummary(c *gin.Context) {
 			TotalSpent:          spent,
 			TotalBudgets:        totalBudgets,
 			AverageSpentPerTrip: avgSpent,
+			CountriesVisited:    countriesVisited,
 		},
 	})
 }
@@ -136,7 +149,7 @@ func GetAnalyticsTrips(c *gin.Context) {
 	})
 }
 
-// GetAnalyticsExpenses returns expense breakdown by category for the user
+// GetAnalyticsExpenses returns expense breakdown by category, with optional tripId and dateRange filters
 func GetAnalyticsExpenses(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
@@ -148,17 +161,40 @@ func GetAnalyticsExpenses(c *gin.Context) {
 	}
 	claims := userInterface.(*utils.Claims)
 
-	rows, err := database.DB.Query(`
+	tripID := c.Query("tripId")
+	dateRange := c.Query("dateRange")
+
+	// Build WHERE clause dynamically
+	conditions := []string{"b.user_id = ?"}
+	args := []interface{}{claims.UserID}
+
+	if tripID != "" {
+		conditions = append(conditions, "b.trip_id = ?")
+		args = append(args, tripID)
+	}
+
+	if dateRange != "" {
+		// dateRange format: "YYYY-MM-DD,YYYY-MM-DD"
+		parts := strings.SplitN(dateRange, ",", 2)
+		if len(parts) == 2 {
+			conditions = append(conditions, "date(e.expense_date) >= ? AND date(e.expense_date) <= ?")
+			args = append(args, parts[0], parts[1])
+		}
+	}
+
+	query := fmt.Sprintf(`
 		SELECT 
 			e.category,
 			SUM(e.amount) as total_amount,
 			COUNT(*) as count
 		FROM expenses e
 		JOIN budgets b ON e.budget_id = b.id
-		WHERE b.user_id = ?
+		WHERE %s
 		GROUP BY e.category
 		ORDER BY total_amount DESC
-	`, claims.UserID)
+	`, strings.Join(conditions, " AND "))
+
+	rows, err := database.DB.Query(query, args...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error:   "server_error",

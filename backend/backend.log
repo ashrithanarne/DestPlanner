@@ -1,0 +1,139 @@
+2026/04/29 03:43:36 Database initialized successfully
+2026/04/29 03:43:36 WARNING: Using default JWT secret. Set JWT_SECRET environment variable in production!
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /health                   --> main.main.func1 (4 handlers)
+[GIN-debug] POST   /api/auth/login           --> backend/handlers.Login (4 handlers)
+[GIN-debug] POST   /api/auth/register        --> backend/handlers.Register (4 handlers)
+[GIN-debug] GET    /api/auth/destinations    --> backend/handlers.GetDestinations (4 handlers)
+[GIN-debug] GET    /api/auth/destinations/:id --> backend/handlers.GetDestinationByID (4 handlers)
+[GIN-debug] GET    /api/auth/destinations/suggest --> backend/handlers.SuggestDestinations (4 handlers)
+[GIN-debug] GET    /api/public/destinations/compare --> backend/handlers.CompareDestinations (4 handlers)
+[GIN-debug] GET    /api/public/destinations/:id/activities --> backend/handlers.GetActivities (4 handlers)
+[GIN-debug] GET    /api/public/destinations/:id/travel --> backend/handlers.GetTravelOptions (4 handlers)
+[GIN-debug] GET    /api/public/destinations/:id/accommodations --> backend/handlers.GetAccommodationOptions (4 handlers)
+[GIN-debug] GET    /api/public/destinations/:id/reviews --> backend/handlers.GetReviews (4 handlers)
+[GIN-debug] POST   /api/auth/logout          --> backend/handlers.Logout (5 handlers)
+[GIN-debug] GET    /api/profile              --> backend/handlers.GetProfile (5 handlers)
+[GIN-debug] PUT    /api/profile              --> backend/handlers.UpdateProfile (5 handlers)
+[GIN-debug] GET    /api/users/search         --> backend/handlers.SearchUsers (5 handlers)
+[GIN-debug] GET    /api/users/:id            --> backend/handlers.GetUserByID (5 handlers)
+[GIN-debug] POST   /api/bookmarks            --> backend/handlers.SaveBookmark (5 handlers)
+[GIN-debug] GET    /api/bookmarks            --> backend/handlers.GetBookmarks (5 handlers)
+[GIN-debug] DELETE /api/bookmarks/:id        --> backend/handlers.DeleteBookmark (5 handlers)
+[GIN-debug] POST   /api/destinations         --> backend/handlers.CreateDestination (5 handlers)
+[GIN-debug] DELETE /api/destinations/:id     --> backend/handlers.DeleteDestination (5 handlers)
+[GIN-debug] PUT    /api/destinations/:id     --> backend/handlers.UpdateDestination (5 handlers)
+[GIN-debug] POST   /api/destinations/:id/reviews --> backend/handlers.CreateReview (5 handlers)
+[GIN-debug] PUT    /api/destinations/:id/reviews/:reviewId --> backend/handlers.UpdateReview (5 handlers)
+[GIN-debug] DELETE /api/destinations/:id/reviews/:reviewId --> backend/handlers.DeleteReview (5 handlers)
+[GIN-debug] POST   /api/destinations/:id/activities --> backend/handlers.CreateActivity (5 handlers)
+[GIN-debug] PUT    /api/destinations/:id/activities/:activityId --> backend/handlers.UpdateActivity (5 handlers)
+[GIN-debug] DELETE /api/destinations/:id/activities/:activityId --> backend/handlers.DeleteActivity (5 handlers)
+[GIN-debug] POST   /api/itineraries          --> backend/handlers.CreateItinerary (5 handlers)
+[GIN-debug] GET    /api/itineraries/:id      --> backend/handlers.GetItinerary (5 handlers)
+[GIN-debug] POST   /api/itineraries/:id/destinations --> backend/handlers.AddDestination (5 handlers)
+[GIN-debug] DELETE /api/itineraries/:id/destinations/:dest_id --> backend/handlers.RemoveDestination (5 handlers)
+[GIN-debug] POST   /api/itineraries/:id/collaborators --> backend/handlers.AddCollaborator (5 handlers)
+[GIN-debug] DELETE /api/itineraries/:id/collaborators/:user_id --> backend/handlers.RemoveCollaborator (5 handlers)
+[GIN-debug] DELETE /api/itineraries/:id      --> backend/handlers.DeleteItinerary (5 handlers)
+[GIN-debug] POST   /api/budgets              --> backend/handlers.CreateBudget (5 handlers)
+[GIN-debug] GET    /api/budgets              --> backend/handlers.GetBudgets (5 handlers)
+[GIN-debug] GET    /api/budgets/:id          --> backend/handlers.GetBudgetByID (5 handlers)
+[GIN-debug] PUT    /api/budgets/:id          --> backend/handlers.UpdateBudget (5 handlers)
+[GIN-debug] DELETE /api/budgets/:id          --> backend/handlers.DeleteBudget (5 handlers)
+[GIN-debug] GET    /api/analytics/summary    --> backend/handlers.GetAnalyticsSummary (5 handlers)
+[GIN-debug] GET    /api/analytics/trips      --> backend/handlers.GetAnalyticsTrips (5 handlers)
+[GIN-debug] GET    /api/analytics/expenses   --> backend/handlers.GetAnalyticsExpenses (5 handlers)
+[GIN-debug] POST   /api/budgets/:id/expenses --> backend/handlers.AddExpense (5 handlers)
+[GIN-debug] GET    /api/budgets/:id/expenses --> backend/handlers.GetExpenses (5 handlers)
+[GIN-debug] PUT    /api/budgets/:id/expenses/:expenseId --> backend/handlers.UpdateExpense (5 handlers)
+[GIN-debug] DELETE /api/budgets/:id/expenses/:expenseId --> backend/handlers.DeleteExpense (5 handlers)
+[GIN-debug] POST   /api/trips/:id/packing-list --> backend/handlers.CreatePackingList (5 handlers)
+[GIN-debug] GET    /api/trips/:id/packing-list --> backend/handlers.GetPackingList (5 handlers)
+[GIN-debug] DELETE /api/trips/:id/packing-list --> backend/handlers.DeletePackingList (5 handlers)
+[GIN-debug] POST   /api/trips/:id/packing-list/items --> backend/handlers.AddPackingItem (5 handlers)
+[GIN-debug] GET    /api/packing-list/suggest --> backend/handlers.GetSuggestedItems (5 handlers)
+[GIN-debug] PUT    /api/packing-items/:itemId --> backend/handlers.UpdatePackingItem (5 handlers)
+[GIN-debug] DELETE /api/packing-items/:itemId --> backend/handlers.DeletePackingItem (5 handlers)
+[GIN-debug] POST   /api/trips                --> backend/handlers.CreateTrip (5 handlers)
+[GIN-debug] GET    /api/trips                --> backend/handlers.GetTrips (5 handlers)
+[GIN-debug] GET    /api/trips/:id            --> backend/handlers.GetTripByID (5 handlers)
+[GIN-debug] PUT    /api/trips/:id            --> backend/handlers.UpdateTrip (5 handlers)
+[GIN-debug] DELETE /api/trips/:id            --> backend/handlers.DeleteTrip (5 handlers)
+[GIN-debug] GET    /api/notifications        --> backend/handlers.GetNotifications (5 handlers)
+[GIN-debug] GET    /api/notifications/unread-count --> backend/handlers.GetUnreadCount (5 handlers)
+[GIN-debug] PUT    /api/notifications/read-all --> backend/handlers.MarkAllNotificationsRead (5 handlers)
+[GIN-debug] PUT    /api/notifications/:id/read --> backend/handlers.MarkNotificationRead (5 handlers)
+[GIN-debug] DELETE /api/notifications/:id    --> backend/handlers.DeleteNotification (5 handlers)
+[GIN-debug] GET    /api/notifications/preferences --> backend/handlers.GetNotificationPreferences (5 handlers)
+[GIN-debug] PUT    /api/notifications/preferences --> backend/handlers.UpdateNotificationPreferences (5 handlers)
+[GIN-debug] POST   /api/notifications/reminders/check --> backend/handlers.CheckTripReminders (5 handlers)
+[GIN-debug] POST   /api/groups               --> backend/handlers.CreateGroup (5 handlers)
+[GIN-debug] GET    /api/groups               --> backend/handlers.GetGroups (5 handlers)
+[GIN-debug] GET    /api/groups/:id           --> backend/handlers.GetGroupByID (5 handlers)
+[GIN-debug] POST   /api/groups/:id/members   --> backend/handlers.AddMember (5 handlers)
+[GIN-debug] DELETE /api/groups/:id/members/:userId --> backend/handlers.RemoveMember (5 handlers)
+[GIN-debug] POST   /api/groups/:id/expenses  --> backend/handlers.AddGroupExpense (5 handlers)
+[GIN-debug] GET    /api/groups/:id/expenses  --> backend/handlers.GetGroupExpenses (5 handlers)
+[GIN-debug] GET    /api/groups/:id/balances  --> backend/handlers.GetGroupBalances (5 handlers)
+[GIN-debug] PUT    /api/groups/:id/expenses/:expenseId/settle --> backend/handlers.SettleExpense (5 handlers)
+[GIN-debug] GET    /api/trips/:id/timeline   --> backend/handlers.GetTimeline (5 handlers)
+[GIN-debug] POST   /api/trips/:id/timeline/items --> backend/handlers.CreateTimelineItem (5 handlers)
+[GIN-debug] PUT    /api/trips/:id/timeline/items/:itemId --> backend/handlers.UpdateTimelineItem (5 handlers)
+[GIN-debug] DELETE /api/trips/:id/timeline/items/:itemId --> backend/handlers.DeleteTimelineItem (5 handlers)
+[GIN-debug] PUT    /api/trips/:id/timeline/items/:itemId/reorder --> backend/handlers.ReorderTimelineItem (5 handlers)
+[GIN-debug] POST   /api/users/:id/follow     --> backend/handlers.FollowUser (5 handlers)
+[GIN-debug] DELETE /api/users/:id/follow     --> backend/handlers.UnfollowUser (5 handlers)
+[GIN-debug] GET    /api/users/:id/profile    --> backend/handlers.GetPublicProfile (5 handlers)
+[GIN-debug] GET    /api/users/:id/followers  --> backend/handlers.GetFollowers (5 handlers)
+[GIN-debug] GET    /api/users/:id/following  --> backend/handlers.GetFollowing (5 handlers)
+[GIN-debug] GET    /api/users/:id/trips      --> backend/handlers.GetPublicTripsForUser (5 handlers)
+[GIN-debug] PUT    /api/trips/:id/visibility --> backend/handlers.UpdateTripVisibility (5 handlers)
+[GIN-debug] GET    /api/feed                 --> backend/handlers.GetFeed (5 handlers)
+[GIN-debug] POST   /api/trips/:id/invite     --> backend/handlers.SendTripInvites (5 handlers)
+[GIN-debug] GET    /api/trips/:id/invites    --> backend/handlers.GetTripInvites (5 handlers)
+[GIN-debug] POST   /api/invites/:token/accept --> backend/handlers.AcceptInvite (5 handlers)
+2026/04/29 03:43:36 Server starting on port 8080...
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN] 2026/04/29 - 03:46:47 | 200 |      1.5659ms |             ::1 | GET      "/api/public/destinations/compare?ids=1,2,3"
+[GIN] 2026/04/29 - 03:46:48 | 401 |            0s |             ::1 | GET      "/api/notifications/unread-count"
+[GIN] 2026/04/29 - 03:46:48 | 200 |     10.1236ms |             ::1 | GET      "/api/public/destinations/compare?ids=1,2,3"
+[GIN] 2026/04/29 - 03:48:32 | 200 |      1.5771ms |             ::1 | GET      "/api/public/destinations/compare?ids=1,2,3"
+[GIN] 2026/04/29 - 03:48:33 | 401 |            0s |             ::1 | GET      "/api/notifications/unread-count"
+[GIN] 2026/04/29 - 03:48:33 | 200 |      31.672ms |             ::1 | GET      "/api/public/destinations/compare?ids=1,2,3"
+[GIN] 2026/04/29 - 03:48:50 | 200 |      2.2859ms |             ::1 | GET      "/api/public/destinations/compare?ids=1,2,3"
+[GIN] 2026/04/29 - 03:48:51 | 200 |     29.9027ms |             ::1 | GET      "/api/public/destinations/compare?ids=1,2,3"
+[GIN] 2026/04/29 - 03:53:21 | 200 |      1.5721ms |             ::1 | GET      "/api/auth/destinations"
+[GIN] 2026/04/29 - 03:53:28 | 200 |       505.5µs |             ::1 | GET      "/api/auth/destinations/1"
+[GIN] 2026/04/29 - 03:53:28 | 200 |      1.2093ms |             ::1 | GET      "/api/public/destinations/1/activities"
+[GIN] 2026/04/29 - 03:53:28 | 200 |       506.5µs |             ::1 | GET      "/api/public/destinations/1/travel"
+[GIN] 2026/04/29 - 03:53:28 | 200 |      3.9453ms |             ::1 | GET      "/api/public/destinations/1/reviews"
+[GIN] 2026/04/29 - 03:53:28 | 200 |      5.0071ms |             ::1 | GET      "/api/public/destinations/1/accommodations"
+[GIN] 2026/04/29 - 03:54:50 | 200 |       651.7µs |             ::1 | GET      "/api/auth/destinations/1"
+[GIN] 2026/04/29 - 03:54:50 | 200 |         522µs |             ::1 | GET      "/api/public/destinations/1/travel"
+[GIN] 2026/04/29 - 03:54:50 | 200 |      1.1737ms |             ::1 | GET      "/api/public/destinations/1/activities"
+[GIN] 2026/04/29 - 03:54:50 | 200 |            0s |             ::1 | GET      "/api/public/destinations/1/accommodations"
+[GIN] 2026/04/29 - 03:54:50 | 200 |      1.0531ms |             ::1 | GET      "/api/public/destinations/1/reviews"
+[GIN] 2026/04/29 - 03:54:51 | 200 |      22.517ms |             ::1 | GET      "/api/auth/destinations/1"
+[GIN] 2026/04/29 - 03:54:51 | 200 |     16.0848ms |             ::1 | GET      "/api/public/destinations/1/travel"
+[GIN] 2026/04/29 - 03:54:51 | 200 |     21.0866ms |             ::1 | GET      "/api/public/destinations/1/activities"
+[GIN] 2026/04/29 - 03:54:51 | 200 |     38.4747ms |             ::1 | GET      "/api/public/destinations/1/reviews"
+[GIN] 2026/04/29 - 03:54:51 | 200 |      35.313ms |             ::1 | GET      "/api/public/destinations/1/accommodations"
+[GIN] 2026/04/29 - 03:55:57 | 200 |       575.7µs |             ::1 | GET      "/api/auth/destinations/1"
+[GIN] 2026/04/29 - 03:55:57 | 200 |       522.8µs |             ::1 | GET      "/api/public/destinations/1/travel"
+[GIN] 2026/04/29 - 03:55:57 | 200 |      1.0985ms |             ::1 | GET      "/api/public/destinations/1/activities"
+[GIN] 2026/04/29 - 03:55:57 | 200 |      1.2723ms |             ::1 | GET      "/api/public/destinations/1/reviews"
+[GIN] 2026/04/29 - 03:55:57 | 200 |      2.6093ms |             ::1 | GET      "/api/public/destinations/1/accommodations"
+[GIN] 2026/04/29 - 03:55:59 | 200 |       998.1µs |             ::1 | GET      "/api/auth/destinations/1"
+[GIN] 2026/04/29 - 03:55:59 | 200 |      1.3598ms |             ::1 | GET      "/api/public/destinations/1/activities"
+[GIN] 2026/04/29 - 03:55:59 | 200 |      1.3173ms |             ::1 | GET      "/api/public/destinations/1/travel"
+[GIN] 2026/04/29 - 03:55:59 | 200 |      1.2212ms |             ::1 | GET      "/api/public/destinations/1/accommodations"
+[GIN] 2026/04/29 - 03:55:59 | 200 |      1.4875ms |             ::1 | GET      "/api/public/destinations/1/reviews"
+exit status 1
