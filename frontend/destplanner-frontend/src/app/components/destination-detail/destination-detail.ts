@@ -71,20 +71,26 @@ export class DestinationDetailComponent implements OnInit {
   ngOnInit(): void {
     this.isLoggedIn = this.authService.isLoggedIn();
     this.currentUserId = this.authService.getCurrentUser()?.id ?? null;
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      const destinationId = +id;
-      this.loadDestination(destinationId);
-      this.loadActivities(destinationId);
-      this.loadTravelOptions(destinationId);
-      this.loadAccommodationOptions(destinationId);
-      this.loadReviews(destinationId);
-      if (!this.isLoggedIn) {
-        this.reviewsError = '';
+
+    this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id) {
+        const destinationId = +id;
+        this.loading = true;
+        this.loadError = false;
+        this.destination = null;
+        this.loadDestination(destinationId);
+        this.loadActivities(destinationId);
+        this.loadTravelOptions(destinationId);
+        this.loadAccommodationOptions(destinationId);
+        this.loadReviews(destinationId);
+        if (!this.isLoggedIn) {
+          this.reviewsError = '';
+        }
+      } else {
+        this.router.navigate(['/destinations']);
       }
-    } else {
-      this.router.navigate(['/destinations']);
-    }
+    });
   }
 
   loadDestination(id: number): void {
@@ -95,7 +101,7 @@ export class DestinationDetailComponent implements OnInit {
         if (this.isLoggedIn) {
           this.bookmarkService.getBookmarks().subscribe({
             next: (bookmarks) => {
-              const bookmarkedNames = new Set(bookmarks.map(b => b.destination));
+              const bookmarkedNames = new Set((bookmarks || []).map(b => b.destination));
               this.destination!.is_bookmarked = bookmarkedNames.has(this.destination!.name);
               this.loading = false;
             },
