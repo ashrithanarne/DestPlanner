@@ -465,10 +465,14 @@ CREATE TABLE IF NOT EXISTS activities (
 	// Migrate: add visibility column to trips if not already present
 	DB.Exec(`ALTER TABLE trips ADD COLUMN visibility TEXT NOT NULL DEFAULT 'private'`)
 
-	// Seed destination data for testing (only if table is empty)
-	var destCount int
-	DB.QueryRow("SELECT COUNT(*) FROM destinations").Scan(&destCount)
-	if destCount == 0 {
+	// Seed sample destination data for non-test databases only.
+	// Unit tests frequently initialize ":memory:" and expect to control
+	// their own fixtures, so automatic seeding there causes cross-test
+	// contamination and incorrect assertions.
+	if dataSourceName != ":memory:" {
+		var destCount int
+		DB.QueryRow("SELECT COUNT(*) FROM destinations").Scan(&destCount)
+		if destCount == 0 {
 		seeds := []struct {
 			name, country, description, category, bestSeason, travelTime string
 			budget float64
@@ -555,7 +559,8 @@ CREATE TABLE IF NOT EXISTS activities (
 				}
 			}
 		}
-		log.Println("Seed data inserted: 10 destinations with activities")
+			log.Println("Seed data inserted: 10 destinations with activities")
+		}
 	}
 
 	log.Println("Database initialized successfully")

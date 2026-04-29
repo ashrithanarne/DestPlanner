@@ -53,14 +53,6 @@ export class NavigationComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.authService.isLoggedIn$.subscribe((loggedIn) => {
         this.isAuthenticated = loggedIn;
-        if (isPlatformBrowser(this.platformId)) {
-          if (loggedIn) {
-            this.notifService.startPolling(30000);
-          } else {
-            this.notifService.stopPolling();
-            this.unreadCount = 0;
-          }
-        }
       })
     );
     this.subs.add(
@@ -70,6 +62,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
     );
 
     if (isPlatformBrowser(this.platformId)) {
+      this.notifService.startPolling(30000);
       this.subs.add(
         this.notifService.unreadCount$.subscribe(c => (this.unreadCount = c))
       );
