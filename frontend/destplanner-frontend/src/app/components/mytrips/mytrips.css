@@ -517,11 +517,6 @@
   border-color: #667eea !important;
 }
 
-/* Itinerary button */
-.btn-itinerary {
-  /* inherits color="primary" from Angular Material */
-}
-
 /* Invite button */
 .btn-invite {
   color: #667eea !important;

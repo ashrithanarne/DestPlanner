@@ -5,6 +5,7 @@ type AnalyticsSummary struct {
 	TotalSpent          float64 `json:"total_spent"`
 	TotalBudgets        int     `json:"total_budgets"`
 	AverageSpentPerTrip float64 `json:"average_spent_per_trip"`
+	CountriesVisited    int     `json:"countries_visited"`
 }
 
 type AnalyticsTrip struct {

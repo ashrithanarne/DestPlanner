@@ -14,7 +14,6 @@ import (
 // CompareDestinations compares 2-3 destinations side by side
 func CompareDestinations(c *gin.Context) {
 
-	// Get ids query param e.g. ?ids=1,2,3
 	idsParam := c.Query("ids")
 	if idsParam == "" {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{
@@ -24,7 +23,6 @@ func CompareDestinations(c *gin.Context) {
 		return
 	}
 
-	// Split and parse the IDs
 	idStrings := strings.Split(idsParam, ",")
 
 	if len(idStrings) < 2 {
@@ -43,7 +41,6 @@ func CompareDestinations(c *gin.Context) {
 		return
 	}
 
-	// Validate all IDs are valid integers and no duplicates
 	seen := make(map[int]bool)
 	var ids []int
 	for _, idStr := range idStrings {
@@ -67,14 +64,14 @@ func CompareDestinations(c *gin.Context) {
 		ids = append(ids, id)
 	}
 
-	// Fetch each destination
 	destinations := []models.DestinationComparison{}
 	for _, id := range ids {
 		var dest models.DestinationComparison
+		var bestSeason, travelTime string
 		err := database.DB.QueryRow(
-			"SELECT id, name, country, budget, description FROM destinations WHERE id = ?",
+			"SELECT id, name, country, budget, description, COALESCE(best_season,''), COALESCE(travel_time,'') FROM destinations WHERE id = ?",
 			id,
-		).Scan(&dest.ID, &dest.Name, &dest.Country, &dest.Budget, &dest.Description)
+		).Scan(&dest.ID, &dest.Name, &dest.Country, &dest.Budget, &dest.Description, &bestSeason, &travelTime)
 
 		if err != nil {
 			c.JSON(http.StatusNotFound, models.ErrorResponse{
@@ -82,6 +79,27 @@ func CompareDestinations(c *gin.Context) {
 				Message: "Destination with ID " + strconv.Itoa(id) + " not found",
 			})
 			return
+		}
+
+		dest.BestSeason = bestSeason
+		dest.TravelTime = travelTime
+
+		// Fetch top activities for this destination
+		rows, err := database.DB.Query(
+			"SELECT name FROM activities WHERE destination_id = ? LIMIT 5",
+			id,
+		)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var name string
+				if rows.Scan(&name) == nil {
+					dest.Activities = append(dest.Activities, name)
+				}
+			}
+		}
+		if dest.Activities == nil {
+			dest.Activities = []string{}
 		}
 
 		destinations = append(destinations, dest)

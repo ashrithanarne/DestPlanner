@@ -56,6 +56,16 @@ func main() {
 		auth.GET("/destinations/suggest", handlers.SuggestDestinations)
 	}
 
+	// Public destination sub-routes (separate group to avoid :id conflict)
+	public := r.Group("/api/public")
+	{
+		public.GET("/destinations/compare", handlers.CompareDestinations)
+		public.GET("/destinations/:id/activities", handlers.GetActivities)
+		public.GET("/destinations/:id/travel", handlers.GetTravelOptions)
+		public.GET("/destinations/:id/accommodations", handlers.GetAccommodationOptions)
+		public.GET("/destinations/:id/reviews", handlers.GetReviews)
+	}
+
 	// Protected auth routes (require authentication)
 	authProtected := r.Group("/api/auth")
 	authProtected.Use(middleware.AuthMiddleware())
@@ -85,17 +95,12 @@ func main() {
 		api.DELETE("/destinations/:id", handlers.DeleteDestination)
 		api.PUT("/destinations/:id", handlers.UpdateDestination)
 
-		// Compare destinations
-		api.GET("/destinations/compare", handlers.CompareDestinations)
-
-		// Review routes
+		// Review routes (GET is public, write operations require auth)
 		api.POST("/destinations/:id/reviews", handlers.CreateReview)
-		api.GET("/destinations/:id/reviews", handlers.GetReviews)
 		api.PUT("/destinations/:id/reviews/:reviewId", handlers.UpdateReview)
 		api.DELETE("/destinations/:id/reviews/:reviewId", handlers.DeleteReview)
 
-		// Activity routes
-		api.GET("/destinations/:id/activities", handlers.GetActivities)
+		// Activity routes (GET is public, write operations require auth)
 		api.POST("/destinations/:id/activities", handlers.CreateActivity)
 		api.PUT("/destinations/:id/activities/:activityId", handlers.UpdateActivity)
 		api.DELETE("/destinations/:id/activities/:activityId", handlers.DeleteActivity)
@@ -108,10 +113,6 @@ func main() {
 		api.POST("/itineraries/:id/collaborators", handlers.AddCollaborator)
 		api.DELETE("/itineraries/:id/collaborators/:user_id", handlers.RemoveCollaborator)
 		api.DELETE("/itineraries/:id", handlers.DeleteItinerary)
-
-		// Travel and accommodation routes
-		api.GET("/destinations/:id/travel", handlers.GetTravelOptions)
-		api.GET("/destinations/:id/accommodations", handlers.GetAccommodationOptions)
 
 		// Budget routes
 		api.POST("/budgets", handlers.CreateBudget)
@@ -177,7 +178,7 @@ func main() {
 		api.DELETE("/trips/:id/timeline/items/:itemId", handlers.DeleteTimelineItem)
 		api.PUT("/trips/:id/timeline/items/:itemId/reorder", handlers.ReorderTimelineItem)
 
-		// Social routes (Sprint 4)
+		// Social routes 
 		api.POST("/users/:id/follow", handlers.FollowUser)
 		api.DELETE("/users/:id/follow", handlers.UnfollowUser)
 		api.GET("/users/:id/profile", handlers.GetPublicProfile)
@@ -187,7 +188,7 @@ func main() {
 		api.PUT("/trips/:id/visibility", handlers.UpdateTripVisibility)
 		api.GET("/feed", handlers.GetFeed)
 
-		// Trip invite routes (Sprint 4)
+		// Trip invite routes 
 		api.POST("/trips/:id/invite", handlers.SendTripInvites)
 		api.GET("/trips/:id/invites", handlers.GetTripInvites)
 		api.POST("/invites/:token/accept", handlers.AcceptInvite)

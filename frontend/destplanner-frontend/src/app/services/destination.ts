@@ -3,6 +3,22 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+export interface DestinationCompare {
+  id: number;
+  name: string;
+  country: string;
+  budget: number;
+  description: string;
+  best_season: string;
+  travel_time: string;
+  activities: string[];
+}
+
+export interface CompareResponse {
+  total_destinations: number;
+  destinations: DestinationCompare[];
+}
+
 export interface Destination {
   id: number;
   name: string;
@@ -49,6 +65,40 @@ export interface DestinationActivitiesResponse {
   activities: DestinationActivity[];
 }
 
+export interface TravelOption {
+  id: number;
+  type: string;
+  name: string;
+  description: string;
+  estimated_cost: number;
+  currency: string;
+  booking_link: string;
+}
+
+export interface AccommodationOption {
+  id: number;
+  name: string;
+  type: string;
+  description: string;
+  estimated_cost: number;
+  currency: string;
+  booking_link: string;
+}
+
+export interface TravelResponse {
+  destination_id: number;
+  destination_name: string;
+  total_options: number;
+  travel_options: TravelOption[];
+}
+
+export interface AccommodationResponse {
+  destination_id: number;
+  destination_name: string;
+  total_options: number;
+  accommodation_options: AccommodationOption[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -86,13 +136,13 @@ export class DestinationService {
 
   getReviews(destinationId: number): Observable<DestinationReviewsResponse> {
     return this.http.get<DestinationReviewsResponse>(
-      `${this.baseUrl}/destinations/${destinationId}/reviews`
+      `${this.baseUrl}/public/destinations/${destinationId}/reviews`
     );
   }
 
   getActivities(destinationId: number): Observable<DestinationActivitiesResponse> {
     return this.http.get<DestinationActivitiesResponse>(
-      `${this.baseUrl}/destinations/${destinationId}/activities`
+      `${this.baseUrl}/public/destinations/${destinationId}/activities`
     );
   }
 
@@ -113,6 +163,24 @@ export class DestinationService {
   deleteReview(destinationId: number, reviewId: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(
       `${this.baseUrl}/destinations/${destinationId}/reviews/${reviewId}`
+    );
+  }
+
+  compareDestinations(ids: number[]): Observable<CompareResponse> {
+    return this.http.get<CompareResponse>(
+      `${this.baseUrl}/public/destinations/compare?ids=${ids.join(',')}`
+    );
+  }
+
+  getTravelOptions(destinationId: number): Observable<TravelResponse> {
+    return this.http.get<TravelResponse>(
+      `${this.baseUrl}/public/destinations/${destinationId}/travel`
+    );
+  }
+
+  getAccommodationOptions(destinationId: number): Observable<AccommodationResponse> {
+    return this.http.get<AccommodationResponse>(
+      `${this.baseUrl}/public/destinations/${destinationId}/accommodations`
     );
   }
 }

@@ -63,6 +63,55 @@
 - `visibility` column added to trips table via a safe `ALTER TABLE` migration, defaulting to private
 - New `user_follows` table added with a unique constraint on (follower_id, following_id)
 
+### Frontend
+ 
+#### 1. **Category Destinations Component** *(Issue #31)*
+- Users can browse popular destinations filtered by trip category (Friends, Family, Couples, Solo, Adventure, Cultural)
+- First category is auto-selected on load; switching tabs fetches new results immediately
+- Selecting the same category a second time is a no-op (no redundant API call)
+- Empty state message shown when no destinations match the selected category
+- Error state shown with retry option on API failure
+- Each destination card shows name, country, rating (star display), budget, and description
+- Stars are calculated from rating value and rendered as filled/empty icons
+- Category banner with gradient updates when active tab changes
+- Gradient colours are assigned per card index for visual variety
+#### 2. **Trip Invite Component** *(Issue #134)*
+- Trip owners can type or paste one or more email addresses to invite collaborators
+- Emails are staged as removable chips before sending; Enter and comma keys both add a chip
+- Duplicate and invalid emails are rejected client-side before submission
+- Send button dispatches all staged emails in a single API call
+- Per-email result statuses (`invited`, `already_invited`, `already_collaborator`, `invalid_email`, `error`) are displayed after sending
+- Invite list table shows all existing invites with status badge (pending / accepted / expired)
+- Table reloads automatically after a successful send
+- Sending state disables the button and shows a spinner
+#### 3. **Accept Invite Component** *(Issue #134)*
+- Reads the invite token from the URL query parameter on load
+- Calls the accept endpoint and displays one of five outcome states: success, expired, already accepted, already collaborator, not found, or generic error
+- Redirects to `/login` if the user is not authenticated (401)
+- Navigation buttons let the user go to My Trips or directly to the accepted trip
+#### 4. **Feed Component** *(Issue #140)*
+- Displays a paginated feed of public trips from followed users
+- Loads page 1 on init; Load More button appends subsequent pages
+- Trip cards show destination, dates, owner name/initials, status badge, and time-ago label
+- Status badge colour and icon vary by trip status (planning, ongoing, completed, cancelled)
+- Clicking a trip card navigates to the trip detail page
+- Clicking an owner avatar/name navigates to that user's public profile
+- Error snack bar shown on feed load failure
+#### 5. **Public Profile Component** *(Issue #140)*
+- Loads a user's public profile, public trips, followers, and following lists on init
+- Follow / Unfollow button updates follower count and `is_following` flag optimistically
+- Shows error snack on follow/unfollow failure with the server-provided message
+- Navigates to `/feed` on 404 (user not found)
+- Detects own profile (`isOwnProfile`) and hides follow button accordingly
+- Trip cards and follower/following lists are rendered inline
+#### 6. **User Search Component** *(Issue #140)*
+- Debounced search input (350 ms) prevents excessive API calls while the user types
+- Searches only when query is 2 or more characters; shorter queries clear results immediately
+- Whitespace is trimmed before querying
+- Results show user name, email, and initials avatar
+- Clicking a result navigates to that user's public profile
+- Error snack bar shown on search failure
+
 ---
 
 ## Backend API Documentation
@@ -1041,19 +1090,254 @@ go test ./handlers/... -cover
 
 ---
 
-## Issues Completed in Sprint 4
+## Frontend Unit Tests
+ 
+### Test Framework
+- **Testing Library:** Vitest + Angular Testing Utilities
+- **Component Testing:** `TestBed`, `ComponentFixture`
+- **Async:** `async/await` with `fixture.whenStable()`
+- **Timers:** `vi.useFakeTimers()` for debounce tests
+- **Mocking:** `vi.fn()`, `vi.spyOn()`
+### Test Coverage
+ 
+#### Accept Invite Component Tests (`accept-invite.spec.ts`)
+ 
+**Total Tests: 11**
+ 
+| Test | Description | Status |
+|------|-------------|--------|
+| should show success state when invite accepted | Renders success UI after 200 response | ✅ Pass |
+| should call acceptInvite with token from route | Token extracted from URL query param | ✅ Pass |
+| should show expired state on 410 invite_expired | Expired state shown on 410 | ✅ Pass |
+| should show already_accepted state on 409 already_accepted | Conflict state shown correctly | ✅ Pass |
+| should show already_collaborator state on 409 already_collaborator | Already collaborator state shown | ✅ Pass |
+| should show not_found state on 404 | Not found state shown on 404 | ✅ Pass |
+| should show error state on generic 500 | Generic error state on 500 | ✅ Pass |
+| should show error state when no token in URL | Error shown when token missing | ✅ Pass |
+| should redirect to /login on 401 | Navigates to login on unauthenticated | ✅ Pass |
+| goToMyTrips navigates to /my-trips | Navigation helper works | ✅ Pass |
+| goToTrip navigates to /my-trips when tripId is set | Trip-specific navigation works | ✅ Pass |
+ 
+#### Category Destinations Component Tests (`category-destinations.spec.ts`)
+ 
+**Total Tests: 29**
+ 
+| Test | Description | Status |
+|------|-------------|--------|
+| should create | Component initialises | ✅ Pass |
+| should expose all 6 TRIP_CATEGORIES | All categories present | ✅ Pass |
+| should pre-select the first category on init | Default selection correct | ✅ Pass |
+| should call getDestinationsByCategory with first category key on init | Init fetch triggered | ✅ Pass |
+| should populate destinations after init | Destinations populated from API | ✅ Pass |
+| should set loading=false after successful load | Loading cleared on success | ✅ Pass |
+| should set error=false after successful load | Error cleared on success | ✅ Pass |
+| selectCategory: should update selectedCategory | Tab selection updates state | ✅ Pass |
+| selectCategory: should call getDestinationsByCategory with new key | Fetch triggered on tab change | ✅ Pass |
+| selectCategory: should NOT re-fetch if same category is selected | Duplicate fetch prevented | ✅ Pass |
+| selectCategory: should replace destinations with new results | Results replaced on tab change | ✅ Pass |
+| should set destinations=[] when API returns empty array | Empty state handled | ✅ Pass |
+| should render empty-state element when no destinations | Empty state UI shown | ✅ Pass |
+| should set error=true on HTTP error | Error flag set on failure | ✅ Pass |
+| should set loading=false on HTTP error | Loading cleared on failure | ✅ Pass |
+| should render error-state element on failure | Error UI shown | ✅ Pass |
+| should render destination cards in the grid | Cards rendered | ✅ Pass |
+| should render correct destination name in card | Card content correct | ✅ Pass |
+| should render category banner for selected category | Banner updates on selection | ✅ Pass |
+| should render all category tabs | All tabs rendered | ✅ Pass |
+| getStars: should return 5 elements | Star array length correct | ✅ Pass |
+| getStars: should fill correct number of stars for rating 4 | 4 filled stars for rating 4 | ✅ Pass |
+| getStars: should round rating for star fill (4.6 → 5 filled) | Rounding works | ✅ Pass |
+| getStars: should return 0 filled for rating 0 | Zero rating handled | ✅ Pass |
+| getStars: defaults to 0 when no rating provided | Missing rating handled | ✅ Pass |
+| getCategoryGradient: should return gradient for known key | Gradient returned correctly | ✅ Pass |
+| getCategoryGradient: should return fallback for unknown key | Fallback gradient used | ✅ Pass |
+| getCardGradient: should cycle through gradient array | Gradient cycling works | ✅ Pass |
+| getCardGradient: should return different gradients for different indices | Different indices get different gradients | ✅ Pass |
+ 
+#### Feed Component Tests (`feed.spec.ts`)
+ 
+**Total Tests: 20**
+ 
+| Test | Description | Status |
+|------|-------------|--------|
+| should create the component | Component initialises | ✅ Pass |
+| should load feed on init | getFeed called with page 1 limit 20 | ✅ Pass |
+| should set loading to false after feed loads | Loading cleared on success | ✅ Pass |
+| should show error snack on feed load failure | Snack shown on error | ✅ Pass |
+| should set loading to false on error | Loading cleared on failure | ✅ Pass |
+| should set hasMore true when feed length equals limit | Pagination flag set | ✅ Pass |
+| should set hasMore false when feed length is less than limit | No more pages flagged | ✅ Pass |
+| loadMore should increment page and append trips | Page increments, trips appended | ✅ Pass |
+| viewTrip navigates to trip detail | Navigation to trip page works | ✅ Pass |
+| viewProfile navigates to user profile | Navigation to profile works | ✅ Pass |
+| getStatusColor returns correct color for planning | Status colour correct | ✅ Pass |
+| getStatusColor returns warn for cancelled | Cancelled colour correct | ✅ Pass |
+| getStatusIcon returns correct icon for ongoing | Ongoing icon correct | ✅ Pass |
+| getStatusIcon returns check_circle for completed | Completed icon correct | ✅ Pass |
+| getInitials returns correct initials | Initials computed correctly | ✅ Pass |
+| formatDate returns empty string for empty input | Empty date handled | ✅ Pass |
+| timeAgo returns "Today" for recent date | Today label shown | ✅ Pass |
+| timeAgo returns "Yesterday" for yesterday | Yesterday label shown | ✅ Pass |
+| loadFeed with reset clears existing feed | Reset replaces feed | ✅ Pass |
+| currentUserId is set from auth service | Auth user ID wired correctly | ✅ Pass |
+ 
+#### Public Profile Component Tests (`public-profile.spec.ts`)
+ 
+**Total Tests: 20**
+ 
+| Test | Description | Status |
+|------|-------------|--------|
+| should create | Component initialises | ✅ Pass |
+| should load profile on init | getPublicProfile called with user ID | ✅ Pass |
+| should load public trips on init | getPublicTripsForUser called | ✅ Pass |
+| should load followers and following on init | Both lists fetched | ✅ Pass |
+| should set loading to false after load | Loading cleared on success | ✅ Pass |
+| should detect own profile correctly | isOwnProfile false when IDs differ | ✅ Pass |
+| should navigate to feed on 404 | Redirects to /feed on not found | ✅ Pass |
+| should show snack on generic load error | Snack shown on 500 | ✅ Pass |
+| toggleFollow should call followUser when not following | Follow API called | ✅ Pass |
+| toggleFollow should call unfollowUser when following | Unfollow API called | ✅ Pass |
+| toggleFollow increments follower_count when following | Count incremented optimistically | ✅ Pass |
+| toggleFollow decrements follower_count when unfollowing | Count decremented optimistically | ✅ Pass |
+| toggleFollow shows snack on error | Error message from server shown | ✅ Pass |
+| getInitials returns correct value | Two-letter initials correct | ✅ Pass |
+| getInitials handles empty strings | Empty input returns empty string | ✅ Pass |
+| formatDate returns empty for empty input | Empty date handled | ✅ Pass |
+| getStatusClass returns correct class | CSS class correct per status | ✅ Pass |
+| viewTrip navigates correctly | Trip navigation uses owner ID | ✅ Pass |
+| navigateToProfile navigates correctly | Profile navigation works | ✅ Pass |
+| goToMyProfile navigates to /profile | Own profile link works | ✅ Pass |
+ 
+#### Trip Invite Component Tests (`trip-invite.spec.ts`)
+ 
+**Total Tests: 25**
+ 
+| Test | Description | Status |
+|------|-------------|--------|
+| should create the component | Component initialises | ✅ Pass |
+| should call getInvites on init | Invite list fetched on load | ✅ Pass |
+| should show empty state when no invites returned | Empty table state shown | ✅ Pass |
+| should render pending invite row with correct status badge | Pending badge displayed | ✅ Pass |
+| should render accepted invite | Accepted badge displayed | ✅ Pass |
+| should render expired invite | Expired badge displayed | ✅ Pass |
+| should add valid email to stagedEmails | Email chip added | ✅ Pass |
+| should not add duplicate email to stagedEmails | Duplicate rejected | ✅ Pass |
+| should not add invalid email | Invalid format rejected | ✅ Pass |
+| should remove email chip on removeEmail() | Chip removed correctly | ✅ Pass |
+| should add email on Enter keydown | Enter key adds chip | ✅ Pass |
+| should add email on comma keydown | Comma key adds chip | ✅ Pass |
+| should call sendInvites with staged emails | API called with email array | ✅ Pass |
+| should clear stagedEmails after successful send | Chips cleared after send | ✅ Pass |
+| should populate lastResults after send | Per-email results shown | ✅ Pass |
+| should not call sendInvites when no staged emails and input empty | Empty send prevented | ✅ Pass |
+| should set sending=false on HTTP error | Sending flag cleared on error | ✅ Pass |
+| should reload invites after successful send | Invite list refreshed | ✅ Pass |
+| getStatusIcon returns correct icons | Icon per status correct | ✅ Pass |
+| getStatusLabel returns correct labels | Label per status correct | ✅ Pass |
+| getResultLabel maps all result statuses | All result labels mapped | ✅ Pass |
+| isResultSuccess returns true only for invited | Success predicate correct | ✅ Pass |
+| isResultWarning returns true for already_invited and already_collaborator | Warning predicate correct | ✅ Pass |
+| isResultError returns true for invalid_email and error | Error predicate correct | ✅ Pass |
+| formatExpiry returns localized date string | Expiry date formatted | ✅ Pass |
+ 
+#### User Search Component Tests (`user-search.spec.ts`)
+ 
+**Total Tests: 24**
+ 
+| Test | Description | Status |
+|------|-------------|--------|
+| should create | Component initialises | ✅ Pass |
+| should start with empty query | Initial query is empty | ✅ Pass |
+| should start with empty results | Initial results array empty | ✅ Pass |
+| should start with loading=false | Loading false initially | ✅ Pass |
+| should start with searched=false | Searched false initially | ✅ Pass |
+| runSearch: calls searchUsers with trimmed query | API called with trimmed string | ✅ Pass |
+| runSearch: sets results from response | Results populated | ✅ Pass |
+| runSearch: sets loading=false after success | Loading cleared on success | ✅ Pass |
+| runSearch: sets searched=true after call | Searched flag set | ✅ Pass |
+| runSearch: sets loading=true at start (synchronous mock resolves immediately) | Service invoked | ✅ Pass |
+| runSearch: sets loading=false on HTTP error | Loading cleared on error | ✅ Pass |
+| runSearch: shows snack on error | Error snack shown | ✅ Pass |
+| runSearch: returns empty results on empty response | Empty results handled | ✅ Pass |
+| onQueryChange: does not search immediately (debounced) | No call before 350 ms | ✅ Pass |
+| onQueryChange: does not search when query < 2 chars after debounce | Short query skipped | ✅ Pass |
+| onQueryChange: clears results when query < 2 chars after debounce | Results cleared for short query | ✅ Pass |
+| onQueryChange: fires search after 350ms debounce with valid query | Search fires exactly at 350 ms | ✅ Pass |
+| onQueryChange: trims whitespace before searching | Whitespace trimmed | ✅ Pass |
+| viewProfile: navigates to /users/:id/profile | Profile navigation works | ✅ Pass |
+| goToFeed: navigates to /feed | Feed navigation works | ✅ Pass |
+| getInitials: returns uppercase two-letter initials | Initials computed correctly | ✅ Pass |
+| getInitials: returns single letter when last name missing | Single initial handled | ✅ Pass |
+| getInitials: returns empty string for both empty | Empty input handled | ✅ Pass |
+| getInitials: handles undefined gracefully | Undefined input handled | ✅ Pass |
+ 
+#### Social Service Tests (`social.service.spec.ts`)
+ 
+**Total Tests: 18**
+ 
+| Test | Description | Status |
+|------|-------------|--------|
+| followUser sends POST to correct URL | Follow endpoint called | ✅ Pass |
+| followUser passes empty body | Empty body sent | ✅ Pass |
+| unfollowUser sends DELETE to correct URL | Unfollow endpoint called | ✅ Pass |
+| unfollowUser uses correct user id in URL | User ID in URL correct | ✅ Pass |
+| getPublicProfile sends GET to correct URL | Profile endpoint called | ✅ Pass |
+| getPublicProfile returns is_following flag | is_following returned | ✅ Pass |
+| getFollowers sends GET to correct URL | Followers endpoint called | ✅ Pass |
+| getFollowers returns empty array when no followers | Empty followers handled | ✅ Pass |
+| getFollowing sends GET to correct URL | Following endpoint called | ✅ Pass |
+| getFollowing returns list of followed users | Following list returned | ✅ Pass |
+| getPublicTripsForUser sends GET to correct URL | Public trips endpoint called | ✅ Pass |
+| getPublicTripsForUser returns empty list when no public trips | Empty trips handled | ✅ Pass |
+| getFeed sends GET with default pagination | Default page/limit sent | ✅ Pass |
+| getFeed sends GET with custom pagination | Custom page/limit sent | ✅ Pass |
+| getFeed returns trip cards with owner info | Feed trip shape correct | ✅ Pass |
+| updateTripVisibility sends PUT to correct URL | Visibility endpoint called | ✅ Pass |
+| updateTripVisibility sends correct body for private | Private body correct | ✅ Pass |
+| updateTripVisibility sends correct body for public | Public body correct | ✅ Pass |
+ 
+### Frontend Unit Test Summary
+ 
+| File | Tests | Status |
+|------|-------|--------|
+| `accept-invite.spec.ts` | 11 | ✅ All Pass |
+| `category-destinations.spec.ts` | 29 | ✅ All Pass |
+| `feed.spec.ts` | 20 | ✅ All Pass |
+| `public-profile.spec.ts` | 20 | ✅ All Pass |
+| `trip-invite.spec.ts` | 25 | ✅ All Pass |
+| `user-search.spec.ts` | 24 | ✅ All Pass |
+| `social.service.spec.ts` | 18 | ✅ All Pass |
+| **Total** | **147** | **✅ All Pass** |
 
+### Running Frontend Unit Tests
+```bash
+cd frontend/destplanner-frontend
+
+# Run all unit tests
+ng test
+```
+
+----
+
+## Issues Completed in Sprint 4
+ 
+### Backend
 - View travel and accommodation options for a destination (#23)
 - Analytics dashboard (#36)
-- Trip collaboration — invite members by email (#41)
-- Destination category filtering (#42)
-- Social follow system with public trip feed (#43)
-
+- Trip collaboration — invite members by email (#134)
+- Destination category filtering (#31)
+- Social follow system with public trip feed (#140)
+### Frontend
+- View popular destinations by trip type — Category Destinations component (#31)
+- Trip collaboration: invite members by email — Trip Invite + Accept Invite components (#134)
+- Follow other travelers and view their public trips — Feed, Public Profile, User Search components (#140)
 ---
 
 ## Summary
 
 ### Features Delivered
+
+#### Backend
 1. Travel options per destination with flights, trains and buses
 2. Accommodation options per destination with hotels, apartments and hostels
 3. Analytics summary showing total trips, total spent and averages
@@ -1062,6 +1346,14 @@ go test ./handlers/... -cover
 6. Trip collaboration invites with token-based email flow and expiry
 7. Destination category filtering composable with existing filters
 8. Social follow system with public profiles, follow lists, visibility control and paginated feed
+
+#### Frontend
+1. Category Destinations — browse and filter destinations by trip type with star ratings and gradients
+2. Trip Invite — stage and send email invitations with per-result status feedback and invite table
+3. Accept Invite — token-based accept flow with five outcome states and redirect logic
+4. Feed — paginated public trip feed from followed users with status badges and time-ago labels
+5. Public Profile — follow/unfollow with optimistic count updates and public trip display
+6. User Search — debounced search with result cards and profile navigation
 
 ### API Endpoints Added
 - 2 travel and accommodation endpoints
@@ -1080,6 +1372,19 @@ go test ./handlers/... -cover
 | `destination_test.go` (additions) | 7 | ✅ All Pass |
 | `social_test.go` | 28 | ✅ All Pass |
 | **Total** | **77** | **✅ All Pass** |
+
+### Frontend Unit Tests
+| File | Tests | Status |
+|------|-------|--------|
+| `accept-invite.spec.ts` | 11 | ✅ All Pass |
+| `category-destinations.spec.ts` | 29 | ✅ All Pass |
+| `feed.spec.ts` | 20 | ✅ All Pass |
+| `public-profile.spec.ts` | 20 | ✅ All Pass |
+| `trip-invite.spec.ts` | 25 | ✅ All Pass |
+| `user-search.spec.ts` | 24 | ✅ All Pass |
+| `social.service.spec.ts` | 18 | ✅ All Pass |
+| **Total** | **147** | **✅ All Pass** |
+ 
 
 ### Database Changes
 | Change | Type | Safe on Existing DB |

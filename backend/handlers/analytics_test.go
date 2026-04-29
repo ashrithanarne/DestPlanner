@@ -72,20 +72,20 @@ func setupAnalyticsDB(t *testing.T) {
 		t.Fatalf("Failed to create tables: %v", err)
 	}
 
-	// Seed trips
-	database.DB.Exec(`INSERT INTO trips (id, user_id, trip_name, destination, status) VALUES (1, 1, 'Paris Trip', 'Paris', 'completed')`)
-	database.DB.Exec(`INSERT INTO trips (id, user_id, trip_name, destination, status) VALUES (2, 1, 'Tokyo Trip', 'Tokyo', 'planning')`)
+	// Seed trips with distinct destinations
+	database.DB.Exec(`INSERT INTO trips (id, user_id, trip_name, destination, status) VALUES (1, 1, 'Paris Trip', 'France', 'completed')`)
+	database.DB.Exec(`INSERT INTO trips (id, user_id, trip_name, destination, status) VALUES (2, 1, 'Tokyo Trip', 'Japan', 'planning')`)
 
 	// Seed budgets linked to trips
 	database.DB.Exec(`INSERT INTO budgets (id, user_id, trip_id, trip_name, total_budget, spent_amount) VALUES (1, 1, 1, 'Paris Budget', 3000, 1500)`)
 	database.DB.Exec(`INSERT INTO budgets (id, user_id, trip_id, trip_name, total_budget, spent_amount) VALUES (2, 1, 2, 'Tokyo Budget', 4000, 800)`)
 
-	// Seed expenses
-	database.DB.Exec(`INSERT INTO expenses (budget_id, category, amount, description) VALUES (1, 'Accommodation', 800, 'Hotel')`)
-	database.DB.Exec(`INSERT INTO expenses (budget_id, category, amount, description) VALUES (1, 'Food', 400, 'Restaurants')`)
-	database.DB.Exec(`INSERT INTO expenses (budget_id, category, amount, description) VALUES (1, 'Transport', 300, 'Metro')`)
-	database.DB.Exec(`INSERT INTO expenses (budget_id, category, amount, description) VALUES (2, 'Accommodation', 500, 'Airbnb')`)
-	database.DB.Exec(`INSERT INTO expenses (budget_id, category, amount, description) VALUES (2, 'Food', 300, 'Restaurants')`)
+	// Seed expenses with explicit dates for filter testing
+	database.DB.Exec(`INSERT INTO expenses (budget_id, category, amount, description, expense_date) VALUES (1, 'Accommodation', 800, 'Hotel', '2024-01-10')`)
+	database.DB.Exec(`INSERT INTO expenses (budget_id, category, amount, description, expense_date) VALUES (1, 'Food', 400, 'Restaurants', '2024-01-11')`)
+	database.DB.Exec(`INSERT INTO expenses (budget_id, category, amount, description, expense_date) VALUES (1, 'Transport', 300, 'Metro', '2024-01-12')`)
+	database.DB.Exec(`INSERT INTO expenses (budget_id, category, amount, description, expense_date) VALUES (2, 'Accommodation', 500, 'Airbnb', '2024-03-05')`)
+	database.DB.Exec(`INSERT INTO expenses (budget_id, category, amount, description, expense_date) VALUES (2, 'Food', 300, 'Restaurants', '2024-03-06')`)
 }
 
 func TestAnalyticsFlow(t *testing.T) {
@@ -93,6 +93,15 @@ func TestAnalyticsFlow(t *testing.T) {
 	defer database.CloseDB()
 
 	router := setupAnalyticsRouter()
+
+	emptyRouter := gin.Default()
+	emptyRouter.Use(func(c *gin.Context) {
+		c.Set("user", &utils.Claims{UserID: 99})
+		c.Next()
+	})
+	emptyRouter.GET("/api/analytics/summary", GetAnalyticsSummary)
+	emptyRouter.GET("/api/analytics/trips", GetAnalyticsTrips)
+	emptyRouter.GET("/api/analytics/expenses", GetAnalyticsExpenses)
 
 	// -------------------------
 	// 1. Get Summary - Success
@@ -113,18 +122,13 @@ func TestAnalyticsFlow(t *testing.T) {
 	assert.Equal(t, float64(1150), summary["average_spent_per_trip"])
 
 	// -------------------------
-	// 2. Get Summary - Empty (user 2 has no data)
+	// 2. Verify countries_visited in summary
 	// -------------------------
-	// AFTER:
-	emptyRouter := gin.Default()
-	emptyRouter.Use(func(c *gin.Context) {
-		c.Set("user", &utils.Claims{UserID: 99})
-		c.Next()
-	})
-	emptyRouter.GET("/api/analytics/summary", GetAnalyticsSummary)
-	emptyRouter.GET("/api/analytics/trips", GetAnalyticsTrips)
-	emptyRouter.GET("/api/analytics/expenses", GetAnalyticsExpenses)
+	assert.Equal(t, float64(2), summary["countries_visited"])
 
+	// -------------------------
+	// 3. Get Summary - Empty (user 99 has no data)
+	// -------------------------
 	req, _ = http.NewRequest("GET", "/api/analytics/summary", nil)
 	w = httptest.NewRecorder()
 	emptyRouter.ServeHTTP(w, req)
@@ -134,9 +138,10 @@ func TestAnalyticsFlow(t *testing.T) {
 	summary = res["summary"].(map[string]interface{})
 	assert.Equal(t, float64(0), summary["total_trips"])
 	assert.Equal(t, float64(0), summary["total_spent"])
+	assert.Equal(t, float64(0), summary["countries_visited"])
 
 	// -------------------------
-	// 3. Get Trips - Success
+	// 4. Get Trips - Success
 	// -------------------------
 	req, _ = http.NewRequest("GET", "/api/analytics/trips", nil)
 	w = httptest.NewRecorder()
@@ -150,7 +155,7 @@ func TestAnalyticsFlow(t *testing.T) {
 	assert.Equal(t, 2, len(trips))
 
 	// -------------------------
-	// 4. Verify Trip Fields
+	// 5. Verify Trip Fields
 	// -------------------------
 	firstTrip := trips[0].(map[string]interface{})
 	assert.NotEmpty(t, firstTrip["trip_name"])
@@ -158,7 +163,7 @@ func TestAnalyticsFlow(t *testing.T) {
 	assert.NotEmpty(t, firstTrip["destination"])
 
 	// -------------------------
-	// 5. Get Trips - Empty for unknown user
+	// 6. Get Trips - Empty for unknown user
 	// -------------------------
 	req, _ = http.NewRequest("GET", "/api/analytics/trips", nil)
 	w = httptest.NewRecorder()
@@ -169,7 +174,7 @@ func TestAnalyticsFlow(t *testing.T) {
 	assert.Equal(t, float64(0), res["total_trips"])
 
 	// -------------------------
-	// 6. Get Expenses - Success
+	// 7. Get Expenses - No filters (all categories)
 	// -------------------------
 	req, _ = http.NewRequest("GET", "/api/analytics/expenses", nil)
 	w = httptest.NewRecorder()
@@ -181,31 +186,72 @@ func TestAnalyticsFlow(t *testing.T) {
 	assert.Equal(t, float64(2300), res["total_spent"])
 
 	// -------------------------
-	// 7. Verify Expense Categories
+	// 8. Verify Expense Categories ordered by amount descending
 	// -------------------------
 	categories := res["categories"].([]interface{})
 	assert.Equal(t, 3, len(categories))
 
-	firstCat := categories[0].(map[string]interface{})
-	assert.NotEmpty(t, firstCat["category"])
-	assert.NotEmpty(t, firstCat["total_amount"])
-	assert.NotEmpty(t, firstCat["count"])
-
-	// -------------------------
-	// 8. Verify Categories Ordered by Amount Descending
-	// -------------------------
 	firstAmount := categories[0].(map[string]interface{})["total_amount"].(float64)
 	secondAmount := categories[1].(map[string]interface{})["total_amount"].(float64)
 	assert.GreaterOrEqual(t, firstAmount, secondAmount)
 
-	// -------------------------
-	// 9. Verify Accommodation is Highest Category
-	// -------------------------
 	topCategory := categories[0].(map[string]interface{})["category"].(string)
 	assert.Equal(t, "Accommodation", topCategory)
 
 	// -------------------------
-	// 10. Get Expenses - Empty for unknown user
+	// 9. Get Expenses - Filter by tripId=1 (Paris only)
+	// -------------------------
+	req, _ = http.NewRequest("GET", "/api/analytics/expenses?tripId=1", nil)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &res)
+	// Paris trip has 800+400+300 = 1500
+	assert.Equal(t, float64(1500), res["total_spent"])
+	parisCategories := res["categories"].([]interface{})
+	assert.Equal(t, 3, len(parisCategories))
+
+	// -------------------------
+	// 10. Get Expenses - Filter by tripId=2 (Tokyo only)
+	// -------------------------
+	req, _ = http.NewRequest("GET", "/api/analytics/expenses?tripId=2", nil)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &res)
+	// Tokyo trip has 500+300 = 800
+	assert.Equal(t, float64(800), res["total_spent"])
+	tokyoCategories := res["categories"].([]interface{})
+	assert.Equal(t, 2, len(tokyoCategories))
+
+	// -------------------------
+	// 11. Get Expenses - Filter by dateRange (January only)
+	// -------------------------
+	req, _ = http.NewRequest("GET", "/api/analytics/expenses?dateRange=2024-01-01,2024-01-31", nil)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &res)
+	// January expenses: 800+400+300 = 1500
+	assert.Equal(t, float64(1500), res["total_spent"])
+
+	// -------------------------
+	// 12. Get Expenses - Filter by dateRange (March only)
+	// -------------------------
+	req, _ = http.NewRequest("GET", "/api/analytics/expenses?dateRange=2024-03-01,2024-03-31", nil)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &res)
+	// March expenses: 500+300 = 800
+	assert.Equal(t, float64(800), res["total_spent"])
+
+	// -------------------------
+	// 13. Get Expenses - Empty for unknown user
 	// -------------------------
 	req, _ = http.NewRequest("GET", "/api/analytics/expenses", nil)
 	w = httptest.NewRecorder()
