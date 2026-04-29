@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
@@ -8,7 +8,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
-import { DestinationService, Destination, DestinationReview, DestinationActivity, TravelOption, AccommodationOption } from '../../services/destination';
+import {
+  DestinationService,
+  Destination,
+  DestinationReview,
+  DestinationActivity,
+  TravelOption,
+  AccommodationOption,
+} from '../../services/destination';
 import { BookmarkService } from '../../services/bookmark';
 import { AuthService } from '../../services/auth';
 
@@ -18,13 +25,17 @@ import { AuthService } from '../../services/auth';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    MatCardModule, MatButtonModule, MatIconModule,
-    MatProgressSpinnerModule, MatSnackBarModule, MatDividerModule
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatSnackBarModule,
+    MatDividerModule,
   ],
   templateUrl: './destination-detail.html',
-  styleUrl: './destination-detail.css'
+  styleUrl: './destination-detail.css',
 })
-export class DestinationDetailComponent implements OnInit {
+export class DestinationDetailComponent implements OnInit, OnDestroy {
   destination: Destination | null = null;
   loading = true;
   loadError = false;
@@ -53,6 +64,8 @@ export class DestinationDetailComponent implements OnInit {
     comment: FormControl<string>;
   }>;
 
+  private destroyed = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -71,24 +84,27 @@ export class DestinationDetailComponent implements OnInit {
   ngOnInit(): void {
     this.isLoggedIn = this.authService.isLoggedIn();
     this.currentUserId = this.authService.getCurrentUser()?.id ?? null;
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      const destinationId = +id;
+      this.loadDestination(destinationId);
+      this.loadActivities(destinationId);
+      this.loadTravelOptions(destinationId);
+      this.loadAccommodationOptions(destinationId);
+      this.loadReviews(destinationId);
+    } else {
+      this.router.navigate(['/destinations']);
+    }
+  }
 
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        const destinationId = +id;
-        this.loading = true;
-        this.loadError = false;
-        this.destination = null;
-        this.loadDestination(destinationId);
-        this.loadActivities(destinationId);
-        this.loadTravelOptions(destinationId);
-        this.loadAccommodationOptions(destinationId);
-        this.loadReviews(destinationId);
-        if (!this.isLoggedIn) {
-          this.reviewsError = '';
-        }
-      } else {
-        this.router.navigate(['/destinations']);
+  ngOnDestroy(): void {
+    this.destroyed = true;
+  }
+
+  private deferStateUpdate(fn: () => void): void {
+    Promise.resolve().then(() => {
+      if (!this.destroyed) {
+        fn();
       }
     });
   }
@@ -97,18 +113,21 @@ export class DestinationDetailComponent implements OnInit {
     this.loading = true;
     this.destService.getDestinationById(id).subscribe({
       next: (dest) => {
-        this.destination = dest;
+        this.destination = { ...dest, is_bookmarked: !!dest.is_bookmarked };
         if (this.isLoggedIn) {
           this.bookmarkService.getBookmarks().subscribe({
             next: (bookmarks) => {
-              const bookmarkedNames = new Set((bookmarks || []).map(b => b.destination));
-              this.destination!.is_bookmarked = bookmarkedNames.has(this.destination!.name);
-              this.loading = false;
+              const bookmarkedNames = new Set(bookmarks.map((b) => b.destination));
+              this.deferStateUpdate(() => {
+                this.destination!.is_bookmarked = bookmarkedNames.has(this.destination!.name);
+                this.loading = false;
+              });
             },
             error: () => {
-              // bookmark fetch failed — still show the destination
-              this.loading = false;
-            }
+              this.deferStateUpdate(() => {
+                this.loading = false;
+              });
+            },
           });
         } else {
           this.loading = false;
@@ -117,34 +136,40 @@ export class DestinationDetailComponent implements OnInit {
       error: () => {
         this.loadError = true;
         this.loading = false;
-      }
+      },
     });
   }
 
   toggleBookmark(): void {
     if (!this.destination) return;
-    
+
     if (!this.isLoggedIn) {
-      this.snack.open('Please login to bookmark this destination', 'Login', { duration: 3000 })
-        .onAction().subscribe(() => this.router.navigate(['/login']));
+      this.snack
+        .open('Please login to bookmark this destination', 'Login', { duration: 3000 })
+        .onAction()
+        .subscribe(() => this.router.navigate(['/login']));
       return;
     }
 
     if (this.destination.is_bookmarked) {
       this.bookmarkService.getBookmarks().subscribe({
         next: (bookmarks) => {
-          const match = bookmarks.find(b => b.destination === this.destination!.name);
+          const match = bookmarks.find((b) => b.destination === this.destination!.name);
           if (match) {
             this.bookmarkService.removeBookmark(match.id).subscribe({
               next: () => {
-                this.destination!.is_bookmarked = false;
-                this.snack.open('Removed from bookmarks', 'OK', { duration: 2000 });
+                this.deferStateUpdate(() => {
+                  this.destination!.is_bookmarked = false;
+                  this.snack.open('Removed from bookmarks', 'OK', { duration: 2000 });
+                });
               },
               error: (err: { status?: number }) => {
                 if (err.status === 401) {
                   this.isLoggedIn = false;
-                  this.snack.open('Session expired. Please login again.', 'Login', { duration: 3000 })
-                    .onAction().subscribe(() => this.router.navigate(['/login']));
+                  this.snack
+                    .open('Session expired. Please login again.', 'Login', { duration: 3000 })
+                    .onAction()
+                    .subscribe(() => this.router.navigate(['/login']));
                   return;
                 }
                 this.snack.open('Failed to remove bookmark', 'OK', { duration: 2000 });
@@ -155,26 +180,32 @@ export class DestinationDetailComponent implements OnInit {
         error: (err: { status?: number }) => {
           if (err.status === 401) {
             this.isLoggedIn = false;
-            this.snack.open('Session expired. Please login again.', 'Login', { duration: 3000 })
-              .onAction().subscribe(() => this.router.navigate(['/login']));
+            this.snack
+              .open('Session expired. Please login again.', 'Login', { duration: 3000 })
+              .onAction()
+              .subscribe(() => this.router.navigate(['/login']));
           }
         },
       });
     } else {
       this.bookmarkService.addBookmark(this.destination.id).subscribe({
         next: () => {
-          this.destination!.is_bookmarked = true;
-          this.snack.open('Added to bookmarks', 'OK', { duration: 2000 });
+          this.deferStateUpdate(() => {
+            this.destination!.is_bookmarked = true;
+            this.snack.open('Added to bookmarks', 'OK', { duration: 2000 });
+          });
         },
         error: (err: { status?: number }) => {
           if (err.status === 401) {
             this.isLoggedIn = false;
-            this.snack.open('Session expired. Please login again.', 'Login', { duration: 3000 })
-              .onAction().subscribe(() => this.router.navigate(['/login']));
+            this.snack
+              .open('Session expired. Please login again.', 'Login', { duration: 3000 })
+              .onAction()
+              .subscribe(() => this.router.navigate(['/login']));
             return;
           }
           this.snack.open('Failed to add bookmark', 'OK', { duration: 2000 });
-        }
+        },
       });
     }
   }
@@ -299,23 +330,31 @@ export class DestinationDetailComponent implements OnInit {
 
     request$.subscribe({
       next: () => {
-        this.submittingReview = false;
-        const message = this.editingReviewId ? 'Review updated successfully' : 'Review submitted successfully';
-        this.snack.open(message, 'OK', { duration: 2000 });
-        this.cancelEdit();
-        this.loadReviews(this.destination!.id);
+        this.deferStateUpdate(() => {
+          this.submittingReview = false;
+          const message = this.editingReviewId
+            ? 'Review updated successfully'
+            : 'Review submitted successfully';
+          this.snack.open(message, 'OK', { duration: 2000 });
+          this.cancelEdit();
+          this.loadReviews(this.destination!.id);
+        });
       },
       error: (err: { status?: number; error?: { message?: string } }) => {
-        this.submittingReview = false;
-        if (err.status === 401) {
-          this.isLoggedIn = false;
-          this.reviewsError = 'Please login to view and submit reviews.';
-          this.snack.open('Session expired. Please login again.', 'Login', { duration: 3000 })
-            .onAction().subscribe(() => this.router.navigate(['/login']));
-          return;
-        }
-        const msg = err.error?.message || 'Failed to submit review';
-        this.snack.open(msg, 'Close', { duration: 3000 });
+        this.deferStateUpdate(() => {
+          this.submittingReview = false;
+          if (err.status === 401) {
+            this.isLoggedIn = false;
+            this.reviewsError = 'Please login to view and submit reviews.';
+            this.snack
+              .open('Session expired. Please login again.', 'Login', { duration: 3000 })
+              .onAction()
+              .subscribe(() => this.router.navigate(['/login']));
+            return;
+          }
+          const msg = err.error?.message || 'Failed to submit review';
+          this.snack.open(msg, 'Close', { duration: 3000 });
+        });
       },
     });
   }
@@ -336,8 +375,10 @@ export class DestinationDetailComponent implements OnInit {
         if (err.status === 401) {
           this.isLoggedIn = false;
           this.reviewsError = 'Please login to view and submit reviews.';
-          this.snack.open('Session expired. Please login again.', 'Login', { duration: 3000 })
-            .onAction().subscribe(() => this.router.navigate(['/login']));
+          this.snack
+            .open('Session expired. Please login again.', 'Login', { duration: 3000 })
+            .onAction()
+            .subscribe(() => this.router.navigate(['/login']));
           return;
         }
         const msg = err.error?.message || 'Failed to delete review';

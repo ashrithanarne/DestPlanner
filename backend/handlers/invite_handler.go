@@ -18,6 +18,28 @@ import (
 
 const inviteTTL = 7 * 24 * time.Hour // invites expire after 7 days
 
+func parseInviteTimestamp(raw string) time.Time {
+	if raw == "" {
+		return time.Time{}
+	}
+
+	if ts, err := time.ParseInLocation("2006-01-02 15:04:05", raw, time.Local); err == nil {
+		return ts
+	}
+	if ts, err := time.Parse(time.RFC3339, raw); err == nil {
+		normalized := ts.Format("2006-01-02 15:04:05")
+		if localTS, localErr := time.ParseInLocation("2006-01-02 15:04:05", normalized, time.Local); localErr == nil {
+			return localTS
+		}
+		return ts
+	}
+	if ts, err := time.ParseInLocation("2006-01-02T15:04:05", raw, time.Local); err == nil {
+		return ts
+	}
+
+	return time.Time{}
+}
+
 // SendTripInvites handles POST /api/trips/:id/invite.
 // The trip owner can supply one or more email addresses; each gets a unique
 // token stored in trip_invites. In a real deployment you would hand the token
@@ -66,7 +88,7 @@ func SendTripInvites(c *gin.Context) {
 	// expiry time so subsequent duplicate checks are accurate.
 	database.DB.Exec(`
 		UPDATE trip_invites SET status = 'expired'
-		WHERE trip_id = ? AND status = 'pending' AND expires_at < CURRENT_TIMESTAMP
+		WHERE trip_id = ? AND status = 'pending' AND datetime(expires_at) < datetime('now')
 	`, tripID)
 
 	results := make([]models.InviteResult, 0, len(req.Emails))
@@ -153,11 +175,12 @@ func AcceptInvite(c *gin.Context) {
 	// Expire any stale pending invites on read
 	database.DB.Exec(`
 		UPDATE trip_invites SET status = 'expired'
-		WHERE status = 'pending' AND expires_at < CURRENT_TIMESTAMP
+		WHERE status = 'pending' AND datetime(expires_at) < datetime('now')
 	`)
 
 	// Look up the invite
 	var invite models.TripInvite
+	var expiresAtRaw, createdAtRaw string
 	err := database.DB.QueryRow(`
 		SELECT id, trip_id, email, status, expires_at, created_at
 		FROM trip_invites WHERE token = ?
@@ -166,8 +189,8 @@ func AcceptInvite(c *gin.Context) {
 		&invite.TripID,
 		&invite.Email,
 		&invite.Status,
-		&invite.ExpiresAt,
-		&invite.CreatedAt,
+		&expiresAtRaw,
+		&createdAtRaw,
 	)
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "not_found", Message: "Invite not found"})
@@ -176,8 +199,15 @@ func AcceptInvite(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "server_error", Message: "Failed to look up invite"})
 		return
 	}
+	invite.ExpiresAt = parseInviteTimestamp(expiresAtRaw)
+	invite.CreatedAt = parseInviteTimestamp(createdAtRaw)
 
 	if invite.Status == "expired" {
+		c.JSON(http.StatusGone, models.ErrorResponse{Error: "invite_expired", Message: "This invite link has expired"})
+		return
+	}
+	if invite.Status == "pending" && invite.ExpiresAt.Before(time.Now()) {
+		database.DB.Exec(`UPDATE trip_invites SET status = 'expired' WHERE id = ?`, invite.ID)
 		c.JSON(http.StatusGone, models.ErrorResponse{Error: "invite_expired", Message: "This invite link has expired"})
 		return
 	}
@@ -271,7 +301,7 @@ func GetTripInvites(c *gin.Context) {
 	// Expire stale invites on read
 	database.DB.Exec(`
 		UPDATE trip_invites SET status = 'expired'
-		WHERE trip_id = ? AND status = 'pending' AND expires_at < CURRENT_TIMESTAMP
+		WHERE trip_id = ? AND status = 'pending' AND datetime(expires_at) < datetime('now')
 	`, tripID)
 
 	rows, err := database.DB.Query(`
@@ -288,7 +318,14 @@ func GetTripInvites(c *gin.Context) {
 	invites := []models.TripInvite{}
 	for rows.Next() {
 		var inv models.TripInvite
-		if scanErr := rows.Scan(&inv.ID, &inv.TripID, &inv.Email, &inv.Status, &inv.ExpiresAt, &inv.CreatedAt); scanErr == nil {
+		var expiresAtRaw, createdAtRaw string
+		if scanErr := rows.Scan(&inv.ID, &inv.TripID, &inv.Email, &inv.Status, &expiresAtRaw, &createdAtRaw); scanErr == nil {
+			inv.ExpiresAt = parseInviteTimestamp(expiresAtRaw)
+			inv.CreatedAt = parseInviteTimestamp(createdAtRaw)
+			if inv.Status == models.InviteStatusPending && inv.ExpiresAt.Before(time.Now()) {
+				inv.Status = models.InviteStatusExpired
+				database.DB.Exec(`UPDATE trip_invites SET status = 'expired' WHERE id = ?`, inv.ID)
+			}
 			invites = append(invites, inv)
 		}
 	}
