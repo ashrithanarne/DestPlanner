@@ -43,9 +43,8 @@ describe('DashboardComponent', () => {
   };
 
   async function setup() {
-    mockAnalyticsService.getSummary.mockReturnValue(of({ ...MOCK_SUMMARY }));
-    mockAnalyticsService.getTrips.mockReturnValue(of({ ...MOCK_TRIPS }));
-    mockAnalyticsService.getExpenses.mockReturnValue(of({ ...MOCK_EXPENSES }));
+    vi.clearAllMocks();
+    TestBed.resetTestingModule();
 
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
@@ -64,7 +63,9 @@ describe('DashboardComponent', () => {
   }
 
   beforeEach(async () => {
-    vi.clearAllMocks();
+    mockAnalyticsService.getSummary.mockReturnValue(of({ ...MOCK_SUMMARY }));
+    mockAnalyticsService.getTrips.mockReturnValue(of({ ...MOCK_TRIPS }));
+    mockAnalyticsService.getExpenses.mockReturnValue(of({ ...MOCK_EXPENSES }));
     await setup();
   });
 

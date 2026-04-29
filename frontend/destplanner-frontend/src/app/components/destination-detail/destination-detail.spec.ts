@@ -87,6 +87,33 @@ describe('DestinationDetailComponent', () => {
   };
 
   async function setup(authLoggedIn = false, routeId: string | null = '1') {
+    vi.clearAllMocks();
+    TestBed.resetTestingModule();
+    mockAuthService.isLoggedIn.mockReturnValue(authLoggedIn);
+
+    await TestBed.configureTestingModule({
+      imports: [DestinationDetailComponent],
+      providers: [
+        { provide: DestinationService, useValue: mockDestService },
+        { provide: BookmarkService, useValue: mockBookmarkService },
+        { provide: AuthService, useValue: mockAuthService },
+        provideRouter(testRoutes),
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: { get: () => routeId } } },
+        },
+        provideAnimations(),
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(DestinationDetailComponent);
+    component = fixture.componentInstance;
+    router = TestBed.inject(Router);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  }
+
+  beforeEach(async () => {
     mockDestService.getDestinationById.mockReturnValue(of({ ...MOCK_DEST }));
     mockDestService.getActivities.mockReturnValue(of({ ...MOCK_ACTIVITIES }));
     mockDestService.getReviews.mockReturnValue(of({ destination_id: 1, average_rating: 4.5, total_reviews: 2, reviews: [
@@ -101,32 +128,6 @@ describe('DestinationDetailComponent', () => {
     mockBookmarkService.getBookmarks.mockReturnValue(of([] as { id: number; destination: string }[]));
     mockBookmarkService.addBookmark.mockReturnValue(of({ message: 'Added' }));
     mockBookmarkService.removeBookmark.mockReturnValue(of({ message: 'Removed' }));
-    mockAuthService.isLoggedIn.mockReturnValue(authLoggedIn);
-
-    await TestBed.configureTestingModule({
-      imports: [DestinationDetailComponent],
-      providers: [
-        { provide: DestinationService, useValue: mockDestService },
-        { provide: BookmarkService, useValue: mockBookmarkService },
-        { provide: AuthService, useValue: mockAuthService },
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: { get: () => routeId } } },
-        },
-        provideRouter(testRoutes),
-        provideAnimations(),
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(DestinationDetailComponent);
-    component = fixture.componentInstance;
-    router = TestBed.inject(Router);
-    fixture.detectChanges();
-    await fixture.whenStable();
-  }
-
-  beforeEach(async () => {
-    vi.clearAllMocks();
     await setup();
   });
 
