@@ -5,8 +5,12 @@ import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { Component } from '@angular/core';
 import { CompareComponent } from './compare';
 import { DestinationService, DestinationCompare, CompareResponse } from '../../services/destination';
+
+@Component({ template: '', standalone: true })
+class DummyComponent {}
 
 const MOCK_DEST_1: DestinationCompare = {
   id: 1, name: 'Paris', country: 'France', budget: 2000,
@@ -39,17 +43,21 @@ describe('CompareComponent', () => {
   };
 
   async function setup(idsParam = '1,2') {
-    mockDestService.compareDestinations.mockReturnValue(of({ ...MOCK_COMPARE_RESPONSE }));
+    vi.clearAllMocks();
+    TestBed.resetTestingModule();
 
     await TestBed.configureTestingModule({
       imports: [CompareComponent],
       providers: [
         { provide: DestinationService, useValue: mockDestService },
+        provideRouter([
+          { path: 'destinations', component: DummyComponent },
+          { path: '**', component: DummyComponent },
+        ]),
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { queryParamMap: { get: () => idsParam } } },
         },
-        provideRouter([]),
         provideNoopAnimations(),
       ],
     }).compileComponents();
@@ -63,6 +71,7 @@ describe('CompareComponent', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    mockDestService.compareDestinations.mockReturnValue(of({ ...MOCK_COMPARE_RESPONSE }));
     await setup();
   });
 

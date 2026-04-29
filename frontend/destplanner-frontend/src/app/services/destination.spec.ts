@@ -202,7 +202,7 @@ describe('DestinationService', () => {
   it('getActivities: should GET /destinations/:id/activities', () => {
     service.getActivities(1).subscribe();
     const req = httpMock.expectOne((r) =>
-      r.url.includes('/destinations/1/activities') && r.method === 'GET'
+      r.url.includes('/public/destinations/1/activities') && r.method === 'GET'
     );
     expect(req.request.method).toBe('GET');
     req.flush({ destination_id: 1, total_activities: 0, activities: [] });
@@ -210,7 +210,7 @@ describe('DestinationService', () => {
 
   it('getActivities: should use the correct destination id in the URL', () => {
     service.getActivities(42).subscribe();
-    const req = httpMock.expectOne((r) => r.url.includes('/destinations/42/activities'));
+    const req = httpMock.expectOne((r) => r.url.includes('/public/destinations/42/activities'));
     expect(req.request.method).toBe('GET');
     req.flush({ destination_id: 42, total_activities: 0, activities: [] });
   });
@@ -226,7 +226,7 @@ describe('DestinationService', () => {
     };
     let result: any;
     service.getActivities(1).subscribe((r) => (result = r));
-    const req = httpMock.expectOne((r) => r.url.includes('/destinations/1/activities'));
+    const req = httpMock.expectOne((r) => r.url.includes('/public/destinations/1/activities'));
     req.flush(mockResponse);
     expect(result.total_activities).toBe(2);
     expect(result.activities[0].name).toBe('Eiffel Tower');
@@ -238,7 +238,7 @@ describe('DestinationService', () => {
   it('getActivities: should return empty activities array when none exist', () => {
     let result: any;
     service.getActivities(1).subscribe((r) => (result = r));
-    const req = httpMock.expectOne((r) => r.url.includes('/destinations/1/activities'));
+    const req = httpMock.expectOne((r) => r.url.includes('/public/destinations/1/activities'));
     req.flush({ destination_id: 1, total_activities: 0, activities: [] });
     expect(result.activities).toEqual([]);
     expect(result.total_activities).toBe(0);
@@ -247,7 +247,7 @@ describe('DestinationService', () => {
   it('getActivities: should propagate HTTP 404 when destination not found', () => {
     let error: any;
     service.getActivities(999).subscribe({ error: (e) => (error = e) });
-    httpMock.expectOne((r) => r.url.includes('/destinations/999/activities')).flush(
+    httpMock.expectOne((r) => r.url.includes('/public/destinations/999/activities')).flush(
       { error: 'not_found', message: 'Destination not found' },
       { status: 404, statusText: 'Not Found' }
     );
@@ -257,7 +257,7 @@ describe('DestinationService', () => {
   it('getActivities: should propagate HTTP 500 on server error', () => {
     let error: any;
     service.getActivities(1).subscribe({ error: (e) => (error = e) });
-    httpMock.expectOne((r) => r.url.includes('/destinations/1/activities')).flush(
+    httpMock.expectOne((r) => r.url.includes('/public/destinations/1/activities')).flush(
       { error: 'server_error' },
       { status: 500, statusText: 'Internal Server Error' }
     );
@@ -269,7 +269,7 @@ describe('DestinationService', () => {
   it('getTravelOptions: should GET /auth/destinations/:id/travel', () => {
     service.getTravelOptions(1).subscribe();
     const req = httpMock.expectOne((r) =>
-      r.url.includes('/auth/destinations/1/travel') && r.method === 'GET'
+      r.url.includes('/public/destinations/1/travel') && r.method === 'GET'
     );
     expect(req.request.method).toBe('GET');
     req.flush({ destination_id: 1, destination_name: 'Paris', total_options: 0, travel_options: [] });
@@ -277,7 +277,7 @@ describe('DestinationService', () => {
 
   it('getTravelOptions: should use the correct destination id in the URL', () => {
     service.getTravelOptions(5).subscribe();
-    const req = httpMock.expectOne((r) => r.url.includes('/auth/destinations/5/travel'));
+    const req = httpMock.expectOne((r) => r.url.includes('/public/destinations/5/travel'));
     expect(req.request.method).toBe('GET');
     req.flush({ destination_id: 5, destination_name: 'Tokyo', total_options: 0, travel_options: [] });
   });
@@ -294,7 +294,7 @@ describe('DestinationService', () => {
     };
     let result: any;
     service.getTravelOptions(1).subscribe((r) => (result = r));
-    const req = httpMock.expectOne((r) => r.url.includes('/auth/destinations/1/travel'));
+    const req = httpMock.expectOne((r) => r.url.includes('/public/destinations/1/travel'));
     req.flush(mockResponse);
     expect(result.total_options).toBe(2);
     expect(result.travel_options[0].name).toBe('Direct Flight to Paris');
@@ -307,7 +307,7 @@ describe('DestinationService', () => {
   it('getTravelOptions: should propagate HTTP 404 when destination not found', () => {
     let error: any;
     service.getTravelOptions(999).subscribe({ error: (e) => (error = e) });
-    httpMock.expectOne((r) => r.url.includes('/auth/destinations/999/travel')).flush(
+    httpMock.expectOne((r) => r.url.includes('/public/destinations/999/travel')).flush(
       { error: 'not_found', message: 'Destination not found' },
       { status: 404, statusText: 'Not Found' }
     );
@@ -317,7 +317,7 @@ describe('DestinationService', () => {
   it('getTravelOptions: should propagate HTTP 500 on server error', () => {
     let error: any;
     service.getTravelOptions(1).subscribe({ error: (e) => (error = e) });
-    httpMock.expectOne((r) => r.url.includes('/auth/destinations/1/travel')).flush(
+    httpMock.expectOne((r) => r.url.includes('/public/destinations/1/travel')).flush(
       { error: 'server_error' },
       { status: 500, statusText: 'Internal Server Error' }
     );
@@ -329,7 +329,7 @@ describe('DestinationService', () => {
   it('getAccommodationOptions: should GET /auth/destinations/:id/accommodations', () => {
     service.getAccommodationOptions(1).subscribe();
     const req = httpMock.expectOne((r) =>
-      r.url.includes('/auth/destinations/1/accommodations') && r.method === 'GET'
+      r.url.includes('/public/destinations/1/accommodations') && r.method === 'GET'
     );
     expect(req.request.method).toBe('GET');
     req.flush({ destination_id: 1, destination_name: 'Paris', total_options: 0, accommodation_options: [] });
@@ -337,7 +337,7 @@ describe('DestinationService', () => {
 
   it('getAccommodationOptions: should use the correct destination id in the URL', () => {
     service.getAccommodationOptions(7).subscribe();
-    const req = httpMock.expectOne((r) => r.url.includes('/auth/destinations/7/accommodations'));
+    const req = httpMock.expectOne((r) => r.url.includes('/public/destinations/7/accommodations'));
     expect(req.request.method).toBe('GET');
     req.flush({ destination_id: 7, destination_name: 'Bali', total_options: 0, accommodation_options: [] });
   });
@@ -354,7 +354,7 @@ describe('DestinationService', () => {
     };
     let result: any;
     service.getAccommodationOptions(1).subscribe((r) => (result = r));
-    const req = httpMock.expectOne((r) => r.url.includes('/auth/destinations/1/accommodations'));
+    const req = httpMock.expectOne((r) => r.url.includes('/public/destinations/1/accommodations'));
     req.flush(mockResponse);
     expect(result.total_options).toBe(2);
     expect(result.accommodation_options[0].name).toBe('Luxury Hotel Paris');
@@ -367,7 +367,7 @@ describe('DestinationService', () => {
   it('getAccommodationOptions: should propagate HTTP 404 when destination not found', () => {
     let error: any;
     service.getAccommodationOptions(999).subscribe({ error: (e) => (error = e) });
-    httpMock.expectOne((r) => r.url.includes('/auth/destinations/999/accommodations')).flush(
+    httpMock.expectOne((r) => r.url.includes('/public/destinations/999/accommodations')).flush(
       { error: 'not_found', message: 'Destination not found' },
       { status: 404, statusText: 'Not Found' }
     );
@@ -377,7 +377,7 @@ describe('DestinationService', () => {
   it('getAccommodationOptions: should propagate HTTP 500 on server error', () => {
     let error: any;
     service.getAccommodationOptions(1).subscribe({ error: (e) => (error = e) });
-    httpMock.expectOne((r) => r.url.includes('/auth/destinations/1/accommodations')).flush(
+    httpMock.expectOne((r) => r.url.includes('/public/destinations/1/accommodations')).flush(
       { error: 'server_error' },
       { status: 500, statusText: 'Internal Server Error' }
     );
@@ -389,7 +389,7 @@ describe('DestinationService', () => {
   it('getReviews: should GET /auth/destinations/:id/reviews', () => {
     service.getReviews(1).subscribe();
     const req = httpMock.expectOne((r) =>
-      r.url.includes('/auth/destinations/1/reviews') && r.method === 'GET'
+      r.url.includes('/public/destinations/1/reviews') && r.method === 'GET'
     );
     expect(req.request.method).toBe('GET');
     req.flush({ destination_id: 1, average_rating: 0, total_reviews: 0, reviews: [] });
@@ -397,7 +397,7 @@ describe('DestinationService', () => {
 
   it('getReviews: should use the correct destination id in the URL', () => {
     service.getReviews(5).subscribe();
-    const req = httpMock.expectOne((r) => r.url.includes('/auth/destinations/5/reviews'));
+    const req = httpMock.expectOne((r) => r.url.includes('/public/destinations/5/reviews'));
     expect(req.request.method).toBe('GET');
     req.flush({ destination_id: 5, average_rating: 0, total_reviews: 0, reviews: [] });
   });
@@ -414,7 +414,7 @@ describe('DestinationService', () => {
     };
     let result: any;
     service.getReviews(1).subscribe((r) => (result = r));
-    const req = httpMock.expectOne((r) => r.url.includes('/auth/destinations/1/reviews'));
+    const req = httpMock.expectOne((r) => r.url.includes('/public/destinations/1/reviews'));
     req.flush(mockResponse);
     expect(result.total_reviews).toBe(2);
     expect(result.average_rating).toBe(4.5);
@@ -427,7 +427,7 @@ describe('DestinationService', () => {
   it('getReviews: should return empty reviews array when none exist', () => {
     let result: any;
     service.getReviews(1).subscribe((r) => (result = r));
-    const req = httpMock.expectOne((r) => r.url.includes('/auth/destinations/1/reviews'));
+    const req = httpMock.expectOne((r) => r.url.includes('/public/destinations/1/reviews'));
     req.flush({ destination_id: 1, average_rating: 0, total_reviews: 0, reviews: [] });
     expect(result.reviews).toEqual([]);
     expect(result.total_reviews).toBe(0);
@@ -437,7 +437,7 @@ describe('DestinationService', () => {
   it('getReviews: should propagate HTTP 404 when destination not found', () => {
     let error: any;
     service.getReviews(999).subscribe({ error: (e) => (error = e) });
-    httpMock.expectOne((r) => r.url.includes('/auth/destinations/999/reviews')).flush(
+    httpMock.expectOne((r) => r.url.includes('/public/destinations/999/reviews')).flush(
       { error: 'not_found' },
       { status: 404, statusText: 'Not Found' }
     );
