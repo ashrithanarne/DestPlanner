@@ -22,11 +22,9 @@
   <div *ngIf="!loading && destinations.length > 0" class="destinations-grid">
     <mat-card class="dest-card" *ngFor="let dest of destinations" (click)="viewDetails(dest)">
       
-      <!-- We use a placeholder gradient since we don't have images -->
       <div class="dest-image-placeholder">
         <h3>{{ dest.name }}</h3>
         
-        <!-- Bookmark Button -->
         <button mat-icon-button class="bookmark-btn" 
                 (click)="toggleBookmark(dest, $event)"
                 [ngClass]="{'bookmarked': dest.is_bookmarked}">
@@ -51,7 +49,22 @@
 
       <mat-card-actions>
         <button mat-button color="primary">View Details</button>
+        <button mat-button
+                [color]="isInCompare(dest) ? 'warn' : 'accent'"
+                (click)="toggleCompare(dest, $event)">
+          <mat-icon>{{ isInCompare(dest) ? 'remove_circle_outline' : 'compare_arrows' }}</mat-icon>
+          {{ isInCompare(dest) ? 'Remove' : 'Compare' }}
+        </button>
       </mat-card-actions>
     </mat-card>
+  </div>
+
+  <!-- Floating compare bar -->
+  <div class="compare-bar" *ngIf="compareIds.length >= 2">
+    <span>{{ compareIds.length }} destinations selected</span>
+    <button mat-raised-button color="primary" (click)="goToCompare()">
+      <mat-icon>compare_arrows</mat-icon>
+      Compare Now
+    </button>
   </div>
 </div>

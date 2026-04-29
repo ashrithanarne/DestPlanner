@@ -18,6 +18,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'dashboard',
+    loadComponent: () => import('./components/dashboard/dashboard').then(m => m.DashboardComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'budget',
     loadComponent: () => import('./components/budget/budget').then(m => m.BudgetComponent),
     canActivate: [authGuard]
@@ -45,6 +50,10 @@ export const routes: Routes = [
   {
     path: 'destinations/categories',
     loadComponent: () => import('./components/category-destinations/category-destinations').then(m => m.CategoryDestinationsComponent)
+  },
+  {
+    path: 'destinations/compare',
+    loadComponent: () => import('./components/compare/compare').then(m => m.CompareComponent)
   },
   {
     path: 'destinations',

@@ -1,0 +1,112 @@
+.compare-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.compare-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.compare-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.loading-state, .error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 0;
+  color: #6b7280;
+}
+
+.compare-table-wrap {
+  overflow-x: auto;
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.compare-table th,
+.compare-table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: top;
+}
+
+.compare-table thead tr {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: white;
+}
+
+.compare-table thead th {
+  border-bottom: none;
+}
+
+.label-col {
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f9fafb;
+  min-width: 160px;
+}
+
+.dest-col {
+  min-width: 200px;
+}
+
+.dest-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dest-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.remove-btn {
+  color: rgba(255,255,255,0.8) !important;
+}
+
+.remove-btn:hover {
+  color: white !important;
+}
+
+.compare-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.activities-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.activities-list li {
+  margin-bottom: 4px;
+  color: #4b5563;
+}
+
+.desc-cell {
+  color: #6b7280;
+  font-size: 0.9rem;
+  max-width: 250px;
+}

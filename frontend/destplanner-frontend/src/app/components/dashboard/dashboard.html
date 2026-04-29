@@ -1,0 +1,126 @@
+<div class="dashboard-page">
+  <h1 class="dashboard-title">Analytics Dashboard</h1>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div *ngIf="summaryLoading" class="loading-row">
+      <mat-spinner diameter="32"></mat-spinner>
+    </div>
+    <div *ngIf="summaryError" class="error-msg">{{ summaryError }}</div>
+
+    <ng-container *ngIf="!summaryLoading && !summaryError && summary">
+      <mat-card class="summary-card">
+        <mat-icon class="summary-icon">flight_takeoff</mat-icon>
+        <div class="summary-value">{{ summary.total_trips }}</div>
+        <div class="summary-label">Total Trips</div>
+      </mat-card>
+      <mat-card class="summary-card">
+        <mat-icon class="summary-icon">payments</mat-icon>
+        <div class="summary-value">${{ summary.total_spent | number:'1.0-0' }}</div>
+        <div class="summary-label">Total Spent</div>
+      </mat-card>
+      <mat-card class="summary-card">
+        <mat-icon class="summary-icon">public</mat-icon>
+        <div class="summary-value">{{ summary.countries_visited }}</div>
+        <div class="summary-label">Countries Visited</div>
+      </mat-card>
+      <mat-card class="summary-card">
+        <mat-icon class="summary-icon">trending_up</mat-icon>
+        <div class="summary-value">${{ summary.average_spent_per_trip | number:'1.0-0' }}</div>
+        <div class="summary-label">Avg Spent / Trip</div>
+      </mat-card>
+    </ng-container>
+  </div>
+
+  <div class="dashboard-body">
+
+    <!-- Past Trips -->
+    <mat-card class="section-card">
+      <h2 class="section-title">
+        <mat-icon>luggage</mat-icon> Past Trips
+      </h2>
+
+      <div *ngIf="tripsLoading" class="loading-row"><mat-spinner diameter="28"></mat-spinner></div>
+      <div *ngIf="tripsError" class="error-msg">{{ tripsError }}</div>
+
+      <div *ngIf="!tripsLoading && !tripsError && trips.length === 0" class="empty-msg">
+        No trips yet. Start planning your first adventure!
+      </div>
+
+      <div *ngIf="!tripsLoading && !tripsError && trips.length > 0" class="trips-table-wrap">
+        <table class="trips-table">
+          <thead>
+            <tr>
+              <th>Trip</th>
+              <th>Destination</th>
+              <th>Dates</th>
+              <th>Status</th>
+              <th>Total Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let trip of trips" (click)="navigateToTrip(trip.id)" class="trip-row">
+              <td>{{ trip.trip_name }}</td>
+              <td>{{ trip.destination || '—' }}</td>
+              <td>
+                <span *ngIf="trip.start_date">{{ trip.start_date }}</span>
+                <span *ngIf="trip.start_date && trip.end_date"> – </span>
+                <span *ngIf="trip.end_date">{{ trip.end_date }}</span>
+                <span *ngIf="!trip.start_date && !trip.end_date">—</span>
+              </td>
+              <td><span class="status-badge status-{{ trip.status }}">{{ trip.status }}</span></td>
+              <td>${{ trip.total_cost | number:'1.0-0' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </mat-card>
+
+    <!-- Expense Breakdown -->
+    <mat-card class="section-card">
+      <h2 class="section-title">
+        <mat-icon>pie_chart</mat-icon> Expense Breakdown
+      </h2>
+
+      <!-- Filters -->
+      <div class="filters-row">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Filter by Trip</mat-label>
+          <mat-select [(ngModel)]="selectedTripId">
+            <mat-option [value]="undefined">All Trips</mat-option>
+            <mat-option *ngFor="let trip of trips" [value]="trip.id">{{ trip.trip_name }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Date Range (YYYY-MM-DD,YYYY-MM-DD)</mat-label>
+          <input matInput [(ngModel)]="selectedDateRange" placeholder="e.g. 2024-01-01,2024-03-31">
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" (click)="applyFilters()">Apply</button>
+        <button mat-stroked-button (click)="clearFilters()">Clear</button>
+      </div>
+
+      <div *ngIf="expensesLoading" class="loading-row"><mat-spinner diameter="28"></mat-spinner></div>
+      <div *ngIf="expensesError" class="error-msg">{{ expensesError }}</div>
+
+      <div *ngIf="!expensesLoading && !expensesError && categories.length === 0" class="empty-msg">
+        No expense data found. Add expenses to your trips to see the breakdown.
+      </div>
+
+      <div *ngIf="!expensesLoading && !expensesError && categories.length > 0" class="chart-section">
+        <div class="chart-total">Total: ${{ totalExpenseSpent | number:'1.0-0' }}</div>
+        <div class="bar-chart">
+          <div class="bar-row" *ngFor="let cat of categories">
+            <div class="bar-label">{{ cat.category }}</div>
+            <div class="bar-track">
+              <div class="bar-fill" [style.width]="getBarWidth(cat.total_amount)"></div>
+            </div>
+            <div class="bar-value">${{ cat.total_amount | number:'1.0-0' }} ({{ getBarWidth(cat.total_amount) }})</div>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+  </div>
+</div>

@@ -36,17 +36,41 @@ func setupCompareDB(t *testing.T) {
 	_, err = database.DB.Exec(`
 		CREATE TABLE IF NOT EXISTS destinations (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT, country TEXT, budget REAL, description TEXT
+			name TEXT, country TEXT, budget REAL, description TEXT,
+			best_season TEXT NOT NULL DEFAULT '',
+			travel_time TEXT NOT NULL DEFAULT ''
 		);
 	`)
 	if err != nil {
-		t.Fatalf("Failed to create tables: %v", err)
+		t.Fatalf("Failed to create destinations table: %v", err)
 	}
 
-	// Seed 3 destinations
-	database.DB.Exec(`INSERT INTO destinations (id, name, country, budget, description) VALUES (1, 'Paris', 'France', 2000, 'City of Light')`)
-	database.DB.Exec(`INSERT INTO destinations (id, name, country, budget, description) VALUES (2, 'Tokyo', 'Japan', 3000, 'Land of the Rising Sun')`)
-	database.DB.Exec(`INSERT INTO destinations (id, name, country, budget, description) VALUES (3, 'Bali', 'Indonesia', 1500, 'Island of the Gods')`)
+	_, err = database.DB.Exec(`
+		CREATE TABLE IF NOT EXISTS activities (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			destination_id INTEGER NOT NULL,
+			name TEXT NOT NULL,
+			description TEXT,
+			category TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		);
+	`)
+	if err != nil {
+		t.Fatalf("Failed to create activities table: %v", err)
+	}
+
+	// Seed 3 destinations with best_season and travel_time
+	database.DB.Exec(`INSERT INTO destinations (id, name, country, budget, description, best_season, travel_time) VALUES (1, 'Paris', 'France', 2000, 'City of Light', 'Spring', '2h flight')`)
+	database.DB.Exec(`INSERT INTO destinations (id, name, country, budget, description, best_season, travel_time) VALUES (2, 'Tokyo', 'Japan', 3000, 'Land of the Rising Sun', 'Autumn', '14h flight')`)
+	database.DB.Exec(`INSERT INTO destinations (id, name, country, budget, description, best_season, travel_time) VALUES (3, 'Bali', 'Indonesia', 1500, 'Island of the Gods', 'Summer', '18h flight')`)
+
+	// Seed activities for Paris
+	database.DB.Exec(`INSERT INTO activities (destination_id, name) VALUES (1, 'Eiffel Tower')`)
+	database.DB.Exec(`INSERT INTO activities (destination_id, name) VALUES (1, 'Louvre Museum')`)
+
+	// Seed activities for Tokyo
+	database.DB.Exec(`INSERT INTO activities (destination_id, name) VALUES (2, 'Shibuya Crossing')`)
 }
 
 func TestCompareDestinations(t *testing.T) {
@@ -133,7 +157,7 @@ func TestCompareDestinations(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	// -------------------------
-	// 9. Verify response fields are correct
+	// 9. Verify budget and country fields
 	// -------------------------
 	req, _ = http.NewRequest("GET", "/api/destinations/compare?ids=1,3", nil)
 	w = httptest.NewRecorder()
@@ -148,4 +172,52 @@ func TestCompareDestinations(t *testing.T) {
 	assert.Equal(t, float64(2000), paris["budget"])
 	assert.Equal(t, "Indonesia", bali["country"])
 	assert.Equal(t, float64(1500), bali["budget"])
+
+	// -------------------------
+	// 10. Verify best_season and travel_time fields
+	// -------------------------
+	req, _ = http.NewRequest("GET", "/api/destinations/compare?ids=1,2", nil)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &res)
+	dests = res["destinations"].([]interface{})
+	parisD := dests[0].(map[string]interface{})
+	tokyoD := dests[1].(map[string]interface{})
+	assert.Equal(t, "Spring", parisD["best_season"])
+	assert.Equal(t, "2h flight", parisD["travel_time"])
+	assert.Equal(t, "Autumn", tokyoD["best_season"])
+	assert.Equal(t, "14h flight", tokyoD["travel_time"])
+
+	// -------------------------
+	// 11. Verify activities are returned for destinations that have them
+	// -------------------------
+	req, _ = http.NewRequest("GET", "/api/destinations/compare?ids=1,2", nil)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &res)
+	dests = res["destinations"].([]interface{})
+	parisActivities := dests[0].(map[string]interface{})["activities"].([]interface{})
+	tokyoActivities := dests[1].(map[string]interface{})["activities"].([]interface{})
+	assert.Equal(t, 2, len(parisActivities))
+	assert.Equal(t, "Eiffel Tower", parisActivities[0])
+	assert.Equal(t, "Louvre Museum", parisActivities[1])
+	assert.Equal(t, 1, len(tokyoActivities))
+	assert.Equal(t, "Shibuya Crossing", tokyoActivities[0])
+
+	// -------------------------
+	// 12. Verify activities is empty array (not null) for destinations with no activities
+	// -------------------------
+	req, _ = http.NewRequest("GET", "/api/destinations/compare?ids=2,3", nil)
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &res)
+	dests = res["destinations"].([]interface{})
+	baliActivities := dests[1].(map[string]interface{})["activities"].([]interface{})
+	assert.Equal(t, 0, len(baliActivities))
 }
