@@ -65,6 +65,9 @@ func InitDB(dataSourceName string) error {
 
 	// Migrate: add category column to destinations if not already present
 	DB.Exec(`ALTER TABLE destinations ADD COLUMN category TEXT`)
+	// Migrate: add best_season and travel_time columns if not already present
+	DB.Exec(`ALTER TABLE destinations ADD COLUMN best_season TEXT NOT NULL DEFAULT ''`)
+	DB.Exec(`ALTER TABLE destinations ADD COLUMN travel_time TEXT NOT NULL DEFAULT ''`)
 
 	// Create bookmarks table
 	createBookmarksTable := `
@@ -461,6 +464,99 @@ CREATE TABLE IF NOT EXISTS activities (
 
 	// Migrate: add visibility column to trips if not already present
 	DB.Exec(`ALTER TABLE trips ADD COLUMN visibility TEXT NOT NULL DEFAULT 'private'`)
+
+	// Seed destination data for testing (only if table is empty)
+	var destCount int
+	DB.QueryRow("SELECT COUNT(*) FROM destinations").Scan(&destCount)
+	if destCount == 0 {
+		seeds := []struct {
+			name, country, description, category, bestSeason, travelTime string
+			budget float64
+		}{
+			{"Paris", "France", "The City of Light — famous for the Eiffel Tower, world-class cuisine, art museums, and romantic boulevards.", "couples", "Spring", "2h flight", 180},
+			{"Tokyo", "Japan", "A dazzling blend of ultramodern and traditional — neon-lit skyscrapers, ancient temples, and incredible street food.", "adventure", "Autumn", "14h flight", 150},
+			{"Bali", "Indonesia", "Island of the Gods — lush rice terraces, Hindu temples, surf beaches, and vibrant nightlife.", "beach", "Summer", "18h flight", 60},
+			{"New York", "USA", "The city that never sleeps — iconic skyline, Broadway shows, Central Park, and world-famous food.", "city", "Autumn", "8h flight", 250},
+			{"Barcelona", "Spain", "Gaudí architecture, sun-soaked beaches, tapas culture, and a buzzing nightlife scene.", "couples", "Spring", "2h flight", 130},
+			{"Kyoto", "Japan", "Japan's cultural heart — thousands of temples, traditional geisha districts, and stunning bamboo groves.", "culture", "Spring", "14h flight", 120},
+			{"Santorini", "Greece", "Iconic white-washed buildings, volcanic beaches, breathtaking sunsets, and excellent local wine.", "beach", "Summer", "3h flight", 200},
+			{"Cape Town", "South Africa", "Dramatic Table Mountain backdrop, stunning coastlines, vibrant food scene, and nearby safari options.", "adventure", "Summer", "11h flight", 90},
+			{"Machu Picchu", "Peru", "Ancient Incan citadel set high in the Andes Mountains — one of the world's most iconic archaeological sites.", "adventure", "Winter", "16h flight", 80},
+			{"Dubai", "UAE", "Futuristic skyline, luxury shopping, desert safaris, and record-breaking attractions in the Arabian desert.", "city", "Winter", "7h flight", 300},
+		}
+		for _, s := range seeds {
+			DB.Exec(
+				`INSERT INTO destinations (name, country, budget, description, category, best_season, travel_time) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+				s.name, s.country, s.budget, s.description, s.category, s.bestSeason, s.travelTime,
+			)
+		}
+
+		// Seed activities for each destination
+		activitySeeds := map[string][]struct{ name, desc, cat string }{
+			"Paris": {
+				{"Eiffel Tower", "Visit the iconic iron lattice tower on the Champ de Mars.", "Sightseeing"},
+				{"Louvre Museum", "Explore the world's largest art museum and home of the Mona Lisa.", "Culture"},
+				{"Seine River Cruise", "Scenic boat tour along the Seine passing major landmarks.", "Leisure"},
+			},
+			"Tokyo": {
+				{"Shibuya Crossing", "Experience the world's busiest pedestrian crossing.", "Sightseeing"},
+				{"Senso-ji Temple", "Tokyo's oldest and most significant Buddhist temple in Asakusa.", "Culture"},
+				{"Tsukiji Outer Market", "Fresh sushi and street food at the famous fish market.", "Food"},
+			},
+			"Bali": {
+				{"Ubud Monkey Forest", "Sacred sanctuary home to hundreds of Balinese long-tailed macaques.", "Nature"},
+				{"Tanah Lot Temple", "Iconic sea temple perched on a rocky outcrop at sunset.", "Culture"},
+				{"Kuta Beach Surfing", "Learn to surf on one of Bali's most famous beaches.", "Adventure"},
+			},
+			"New York": {
+				{"Central Park", "840-acre urban park perfect for walking, cycling, and picnics.", "Leisure"},
+				{"Statue of Liberty", "Iconic symbol of freedom on Liberty Island in New York Harbor.", "Sightseeing"},
+				{"Broadway Show", "World-class theatre performances in the heart of Midtown Manhattan.", "Entertainment"},
+			},
+			"Barcelona": {
+				{"Sagrada Família", "Gaudí's unfinished masterpiece basilica — a UNESCO World Heritage Site.", "Culture"},
+				{"Park Güell", "Colourful mosaic park with panoramic views over the city.", "Sightseeing"},
+				{"La Boqueria Market", "Famous public market with fresh produce, tapas, and local specialties.", "Food"},
+			},
+			"Kyoto": {
+				{"Fushimi Inari Shrine", "Thousands of vermilion torii gates winding up a forested mountain.", "Culture"},
+				{"Arashiyama Bamboo Grove", "Towering bamboo stalks creating an otherworldly forest path.", "Nature"},
+				{"Gion District", "Historic geisha district with traditional wooden machiya townhouses.", "Culture"},
+			},
+			"Santorini": {
+				{"Oia Sunset", "Watch the world-famous sunset from the clifftop village of Oia.", "Leisure"},
+				{"Volcano Hike", "Hike to the active volcanic crater and swim in hot springs.", "Adventure"},
+				{"Wine Tasting", "Sample unique Assyrtiko wines grown in volcanic soil.", "Food"},
+			},
+			"Cape Town": {
+				{"Table Mountain", "Take the cable car to the flat-topped mountain for panoramic views.", "Nature"},
+				{"Cape of Good Hope", "The dramatic southwestern tip of the African continent.", "Sightseeing"},
+				{"Robben Island", "Historic island where Nelson Mandela was imprisoned for 18 years.", "Culture"},
+			},
+			"Machu Picchu": {
+				{"Inca Trail Trek", "Classic 4-day hike through cloud forest to the Sun Gate.", "Adventure"},
+				{"Huayna Picchu", "Steep hike up the iconic peak overlooking the citadel.", "Adventure"},
+				{"Guided Ruins Tour", "Expert-led tour of the ancient Incan citadel and its history.", "Culture"},
+			},
+			"Dubai": {
+				{"Burj Khalifa", "Visit the observation deck of the world's tallest building.", "Sightseeing"},
+				{"Desert Safari", "Dune bashing, camel riding, and traditional Bedouin dinner.", "Adventure"},
+				{"Dubai Mall", "One of the world's largest shopping malls with an indoor aquarium.", "Leisure"},
+			},
+		}
+		for destName, activities := range activitySeeds {
+			var destID int
+			if err := DB.QueryRow("SELECT id FROM destinations WHERE name = ?", destName).Scan(&destID); err == nil {
+				for _, a := range activities {
+					DB.Exec(
+						`INSERT INTO activities (destination_id, name, description, category) VALUES (?, ?, ?, ?)`,
+						destID, a.name, a.desc, a.cat,
+					)
+				}
+			}
+		}
+		log.Println("Seed data inserted: 10 destinations with activities")
+	}
 
 	log.Println("Database initialized successfully")
 	return nil

@@ -32,6 +32,7 @@ export class DestinationsComponent implements OnInit {
   destinations: Destination[] = [];
   loading = true;
   isLoggedIn = false;
+  compareIds: number[] = [];
 
   constructor(
     private destService: DestinationService,
@@ -119,6 +120,29 @@ export class DestinationsComponent implements OnInit {
         error: () => this.snack.open('Failed to add bookmark', 'OK', { duration: 2000 })
       });
     }
+  }
+
+  toggleCompare(dest: Destination, event: Event): void {
+    event.stopPropagation();
+    const idx = this.compareIds.indexOf(dest.id);
+    if (idx > -1) {
+      this.compareIds = this.compareIds.filter(id => id !== dest.id);
+    } else {
+      if (this.compareIds.length >= 3) {
+        this.snack.open('You can compare up to 3 destinations', 'OK', { duration: 2000 });
+        return;
+      }
+      this.compareIds = [...this.compareIds, dest.id];
+    }
+    this.cdr.markForCheck();
+  }
+
+  isInCompare(dest: Destination): boolean {
+    return this.compareIds.includes(dest.id);
+  }
+
+  goToCompare(): void {
+    this.router.navigate(['/destinations/compare'], { queryParams: { ids: this.compareIds.join(',') } });
   }
 
   viewDetails(dest: Destination): void {

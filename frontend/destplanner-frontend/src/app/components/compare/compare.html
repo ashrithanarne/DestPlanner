@@ -1,0 +1,68 @@
+<div class="compare-page">
+  <div class="compare-header">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Compare Destinations</h1>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading comparison...</p>
+  </div>
+
+  <div *ngIf="!loading && error" class="error-state">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-raised-button color="primary" (click)="goBack()">Back to Destinations</button>
+  </div>
+
+  <div *ngIf="!loading && !error && destinations.length >= 2" class="compare-table-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th class="label-col"></th>
+          <th *ngFor="let dest of destinations" class="dest-col">
+            <div class="dest-header">
+              <span class="dest-name">{{ dest.name }}</span>
+              <button mat-icon-button class="remove-btn" (click)="removeDestination(dest.id)" title="Remove">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label-col"><mat-icon>place</mat-icon> Country</td>
+          <td *ngFor="let dest of destinations">{{ dest.country }}</td>
+        </tr>
+        <tr>
+          <td class="label-col"><mat-icon>payments</mat-icon> Budget/day</td>
+          <td *ngFor="let dest of destinations">${{ dest.budget }}</td>
+        </tr>
+        <tr>
+          <td class="label-col"><mat-icon>wb_sunny</mat-icon> Best Season</td>
+          <td *ngFor="let dest of destinations">{{ dest.best_season || '—' }}</td>
+        </tr>
+        <tr>
+          <td class="label-col"><mat-icon>flight</mat-icon> Travel Time</td>
+          <td *ngFor="let dest of destinations">{{ dest.travel_time || '—' }}</td>
+        </tr>
+        <tr>
+          <td class="label-col"><mat-icon>local_activity</mat-icon> Activities</td>
+          <td *ngFor="let dest of destinations">
+            <ul class="activities-list" *ngIf="dest.activities.length > 0">
+              <li *ngFor="let a of dest.activities">{{ a }}</li>
+            </ul>
+            <span *ngIf="dest.activities.length === 0">—</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="label-col"><mat-icon>info</mat-icon> Description</td>
+          <td *ngFor="let dest of destinations" class="desc-cell">{{ dest.description }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

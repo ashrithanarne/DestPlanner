@@ -11,6 +11,12 @@
     <p>Loading destination details...</p>
   </div>
 
+  <div *ngIf="!loading && loadError" class="error-state">
+    <mat-icon>error_outline</mat-icon>
+    <p>Could not load destination. Make sure the server is running and try again.</p>
+    <button mat-stroked-button (click)="goBack()">Go Back</button>
+  </div>
+
   <div *ngIf="!loading && destination" class="content">
     <mat-card class="detail-card">
       <div class="hero-image-placeholder">
@@ -66,8 +72,67 @@
 
           <div *ngIf="!activitiesLoading && !activitiesError && activities.length > 0" class="activities-list">
             <mat-card class="activity-card" *ngFor="let activity of activities">
-              <div class="activity-name">{{ activity.name }}</div>
+              <div class="activity-card-header">
+                <div class="activity-name">{{ activity.name }}</div>
+                <span *ngIf="activity.category" class="activity-category">{{ activity.category }}</span>
+              </div>
               <p class="activity-description">{{ activity.description || 'No description available.' }}</p>
+            </mat-card>
+          </div>
+        </section>
+
+        <mat-divider style="margin: 2rem 0;"></mat-divider>
+
+        <section class="travel-section">
+          <h3>Travel Options</h3>
+
+          <div *ngIf="travelLoading" class="travel-loading">Loading travel options...</div>
+
+          <div *ngIf="!travelLoading && travelError" class="travel-error">{{ travelError }}</div>
+
+          <div *ngIf="!travelLoading && !travelError && travelOptions.length === 0" class="travel-empty">
+            No travel options available for this destination yet.
+          </div>
+
+          <div *ngIf="!travelLoading && !travelError && travelOptions.length > 0" class="options-grid">
+            <mat-card class="option-card" *ngFor="let option of travelOptions">
+              <div class="option-header">
+                <span class="option-name">{{ option.name }}</span>
+                <span class="option-type">{{ option.type }}</span>
+              </div>
+              <p class="option-description">{{ option.description }}</p>
+              <div class="option-footer">
+                <span class="option-cost">{{ option.currency }} {{ option.estimated_cost | number:'1.0-0' }}</span>
+                <a [href]="option.booking_link" target="_blank" rel="noopener" mat-stroked-button color="primary" class="book-btn">Book Now</a>
+              </div>
+            </mat-card>
+          </div>
+        </section>
+
+        <mat-divider style="margin: 2rem 0;"></mat-divider>
+
+        <section class="accommodation-section">
+          <h3>Accommodation Options</h3>
+
+          <div *ngIf="accommodationsLoading" class="accommodation-loading">Loading accommodation options...</div>
+
+          <div *ngIf="!accommodationsLoading && accommodationsError" class="accommodation-error">{{ accommodationsError }}</div>
+
+          <div *ngIf="!accommodationsLoading && !accommodationsError && accommodations.length === 0" class="accommodation-empty">
+            No accommodation options available for this destination yet.
+          </div>
+
+          <div *ngIf="!accommodationsLoading && !accommodationsError && accommodations.length > 0" class="options-grid">
+            <mat-card class="option-card" *ngFor="let option of accommodations">
+              <div class="option-header">
+                <span class="option-name">{{ option.name }}</span>
+                <span class="option-type">{{ option.type }}</span>
+              </div>
+              <p class="option-description">{{ option.description }}</p>
+              <div class="option-footer">
+                <span class="option-cost">{{ option.currency }} {{ option.estimated_cost | number:'1.0-0' }} / night</span>
+                <a [href]="option.booking_link" target="_blank" rel="noopener" mat-stroked-button color="primary" class="book-btn">Book Now</a>
+              </div>
             </mat-card>
           </div>
         </section>
@@ -84,7 +149,7 @@
           </div>
 
           <div *ngIf="!isLoggedIn" class="reviews-login-prompt">
-            <p>Please login to view and submit destination reviews.</p>
+            <p>Please login to submit a review.</p>
             <button mat-stroked-button color="primary" routerLink="/login">Go to Login</button>
           </div>
 

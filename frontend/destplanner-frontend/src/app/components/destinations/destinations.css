@@ -129,3 +129,19 @@ mat-card-actions {
   gap: 6px;
   text-decoration: none;
 }
+
+.compare-bar {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  z-index: 100;
+}
