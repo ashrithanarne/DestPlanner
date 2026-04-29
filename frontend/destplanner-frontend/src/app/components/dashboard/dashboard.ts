@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -19,6 +19,7 @@ import {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -50,7 +51,11 @@ export class DashboardComponent implements OnInit {
   selectedTripId: number | undefined = undefined;
   selectedDateRange = '';
 
-  constructor(private analyticsService: AnalyticsService, private router: Router) {}
+  constructor(
+    private analyticsService: AnalyticsService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadSummary();
@@ -65,10 +70,12 @@ export class DashboardComponent implements OnInit {
       next: (res) => {
         this.summary = res.summary;
         this.summaryLoading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.summaryError = 'Failed to load summary.';
         this.summaryLoading = false;
+        this.cdr.markForCheck();
       },
     });
   }
@@ -80,10 +87,12 @@ export class DashboardComponent implements OnInit {
       next: (res) => {
         this.trips = res.trips || [];
         this.tripsLoading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.tripsError = 'Failed to load trips.';
         this.tripsLoading = false;
+        this.cdr.markForCheck();
       },
     });
   }
@@ -96,10 +105,12 @@ export class DashboardComponent implements OnInit {
         this.categories = res.categories || [];
         this.totalExpenseSpent = res.total_spent || 0;
         this.expensesLoading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.expensesError = 'Failed to load expense data.';
         this.expensesLoading = false;
+        this.cdr.markForCheck();
       },
     });
   }
